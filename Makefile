@@ -6,7 +6,7 @@ live/templ:
 
 # run air to detect any go file changes to re-build and re-run the server.
 live/server:
-	go run github.com/air-verse/air@v1.51.0 \
+	go run github.com/cosmtrek/air@v1.51.0 \
 	--build.cmd "go build -o tmp/bin/main" --build.bin "tmp/bin/main" --build.delay "100" \
 	--build.exclude_dir "node_modules" \
 	--build.include_ext "go" \
@@ -23,7 +23,7 @@ live/esbuild:
 
 # watch for any js or css change in the assets/ folder, then reload the browser via templ proxy.
 live/sync_assets:
-	go run github.com/air-verse/air@v1.51.0 \
+	go run github.com/cosmtrek/air@v1.51.0 \
 	--build.cmd "templ generate --notify-proxy" \
 	--build.bin "true" \
 	--build.delay "100" \
