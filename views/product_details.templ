@@ -5,10 +5,11 @@ type xd struct {}
 var DetailFragment = xd{}
 
 templ ProductDetails() {
-    <div>
+    @layout() {
+    <div class="mx-4 text-3xl">
         Whole
-        @templ.Fragment(DetailFragment) {
-            <div>Fragment</div>
-        }
+
     </div>
+    <p class="text-3xl m-0!">ASSADASD</p>
+    }
 }

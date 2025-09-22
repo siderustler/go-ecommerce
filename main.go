@@ -1,8 +1,6 @@
 package main
 
 import (
-	"os"
-
 	"github.com/a-h/templ"
 	"github.com/gofiber/fiber/v2"
 	"github.com/siderustler/go-ecommerce/views"
@@ -11,13 +9,9 @@ import (
 func main() {
 	f := fiber.New()
 	f.Get("/details", func(c *fiber.Ctx) error {
-		if c.Query("fragment") == "xd" {
-			RenderFragment(c, views.ProductDetails(), os.Stdout)
-			os.Stdout.Write([]byte("rendering"))
-			return RenderFragment(c, views.ProductDetails(), views.DetailFragment)
-		}
 		return Render(c, views.ProductDetails())
 	})
+	f.Static("/public", "./views/public/assets")
 	f.Listen(":8080")
 }
 
