@@ -1,0 +1,14 @@
+package views
+
+type xd struct {}
+
+var DetailFragment = xd{}
+
+templ ProductDetails() {
+    <div>
+        Whole
+        @templ.Fragment(DetailFragment) {
+            <div>Fragment</div>
+        }
+    </div>
+}

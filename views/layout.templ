@@ -1,6 +1,6 @@
-package components
+package views
 
-templ Root() {
+templ layout() {
     <!doctype html>
     <html>
         <head>
@@ -11,6 +11,9 @@ templ Root() {
             <script src="public/htmx.min.js"></script>
         </head>
         <body>
+            <main>
+                { children... }
+            </main>
         </body>
     </html>
 }
