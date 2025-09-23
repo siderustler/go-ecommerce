@@ -7,20 +7,18 @@ import (
 )
 
 func main() {
-	f := fiber.New()
-	f.Get("/details", func(c *fiber.Ctx) error {
+	httpServer := fiber.New()
+	httpServer.Get("/details", func(c *fiber.Ctx) error {
 		return Render(c, views.ProductDetails())
 	})
-	f.Static("/public", "./views/public/assets")
-	f.Listen(":8080")
+	httpServer.Static("/public", "./views/public")
+	httpServer.Listen(":8080")
 }
 
-func Render(c *fiber.Ctx, component templ.Component) error {
+func Render(c *fiber.Ctx, component templ.Component, fragments ...any) error {
 	c.Set("Content-Type", "text/html")
+	if len(fragments) > 0 {
+		return templ.RenderFragments(c.Context(), c.Response().BodyWriter(), component, fragments...)
+	}
 	return component.Render(c.Context(), c.Response().BodyWriter())
-}
-
-func RenderFragment(c *fiber.Ctx, component templ.Component, ids any) error {
-	c.Set("Content-Type", "text/html")
-	return templ.RenderFragments(c.Context(), c.Response().BodyWriter(), component, ids)
 }
