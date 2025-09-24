@@ -15,7 +15,7 @@ live/server:
 
 # run tailwindcss to generate the styles.css bundle in watch mode.
 live/tailwind:
-	tailwindcss -i ./views/public/assets/input.css -o ./views/public/assets/styles.css --minify --watch=always
+	npx --yes tailwindcss -i ./views/public/input.css -o ./views/public/styles.css --minify --watch=always
 
 # run esbuild to generate the index.js bundle in watch mode.
 live/esbuild:

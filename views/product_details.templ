@@ -1,15 +1,132 @@
 package views
 
-type xd struct {}
+import "strconv"
 
-var DetailFragment = xd{}
+type productDetailViewModel struct {
+    id string
+    name string
+    images []string
+    price float32
+    productInfo []string
+    technicalParameters []string
 
-templ ProductDetails() {
-    @layout() {
-    <div class="mx-4 text-3xl">
-        Whole
+    selectedImage int
+}
 
-    </div>
-    <p class="text-3xl m-0!">ASSADASD</p>
+func NewProductDetailViewModel(
+    id,name string, 
+    images, productInfo, technicalParameters []string, 
+    price float32, 
+    selectedImage int,
+) productDetailViewModel {
+    if selectedImage < 0 || selectedImage > len(images) - 1 {
+        selectedImage = 0
     }
+    return productDetailViewModel{
+        id: id,
+        name: name,
+        images: images,
+        productInfo: productInfo,
+        technicalParameters: technicalParameters,
+        selectedImage: selectedImage,
+        price: price,
+    }
+}
+
+type imageSelector struct {}
+
+var ImageSelectorFragment = imageSelector{}
+
+templ ProductDetails(product productDetailViewModel) {
+    @layout() {
+        <section>
+            @templ.Fragment(ImageSelectorFragment) {
+                <div id="image-wrapper">
+                    <img alt={ product.name + " image" } src={ product.images[product.selectedImage] } class="rounded-2xl shadow-xl mx-auto"/>
+
+                    {{ imageBasePath :=  "/products/"+product.id+"?img=" }}
+                    @mobileStepper(imageBasePath, product.selectedImage, product.images)
+                </div>
+            }
+        </section>
+    }
+}
+
+templ mobileStepper(basePath string, selected int, productImages []string) {
+    <div class="flex gap-6 p-6 justify-center items-center">
+        for idx, _ := range productImages {
+            {{ path := basePath + strconv.Itoa(idx) }}
+            <a href={ path }
+                if selected == idx {
+                    class="bg-primary-700 w-2 h-2 rounded-full shadow-xl"
+                } else {
+                    class="bg-primary-500 w-1.5 h-1.5 rounded-full shadow-xl"
+                }
+                hx-get={ path }
+                hx-target="#image-wrapper"
+                hx-swap="outerHTML"
+                hx-push-url="true"
+            />
+        }
+    </div>
+}
+
+type direction int
+
+const (
+    left direction = iota + 1
+    right
+)
+
+templ desktopStepperNavigator(direction direction, basePath string, actualStep int, boundary int) {
+    {{ 
+        prevImage, nextImage := actualStep - 1, actualStep + 1
+        if prevImage < 0 {
+            prevImage = boundary
+        }
+        if nextImage > boundary {
+            nextImage = 0
+        }
+        var path, icon string
+        if direction == left {
+            path = basePath + strconv.Itoa(prevImage)
+            icon = "/icons/chevron-left"
+        }
+        if direction == right {
+            path = basePath + strconv.Itoa(nextImage)
+            icon = "/icons/chevron-right"
+        }
+    }}
+        <a 
+            href={ path } class="rounded-full bg-secondary-300 hover:bg-secondary-500 p-3"
+            hx-get={ path }
+            hx-push-url="true"
+            hx-target="#image-wrapper"
+            hx-swap="outerHTML"
+            >
+            <img src={ icon } />
+        </a>
+}
+
+templ desktopStepper(productName, basePath string, selected int, productImages []string) {
+    <div id="image-wrapper" class="flex gap-4 p-4 items-center">
+        @desktopStepperNavigator(left, basePath, selected, len(productImages) - 1)
+        for idx, image := range productImages {
+            <img src={ image } alt={ productName + " image"}>
+                {{ path := basePath + strconv.Itoa(idx) }}
+                <a href={ image }
+                    if selected == idx {
+                        class="border-grey-500 drop-shadow-csm"
+                    } else {
+                        class="drop-shadow-csm"
+                    }
+                    hx-get={ path }
+                    hx-target="#image-wrapper"
+                    hx-swap="outerHTML"
+                    hx-push-url="true"
+                />
+            </img>
+        }
+        @desktopStepperNavigator(right, basePath, selected, len(productImages) - 1)
+    </div>
 }
