@@ -1,11 +1,14 @@
 package main
 
 import (
+	"log"
+	"os"
 	"strconv"
 	"strings"
 
 	"github.com/a-h/templ"
 	"github.com/gofiber/fiber/v2"
+	"github.com/joho/godotenv"
 	"github.com/siderustler/go-ecommerce/views"
 )
 
@@ -15,37 +18,76 @@ func isHTMXRequest(c *fiber.Ctx) bool {
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 	httpServer := fiber.New()
 	httpServer.Get("/products/:product", func(c *fiber.Ctx) error {
+		var fragments []any
 		//go:inline
-		var selectedImage = func(img string) int {
-			if imgNum, err := strconv.Atoi(img); err == nil {
+		var selectedImage = func() int {
+			imgQueryParam := strings.Trim(c.Query("img"), " ")
+			if imgNum, err := strconv.Atoi(imgQueryParam); err == nil {
+				fragments = append(fragments, views.ImageSelectorFragment)
 				return imgNum
 			}
 			return 0
 		}
 
-		imgQueryParam := strings.Trim(c.Query("img"), " ")
+		var expandAdditionalInfo = func(param string, cb func()) bool {
+			additionalInfoQueryParam := strings.Trim(c.Query(param), " ")
+			if additionalInfoQueryParam == "true" || additionalInfoQueryParam == "false" {
+				cb()
+			}
+			return additionalInfoQueryParam == "true"
+		}
 
 		productViewModel := views.NewProductDetailViewModel(
 			"essa",
 			"essa",
 			[]string{"/public/products/essa/1.webp", "/public/products/essa/2.webp", "/public/products/essa/3.webp"},
-			[]string{},
+			[]string{
+				`Nowa podkaszarka Daewoo. 
+				Dzięki niskiej wadze i niedużym rozmiarom 
+				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
+				`,
+				`Nowa podkaszarka Daewoo. 
+				Dzięki niskiej wadze i niedużym rozmiarom 
+				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
+				`,
+				`Nowa podkaszarka Daewoo. 
+				Dzięki niskiej wadze i niedużym rozmiarom 
+				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
+				`,
+			},
 			[]string{},
 			1.99,
-			selectedImage(imgQueryParam),
+			selectedImage(),
+			expandAdditionalInfo("info",func() {
+				fragments = append(fragments, views.ExpandProductInfoFragment)
+			}),
+			expandAdditionalInfo("tech-params",func() {
+				fragments = append(fragments, views.ExpandTechnicalParametersFragment)
+			}),
+			expandAdditionalInfo("shipping",func() {
+				fragments = append(fragments, views.ExpandShippingInfoFragment)
+			}),
+			expandAdditionalInfo("local",func() {
+				fragments = append(fragments, views.ExpandLocalInfoFragment)
+			}),
 		)
 
-		var fragments []any
-		if isHTMXRequest(c) && imgQueryParam != "" {
-			fragments = append(fragments, views.ImageSelectorFragment)
+		if !isHTMXRequest(c) {
+			return Render(c, views.ProductDetails(productViewModel))
 		}
 
 		return Render(c, views.ProductDetails(productViewModel), fragments...)
 	})
-	httpServer.Use("/static", func(c *fiber.Ctx) error {
-		c.Response().Header.Set("Cache-Control", "no-store")
+	httpServer.Use("/public", func(c *fiber.Ctx) error {
+		if os.Getenv("ENVIRONMENT") == "DEV" {
+			c.Response().Header.Set("Cache-Control", "no-store")
+		}
 		return c.Next()
 	})
 	httpServer.Static("/public", "./views/public")

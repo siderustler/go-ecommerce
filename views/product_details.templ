@@ -1,135 +1,293 @@
 package views
 
 import "strconv"
+import "strings"
 
 type productDetailViewModel struct {
-    id string
-    name string
-    images []string
-    price float32
-    productInfo []string
-    technicalParameters []string
+	id                  string
+	name                string
+	images              []string
+	price               float32
+	productInfo         []string
+	technicalParameters []string
 
-    selectedImage int
+	selectedImage                     int
+	isProductInfoExpanded             bool
+	isTechnicalParametersInfoExpanded bool
+	isShippingInfoExpanded            bool
+	isLocalInfoExpanded               bool
 }
 
 func NewProductDetailViewModel(
-    id,name string, 
-    images, productInfo, technicalParameters []string, 
-    price float32, 
-    selectedImage int,
+	id, name string,
+	images, productInfo, technicalParameters []string,
+	price float32,
+	selectedImage int,
+	isProductInfoExpanded bool,
+	isTechnicalParametersInfoExpanded bool,
+	isShippingInfoExpanded bool,
+	isLocalInfoExpanded bool,
 ) productDetailViewModel {
-    if selectedImage < 0 || selectedImage > len(images) - 1 {
-        selectedImage = 0
-    }
-    return productDetailViewModel{
-        id: id,
-        name: name,
-        images: images,
-        productInfo: productInfo,
-        technicalParameters: technicalParameters,
-        selectedImage: selectedImage,
-        price: price,
-    }
+	if selectedImage < 0 || selectedImage > len(images)-1 {
+		selectedImage = 0
+	}
+	return productDetailViewModel{
+		id:                                id,
+		name:                              name,
+		images:                            images,
+		productInfo:                       productInfo,
+		technicalParameters:               technicalParameters,
+		selectedImage:                     selectedImage,
+		price:                             price,
+		isProductInfoExpanded:             isProductInfoExpanded,
+		isLocalInfoExpanded:               isLocalInfoExpanded,
+		isShippingInfoExpanded:            isShippingInfoExpanded,
+		isTechnicalParametersInfoExpanded: isTechnicalParametersInfoExpanded,
+	}
 }
 
-type imageSelector struct {}
+type imageSelector struct{}
 
 var ImageSelectorFragment = imageSelector{}
 
-templ ProductDetails(product productDetailViewModel) {
-    @layout() {
-        <section>
-            @templ.Fragment(ImageSelectorFragment) {
-                <div id="image-wrapper">
-                    <img 
-                        alt={ product.name + " image" } 
-                        src={ product.images[product.selectedImage] } 
-                        class="rounded-2xl shadow-xl mx-auto htmx-swapping:opacity-0 transition-opacity duration-200 htmx-settling:opacity-100"/>
+type expandProductInfo struct{}
 
-                    {{ imageBasePath :=  "/products/"+product.id+"?img=" }}
-                    @mobileStepper(imageBasePath, product.selectedImage, product.images)
-                </div>
-            }
-        </section>
-    }
+var ExpandProductInfoFragment = expandProductInfo{}
+
+type expandTechnicalParameters struct{}
+
+var ExpandTechnicalParametersFragment = expandTechnicalParameters{}
+
+type expandShippingInfo struct{}
+
+var ExpandShippingInfoFragment = expandShippingInfo{}
+
+type expandLocalInfo struct{}
+
+var ExpandLocalInfoFragment = expandLocalInfo{}
+
+templ ProductDetails(product productDetailViewModel) {
+	@layout() {
+		<section class="flex flex-col items-center justify-center">
+			<div class="min-w-sm max-w-md">
+				<div>
+					@templ.Fragment(ImageSelectorFragment) {
+						<div id="image-wrapper">
+							<img
+								alt={ product.name + " image" }
+								src={ product.images[product.selectedImage] }
+								class="rounded-2xl shadow-xl htmx-swapping:opacity-0 transition-opacity duration-200 htmx-settling:opacity-100"
+							/>
+							{{ imageBasePath := "/products/" + product.id + "?img=" }}
+							@mobileStepper(imageBasePath, product.selectedImage, product.images)
+						</div>
+					}
+					@infoWrapper() {
+						@descriptor("Nazwa produktu")
+						<h1 class="font-bold ">{ product.name }</h1>
+					}
+					@infoWrapper() {
+						@descriptor("Cena")
+						<h2 class="font-bold ">{ product.price }</h2>
+					}
+					@infoWrapper() {
+						@descriptor("Opis produktu")
+						<h3>
+							{{
+productInfo := "Świetny produkt"
+if len(product.productInfo) > 0 {
+	productInfo = product.productInfo[0]
+}
+							}}
+							{ productInfo }
+						</h3>
+					}
+				</div>
+				{{ basePath := "/products/" + product.id }}
+				<div>
+					@infoWrapper() {
+						@descriptor("Dodatkowe informacje")
+						{{
+	additionalProductInfo := "Świetny produkt"
+	if len(product.productInfo) > 1 {
+		additionalProductInfo = strings.Join(product.productInfo[1:], "\n")
+	}
+						}}
+						@slideMenu() {
+							@templ.Fragment(ExpandProductInfoFragment) {
+								@slideMenuItem("prod-info",
+									"/public/icons/additional_info.svg",
+									"Informacje o produkcie",
+									additionalProductInfo,
+									product.isProductInfoExpanded,
+									basePath+"?info=",
+								)
+							}
+							@templ.Fragment(ExpandTechnicalParametersFragment) {
+								@slideMenuItem("tech-params",
+									"/public/icons/tech_params_info.svg",
+									"Parametry techniczne",
+									strings.Join(product.technicalParameters, "\n"),
+									product.isTechnicalParametersInfoExpanded,
+									basePath+"?tech-params=",
+								)
+							}
+						}
+					}
+					@infoWrapper() {
+						@descriptor("Możliwości zakupu")
+						@slideMenu() {
+							@templ.Fragment(ExpandShippingInfoFragment) {
+								@slideMenuItem("shipping-info",
+									"/public/icons/shipping_info.svg",
+									"Dostawa",
+									"Placeholder",
+									product.isShippingInfoExpanded,
+									basePath+"?shipping=",
+								)
+							}
+							@templ.Fragment(ExpandLocalInfoFragment) {
+								@slideMenuItem("local-info",
+									"/public/icons/local_info.svg",
+									"Stacjonarnie",
+									"Placeholder",
+									product.isLocalInfoExpanded,
+									basePath+"?local=",
+								)
+							}
+						}
+					}
+					@infoWrapper() {
+						@descriptor("Dostosuj ilość")
+					}
+				</div>
+			</div>
+		</section>
+	}
+}
+
+templ descriptor(content string) {
+	<p class="text-grey-700 text-xs font-medium">{ content }</p>
+}
+
+templ infoWrapper() {
+	<div class="flex flex-col gap-2 pt-4 px-2">
+		{ children... }
+	</div>
+}
+
+templ slideMenuItem(id, icon, content, expandedContent string, isExpanded bool, requestPath string) {
+	<div id={ id }>
+		{{
+	if isExpanded {
+		requestPath += "false"
+	} else {
+		requestPath += "true"
+	}
+		}}
+		<button class="flex gap-2 w-full px-4 py-3" hx-swap="outerHTML swap:0.1s" hx-target={ "#" + id } hx-get={ requestPath }>
+			<img src={ icon } alt={ content + " icon" }/>
+			<span class="w-full text-left">{ content }</span>
+			<img
+				src="/public/icons/chevron-right.svg"
+				if isExpanded {
+					class="transition-transform duration-100 rotate-90 htmx-swapping:rotate-0"
+				} else {
+					class="transition-transform duration-100 rotate-0"
+				}
+			/>
+		</button>
+		if isExpanded {
+			<p class="text-grey-800 px-4 py-3">
+				{ expandedContent }
+			</p>
+		}
+	</div>
+}
+
+templ slideMenu() {
+	<div class="px-3 *:border-t-2 *:border-grey-300 *:last:border-b-2">
+		{ children... }
+	</div>
 }
 
 templ mobileStepper(basePath string, selected int, productImages []string) {
-    <div class="flex gap-6 p-6 justify-center items-center">
-        for idx, _ := range productImages {
-            {{ path := basePath + strconv.Itoa(idx) }}
-            <a href={ path }
-                if selected == idx {
-                    class="bg-primary-700 w-2 h-2 rounded-full shadow-xl"
-                } else {
-                    class="bg-primary-500 w-1.5 h-1.5 rounded-full shadow-xl"
-                }
-                hx-get={ path }
-                hx-target="#image-wrapper"
-                hx-swap="outerHTML swap:0.2s settle:0.2s"
-                hx-push-url="true"
-            />
-        }
-    </div>
+	<div class="flex gap-6 p-6 justify-center items-center">
+		for idx, _ := range productImages {
+			{{ path := basePath + strconv.Itoa(idx) }}
+			<a
+				href={ path }
+				if selected == idx {
+					class="bg-primary-700 w-2 h-2 rounded-full shadow-xl"
+				} else {
+					class="bg-primary-500 w-1.5 h-1.5 rounded-full shadow-xl"
+				}
+				hx-get={ path }
+				hx-target="#image-wrapper"
+				hx-swap="outerHTML swap:0.2s settle:0.2s"
+				hx-push-url="true"
+			></a>
+		}
+	</div>
 }
 
 type direction int
 
 const (
-    left direction = iota + 1
-    right
+	left direction = iota + 1
+	right
 )
 
 templ desktopStepperNavigator(direction direction, basePath string, actualStep int, boundary int) {
-    {{ 
-        prevImage, nextImage := actualStep - 1, actualStep + 1
-        if prevImage < 0 {
-            prevImage = boundary
-        }
-        if nextImage > boundary {
-            nextImage = 0
-        }
-        var path, icon string
-        if direction == left {
-            path = basePath + strconv.Itoa(prevImage)
-            icon = "/icons/chevron-left"
-        }
-        if direction == right {
-            path = basePath + strconv.Itoa(nextImage)
-            icon = "/icons/chevron-right"
-        }
-    }}
-        <a 
-            href={ path } class="rounded-full bg-secondary-300 hover:bg-secondary-500 p-3"
-            hx-get={ path }
-            hx-push-url="true"
-            hx-target="#image-wrapper"
-            hx-swap="outerHTML"
-            >
-            <img src={ icon } />
-        </a>
+	{{
+	prevImage, nextImage := actualStep-1, actualStep+1
+	if prevImage < 0 {
+		prevImage = boundary
+	}
+	if nextImage > boundary {
+		nextImage = 0
+	}
+	var path, icon string
+	if direction == left {
+		path = basePath + strconv.Itoa(prevImage)
+		icon = "/icons/chevron-left"
+	}
+	if direction == right {
+		path = basePath + strconv.Itoa(nextImage)
+		icon = "/icons/chevron-right"
+	}
+	}}
+	<a
+		href={ path }
+		class="rounded-full bg-secondary-300 hover:bg-secondary-500 p-3"
+		hx-get={ path }
+		hx-push-url="true"
+		hx-target="#image-wrapper"
+		hx-swap="outerHTML"
+	>
+		<img src={ icon }/>
+	</a>
 }
 
 templ desktopStepper(productName, basePath string, selected int, productImages []string) {
-    <div class="flex gap-4 p-4 items-center">
-        @desktopStepperNavigator(left, basePath, selected, len(productImages) - 1)
-        for idx, image := range productImages {
-            <img src={ image } alt={ productName + " image"}>
-                {{ path := basePath + strconv.Itoa(idx) }}
-                <a href={ image }
-                    if selected == idx {
-                        class="border-grey-500 drop-shadow-csm"
-                    } else {
-                        class="drop-shadow-csm"
-                    }
-                    hx-get={ path }
-                    hx-target="#image-wrapper"
-                    hx-swap="outerHTML"
-                    hx-push-url="true"
-                />
-            </img>
-        }
-        @desktopStepperNavigator(right, basePath, selected, len(productImages) - 1)
-    </div>
+	<div class="flex gap-4 p-4 items-center">
+		@desktopStepperNavigator(left, basePath, selected, len(productImages)-1)
+		for idx, image := range productImages {
+			<img src={ image } alt={ productName + " image" }/>
+			{{ path := basePath + strconv.Itoa(idx) }}
+			<a
+				href={ image }
+				if selected == idx {
+					class="border-grey-500 drop-shadow-csm"
+				} else {
+					class="drop-shadow-csm"
+				}
+				hx-get={ path }
+				hx-target="#image-wrapper"
+				hx-swap="outerHTML"
+				hx-push-url="true"
+			></a>
+		}
+		@desktopStepperNavigator(right, basePath, selected, len(productImages)-1)
+	</div>
 }
