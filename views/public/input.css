@@ -53,3 +53,40 @@
     --drop-shadow-cism: 0px 2px 3px 1px rgba(0, 0, 0, 0.1), 0px -2px 2px 0px rgba(0, 0, 0, 0.2);
     --drop-shadow-cimd: 0px 2px 4px 2px rgba(0, 0, 0, 0.1), 0px -2px 2px 1px rgba(0, 0, 0, 0.2);
 }
+
+@custom-variant htmx-swapping {
+    &.htmx-swapping {
+        @slot;
+    }
+    .htmx-swapping & {
+        @slot;
+    }
+}
+
+@custom-variant htmx-settling {
+    &.htmx-settling {
+        @slot;
+    }
+    .htmx-settling & {
+        @slot;
+    }
+}
+
+
+@custom-variant htmx-added {
+    &.htmx-added {
+        @slot;
+    }
+    .htmx-added & {
+        @slot;
+    }
+}
+
+@custom-variant htmx-request {
+    &.htmx-request {
+        @slot;
+    }
+    .htmx-request & {
+        @slot;
+    }
+}
