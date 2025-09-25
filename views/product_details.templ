@@ -12,6 +12,7 @@ type productDetailViewModel struct {
 	technicalParameters []string
 
 	selectedImage                     int
+	addBasketCount                    int
 	isProductInfoExpanded             bool
 	isTechnicalParametersInfoExpanded bool
 	isShippingInfoExpanded            bool
@@ -27,6 +28,7 @@ func NewProductDetailViewModel(
 	isTechnicalParametersInfoExpanded bool,
 	isShippingInfoExpanded bool,
 	isLocalInfoExpanded bool,
+	addBasketCount int,
 ) productDetailViewModel {
 	if selectedImage < 0 || selectedImage > len(images)-1 {
 		selectedImage = 0
@@ -43,6 +45,7 @@ func NewProductDetailViewModel(
 		isLocalInfoExpanded:               isLocalInfoExpanded,
 		isShippingInfoExpanded:            isShippingInfoExpanded,
 		isTechnicalParametersInfoExpanded: isTechnicalParametersInfoExpanded,
+		addBasketCount:                    addBasketCount,
 	}
 }
 
@@ -66,8 +69,13 @@ type expandLocalInfo struct{}
 
 var ExpandLocalInfoFragment = expandLocalInfo{}
 
+type basketAddCounter struct{}
+
+var BasketAddCounter = basketAddCounter{}
+
 templ ProductDetails(product productDetailViewModel) {
 	@layout() {
+		{{ basePath := "/products/" + product.id }}
 		<section class="flex flex-col items-center justify-center">
 			<div class="min-w-sm max-w-md">
 				<div>
@@ -103,7 +111,6 @@ if len(product.productInfo) > 0 {
 						</h3>
 					}
 				</div>
-				{{ basePath := "/products/" + product.id }}
 				<div>
 					@infoWrapper() {
 						@descriptor("Dodatkowe informacje")
@@ -116,7 +123,7 @@ if len(product.productInfo) > 0 {
 						@slideMenu() {
 							@templ.Fragment(ExpandProductInfoFragment) {
 								@slideMenuItem("prod-info",
-									"/public/icons/additional_info.svg",
+									"/public/icons/additional-info.svg",
 									"Informacje o produkcie",
 									additionalProductInfo,
 									product.isProductInfoExpanded,
@@ -125,7 +132,7 @@ if len(product.productInfo) > 0 {
 							}
 							@templ.Fragment(ExpandTechnicalParametersFragment) {
 								@slideMenuItem("tech-params",
-									"/public/icons/tech_params_info.svg",
+									"/public/icons/tech-params-info.svg",
 									"Parametry techniczne",
 									strings.Join(product.technicalParameters, "\n"),
 									product.isTechnicalParametersInfoExpanded,
@@ -139,7 +146,7 @@ if len(product.productInfo) > 0 {
 						@slideMenu() {
 							@templ.Fragment(ExpandShippingInfoFragment) {
 								@slideMenuItem("shipping-info",
-									"/public/icons/shipping_info.svg",
+									"/public/icons/shipping-info.svg",
 									"Dostawa",
 									"Placeholder",
 									product.isShippingInfoExpanded,
@@ -148,7 +155,7 @@ if len(product.productInfo) > 0 {
 							}
 							@templ.Fragment(ExpandLocalInfoFragment) {
 								@slideMenuItem("local-info",
-									"/public/icons/local_info.svg",
+									"/public/icons/local-info.svg",
 									"Stacjonarnie",
 									"Placeholder",
 									product.isLocalInfoExpanded,
@@ -159,11 +166,111 @@ if len(product.productInfo) > 0 {
 					}
 					@infoWrapper() {
 						@descriptor("Dostosuj ilość")
+						@templ.Fragment(BasketAddCounter) {
+							<div id="basket-adder" class="flex px-2 gap-6 items-center justify-center">
+								{{
+								decrementPath := basePath + "/decrement"
+								incrementPath := basePath + "/increment"
+								addBasketPath := basePath + "/basket-add"
+								}}
+								@counter(product.addBasketCount, decrementPath, incrementPath)
+								<form method="post" action={ addBasketPath }>
+									@counterInput(product.addBasketCount, hidden)
+									@iconButton(primary, shop, addBasketPath)
+								</form>
+							</div>
+						}
 					}
 				</div>
 			</div>
 		</section>
 	}
+}
+
+templ counter(value int, decrementPath, incrementPath string) {
+	<div class="flex gap-6 px-3 py-2 rounded-lg border-2 border-secondary-300">
+		<form method="post" action={ decrementPath }>
+			@iconButton(secondary, minus, decrementPath)
+			@counterInput(value, hidden)
+		</form>
+		@counterInput(value, shown)
+		<form method="post" action={ incrementPath }>
+			@iconButton(secondary, plus, incrementPath)
+			@counterInput(value, hidden)
+		</form>
+	</div>
+}
+
+type buttonType int
+
+const (
+	primary buttonType = iota
+	secondary
+)
+
+type icon int
+
+const (
+	plus icon = iota
+	minus
+	shop
+)
+
+templ iconButton(buttonType buttonType, icon icon, submitPath string) {
+	{{
+		var iconPath string
+		var iconAlt string
+		var style string
+
+		switch icon {
+		case plus:
+			iconPath = "/public/icons/plus-sign.svg"
+			iconAlt = "plus icon"
+		case minus:
+			iconPath = "/public/icons/minus-sign.svg"
+			iconAlt = "minus icon"
+		case shop:
+			iconPath = "/public/icons/shop-cart.svg"
+			iconAlt = "shop cart icon"
+		}
+
+		switch buttonType {
+		case primary:
+			style = "bg-primary-300 rounded-full p-3"
+		case secondary:
+			style = "bg-secondary-200 rounded-xl p-3"
+		}
+	}}
+	<button
+		class={ style }
+		hx-post={ submitPath }
+		hx-target="#basket-adder"
+		hx-swap="outerHTML"
+	>
+		<img
+			src={ iconPath }
+			alt={ iconAlt }
+		/>
+	</button>
+}
+
+type isHidden int
+
+const (
+	hidden isHidden = iota
+	shown
+)
+
+templ counterInput(value int, isHidden isHidden) {
+	<input
+		name="count"
+		class="border-2 border-secondary-500 text-secondary-900 text-center min-w-12 rounded-lg max-w-12"
+		value={ value }
+		readonly
+		if isHidden == hidden {
+			type="hidden"
+		}
+	/>
 }
 
 templ descriptor(content string) {
@@ -185,7 +292,13 @@ templ slideMenuItem(id, icon, content, expandedContent string, isExpanded bool, 
 		requestPath += "true"
 	}
 		}}
-		<button class="flex gap-2 w-full px-4 py-3" hx-swap="outerHTML swap:0.1s" hx-target={ "#" + id } hx-get={ requestPath }>
+		<a
+			href={ requestPath }
+			class="flex gap-2 w-full px-4 py-3"
+			hx-swap="outerHTML swap:0.1s"
+			hx-target={ "#" + id }
+			hx-get={ requestPath }
+		>
 			<img src={ icon } alt={ content + " icon" }/>
 			<span class="w-full text-left">{ content }</span>
 			<img
@@ -196,7 +309,7 @@ templ slideMenuItem(id, icon, content, expandedContent string, isExpanded bool, 
 					class="transition-transform duration-100 rotate-0"
 				}
 			/>
-		</button>
+		</a>
 		if isExpanded {
 			<p class="text-grey-800 px-4 py-3">
 				{ expandedContent }

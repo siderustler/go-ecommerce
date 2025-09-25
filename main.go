@@ -76,6 +76,7 @@ func main() {
 			expandAdditionalInfo("local",func() {
 				fragments = append(fragments, views.ExpandLocalInfoFragment)
 			}),
+			1,
 		)
 
 		if !isHTMXRequest(c) {
@@ -84,6 +85,138 @@ func main() {
 
 		return Render(c, views.ProductDetails(productViewModel), fragments...)
 	})
+
+	httpServer.Post("/products/:product/decrement",func(c *fiber.Ctx) error {
+		countQueryParam := c.FormValue("count")
+		parsedCount, _ := strconv.Atoi(countQueryParam)
+		basketCount := 1
+		if parsedCount > 1 {
+			basketCount = parsedCount - 1
+		}
+		productViewModel := views.NewProductDetailViewModel(
+			"essa",
+			"essa",
+			[]string{"/public/products/essa/1.webp", "/public/products/essa/2.webp", "/public/products/essa/3.webp"},
+			[]string{
+				`Nowa podkaszarka Daewoo. 
+				Dzięki niskiej wadze i niedużym rozmiarom 
+				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
+				`,
+				`Nowa podkaszarka Daewoo. 
+				Dzięki niskiej wadze i niedużym rozmiarom 
+				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
+				`,
+				`Nowa podkaszarka Daewoo. 
+				Dzięki niskiej wadze i niedużym rozmiarom 
+				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
+				`,
+			},
+			[]string{},
+			1.99,
+			1,
+			false,
+			false,
+			false,
+			false,
+			basketCount,
+		)
+
+		if !isHTMXRequest(c) {
+			return Render(c, views.ProductDetails(productViewModel))
+		}
+		var fragments []any
+		fragments = append(fragments, views.BasketAddCounter)
+		return Render(c, views.ProductDetails(productViewModel), fragments...)
+	})
+
+
+	httpServer.Post("/products/:product/increment",func(c *fiber.Ctx) error {
+		countQueryParam := c.FormValue("count")
+		parsedCount, _ := strconv.Atoi(countQueryParam)
+		basketCount := 1
+		if parsedCount > 0 {
+			basketCount = parsedCount + 1
+		}
+		productViewModel := views.NewProductDetailViewModel(
+			"essa",
+			"essa",
+			[]string{"/public/products/essa/1.webp", "/public/products/essa/2.webp", "/public/products/essa/3.webp"},
+			[]string{
+				`Nowa podkaszarka Daewoo. 
+				Dzięki niskiej wadze i niedużym rozmiarom 
+				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
+				`,
+				`Nowa podkaszarka Daewoo. 
+				Dzięki niskiej wadze i niedużym rozmiarom 
+				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
+				`,
+				`Nowa podkaszarka Daewoo. 
+				Dzięki niskiej wadze i niedużym rozmiarom 
+				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
+				`,
+			},
+			[]string{},
+			1.99,
+			1,
+			false,
+			false,
+			false,
+			false,
+			basketCount,
+		)
+
+		if !isHTMXRequest(c) {
+			return Render(c, views.ProductDetails(productViewModel))
+		}
+		var fragments []any
+		fragments = append(fragments, views.BasketAddCounter)
+		return Render(c, views.ProductDetails(productViewModel), fragments...)
+	})
+
+
+	httpServer.Post("/products/:product/basket-add",func(c *fiber.Ctx) error {
+		countQueryParam := c.FormValue("count")
+		basketCount := 1
+		parsedCount, _ := strconv.Atoi(countQueryParam)
+		if parsedCount > 1 {
+			basketCount = parsedCount
+		}
+		productViewModel := views.NewProductDetailViewModel(
+			"essa",
+			"essa",
+			[]string{"/public/products/essa/1.webp", "/public/products/essa/2.webp", "/public/products/essa/3.webp"},
+			[]string{
+				`Nowa podkaszarka Daewoo. 
+				Dzięki niskiej wadze i niedużym rozmiarom 
+				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
+				`,
+				`Nowa podkaszarka Daewoo. 
+				Dzięki niskiej wadze i niedużym rozmiarom 
+				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
+				`,
+				`Nowa podkaszarka Daewoo. 
+				Dzięki niskiej wadze i niedużym rozmiarom 
+				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
+				`,
+			},
+			[]string{},
+			1.99,
+			1,
+			false,
+			false,
+			false,
+			false,
+			basketCount,
+		)
+
+		if !isHTMXRequest(c) {
+			return Render(c, views.ProductDetails(productViewModel))
+		}
+		var fragments []any
+		fragments = append(fragments, views.BasketAddCounter)
+		return Render(c, views.ProductDetails(productViewModel), fragments...)
+	})
+
 	httpServer.Use("/public", func(c *fiber.Ctx) error {
 		if os.Getenv("ENVIRONMENT") == "DEV" {
 			c.Response().Header.Set("Cache-Control", "no-store")
