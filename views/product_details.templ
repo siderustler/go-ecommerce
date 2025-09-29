@@ -33,6 +33,9 @@ func NewProductDetailViewModel(
 	if selectedImage < 0 || selectedImage > len(images)-1 {
 		selectedImage = 0
 	}
+	if addBasketCount < 1 {
+		addBasketCount = 1
+	}
 	return productDetailViewModel{
 		id:                                id,
 		name:                              name,
@@ -80,11 +83,11 @@ templ ProductDetails(product productDetailViewModel) {
 			<div class="min-w-sm max-w-md md:max-w-3xl">
 				<div class="md:flex gap-6">
 					@templ.Fragment(ImageSelectorFragment) {
-						<div id="image-wrapper">
+						<div id="image-wrapper" class="flex flex-col items-center">
 							<img
 								alt={ product.name + " image" }
 								src={ product.images[product.selectedImage] }
-								class="rounded-2xl shadow-xl htmx-swapping:opacity-0 transition-opacity duration-200 htmx-settling:opacity-100"
+								class="rounded-2xl shadow-xl htmx-swapping:opacity-0 transition-opacity duration-200 htmx-settling:opacity-100 min-w-80 min-h-80"
 							/>
 							{{ imageBasePath := "/products/" + product.id + "?img=" }}
 							@mobileStepper(imageBasePath, product.selectedImage, product.images)
@@ -93,11 +96,11 @@ templ ProductDetails(product productDetailViewModel) {
 					<div class="md:max-w-md">
 						@infoWrapper() {
 							@descriptor("Nazwa produktu", "")
-							<h1 class="font-bold ">{ product.name }</h1>
+							<h1 class="text-xl">{ product.name }</h1>
 						}
 						@infoWrapper() {
 							@descriptor("Cena", "")
-							<h2 class="font-bold ">{ product.price }</h2>
+							<h2 class="text-primary-700 text-xl">{ strconv.FormatFloat(float64(product.price), 'f', 4, 32) + " zł" }</h2>
 						}
 						@infoWrapper() {
 							@descriptor("Opis produktu", "")
@@ -304,7 +307,7 @@ templ descriptor(content string, class string) {
 }
 
 templ infoWrapper() {
-	<div class="flex flex-col gap-2 pt-4 px-2 md:gap-4">
+	<div class="flex flex-col gap-2 pt-4 px-2 md:gap-3">
 		{ children... }
 	</div>
 }

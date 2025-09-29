@@ -1,0 +1,168 @@
+package views
+
+import "strconv"
+
+type Product struct {
+	id    string
+	name  string
+	image string
+	price float32
+
+	addBasketCount int
+}
+
+type productsViewModel struct {
+	products []Product
+
+	actualPage       int
+	maxPagesBoundary int
+}
+
+func NewProduct(id, name, image string, price float32, addBasketCount int) Product {
+	if addBasketCount < 1 {
+		addBasketCount = 1
+	}
+	return Product{
+		id:             id,
+		name:           name,
+		image:          image,
+		price:          price,
+		addBasketCount: addBasketCount,
+	}
+}
+
+func NewProductsViewModel(products []Product, actualPage, maxPagesBoundary int) productsViewModel {
+	if actualPage < 1 {
+		actualPage = 1
+	}
+	if maxPagesBoundary < 1 {
+		maxPagesBoundary = 1
+	}
+	return productsViewModel{
+		products:         products,
+		actualPage:       actualPage,
+		maxPagesBoundary: maxPagesBoundary,
+	}
+}
+
+templ Products(productsViewModel productsViewModel) {
+	@layout() {
+		<section class="flex flex-col py-8 items-center justify-center gap-4 md:gap-6 lg:gap-8">
+			for _, product := range productsViewModel.products {
+				@productItem(product)
+			}
+			@paginator(productsViewModel.actualPage, productsViewModel.maxPagesBoundary)
+		</section>
+	}
+}
+
+templ productItem(product Product) {
+	<div class="flex flex-col md:flex-row py-8 px-2 md:p-8 gap-3 shadow-sm rounded-2xl bg-grey-200">
+		<img src={ product.image } alt={ product.name + " image" } class="rounded-2xl lg:rounded-3xl shadow-lg max-w-72 max-h-72 mx-auto"/>
+		<div class="flex flex-col gap-3 md:gap-6">
+			@infoWrapper() {
+				@descriptor("Nazwa produktu", "")
+				<h1 class="text-xl">{ product.name }</h1>
+			}
+			@infoWrapper() {
+				@descriptor("Cena", "")
+				<h2 class="text-primary-700 text-xl">{ strconv.FormatFloat(float64(product.price), 'f', 4, 32) + " zł" }</h2>
+			}
+		</div>
+		@infoWrapper() {
+			@descriptor("Dostosuj ilość", "")
+			@templ.Fragment(BasketAddCounter) {
+				<div id="basket-adder" class="flex justify-center gap-6 md:gap-4 min-h-14 md:flex-col">
+					{{
+								basePath := "/products/" + product.id
+								decrementPath := basePath + "/decrement"
+								incrementPath := basePath + "/increment"
+								addBasketPath := basePath + "/basket-add"
+					}}
+					@counter(product.addBasketCount, decrementPath, incrementPath)
+					<form method="post" action={ addBasketPath } class="flex items-center justify-center">
+						@counterInput(product.addBasketCount, hidden)
+						@iconButton(primary, shop, addBasketPath)
+					</form>
+				</div>
+			}
+		}
+	</div>
+}
+
+templ paginator(actualPage int, maxPagesBoundary int) {
+	{{
+		prevPage, nextPage := actualPage-1, actualPage+1
+		if prevPage < 1 {
+			prevPage = maxPagesBoundary
+		}
+		if nextPage > maxPagesBoundary {
+			nextPage = 1
+		}
+		navigators := make([]string, 0, 5)
+		isSmallPageCount := maxPagesBoundary < cap(navigators)
+		if isSmallPageCount {
+			for next := 1; next <= maxPagesBoundary; next++ {
+				navigators = append(navigators, strconv.Itoa(next))
+			}
+		}
+		if !isSmallPageCount {
+			boundary := 2
+			isEndNearer := actualPage+boundary >= maxPagesBoundary
+			if isEndNearer {
+				navigators = append(navigators, "1", "...")
+				for next := maxPagesBoundary - boundary; next <= maxPagesBoundary; next++ {
+					navigators = append(navigators, strconv.Itoa(next))
+				}
+			} else {
+				for next := actualPage; next <= actualPage+boundary; next++ {
+					navigators = append(navigators, strconv.Itoa(next))
+				}
+				navigators = append(navigators, "...", strconv.Itoa(maxPagesBoundary))
+			}
+		}
+	}}
+	<div class="flex flex-row p-4 gap-4 items-center">
+		@paginatorItem(prevPage, back)
+		for _, navigator := range navigators {
+			if navigator == "..." {
+				<p class="text-tertiary-900 m-0">...</p>
+			} else {
+				{{
+					onActualPage := strconv.Itoa(actualPage) == navigator
+				}}
+				<a
+					href={ "/products/" + navigator }
+					if onActualPage {
+						class="text-tertiary-900 bg-tertiary-300 p-2 rounded-lg"
+					} else {
+						class="text-tertiary-900"
+					}
+				>{ navigator }</a>
+			}
+		}
+		@paginatorItem(nextPage, forward)
+	</div>
+}
+
+type paginateDirection int
+
+const (
+	back paginateDirection = iota
+	forward
+)
+
+templ paginatorItem(page int, paginateDirection paginateDirection) {
+	{{
+		var imgPath string
+		var imgAlt string
+		if paginateDirection == forward {
+			imgPath = "/public/icons/chevron-right-tertiary.svg"
+			imgAlt = "navigate forward icon"
+		} else {
+			imgPath = "/public/icons/chevron-left-tertiary.svg"
+			imgAlt = "navigate back icon"
+		}
+	}}
+	<a href={ "/products/" + strconv.Itoa(page) } class="bg-tertiary-300 w-12 h-12 p-3 rounded-full"><img src={ imgPath } alt={ imgAlt } width="24px" height="24px"/></a>
+}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -23,7 +24,7 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 	httpServer := fiber.New()
-	httpServer.Get("/products/:product", func(c *fiber.Ctx) error {
+	httpServer.Get("/products/details/:product", func(c *fiber.Ctx) error {
 		var fragments []any
 		//go:inline
 		var selectedImage = func() int {
@@ -86,7 +87,7 @@ func main() {
 		return Render(c, views.ProductDetails(productViewModel), fragments...)
 	})
 
-	httpServer.Post("/products/:product/decrement",func(c *fiber.Ctx) error {
+	httpServer.Post("/products/details/:product/decrement",func(c *fiber.Ctx) error {
 		countQueryParam := c.FormValue("count")
 		parsedCount, _ := strconv.Atoi(countQueryParam)
 		basketCount := 1
@@ -130,7 +131,7 @@ func main() {
 	})
 
 
-	httpServer.Post("/products/:product/increment",func(c *fiber.Ctx) error {
+	httpServer.Post("/products/details/:product/increment",func(c *fiber.Ctx) error {
 		countQueryParam := c.FormValue("count")
 		parsedCount, _ := strconv.Atoi(countQueryParam)
 		basketCount := 1
@@ -174,7 +175,7 @@ func main() {
 	})
 
 
-	httpServer.Post("/products/:product/basket-add",func(c *fiber.Ctx) error {
+	httpServer.Post("/products/details/:product/basket-add",func(c *fiber.Ctx) error {
 		countQueryParam := c.FormValue("count")
 		basketCount := 1
 		parsedCount, _ := strconv.Atoi(countQueryParam)
@@ -216,6 +217,24 @@ func main() {
 		fragments = append(fragments, views.BasketAddCounter)
 		return Render(c, views.ProductDetails(productViewModel), fragments...)
 	})
+
+	httpServer.Get("/products/:page", func(c *fiber.Ctx) error {
+		pageParam := c.Params("page")
+
+		fmt.Printf("%+v",1)
+		page,err := strconv.Atoi(pageParam)
+		if err != nil || page < 1 {
+			page = 1
+		}
+		productsViewModel := views.NewProductsViewModel([]views.Product{
+			views.NewProduct("1", "essa","/public/products/essa/1.webp", 1.99, 1),
+			views.NewProduct("2", "dwa", "/public/products/essa/1.webp", 2.99, 1),
+			views.NewProduct("3", "trzy", "/public/products/essa/1.webp", 3.99, 1),
+		}, page, 10)
+		
+		return Render(c, views.Products(productsViewModel))
+	})
+
 
 	httpServer.Use("/public", func(c *fiber.Ctx) error {
 		if os.Getenv("ENVIRONMENT") == "DEV" {
