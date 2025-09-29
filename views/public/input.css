@@ -72,6 +72,16 @@
     }
 }
 
+@layer utilities {
+  .mask {
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    -webkit-mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+  }
+}
 
 @custom-variant htmx-added {
     &.htmx-added {

@@ -77,8 +77,8 @@ templ ProductDetails(product productDetailViewModel) {
 	@layout() {
 		{{ basePath := "/products/" + product.id }}
 		<section class="flex flex-col items-center justify-center">
-			<div class="min-w-sm max-w-md">
-				<div>
+			<div class="min-w-sm max-w-md md:max-w-3xl">
+				<div class="md:flex gap-6">
 					@templ.Fragment(ImageSelectorFragment) {
 						<div id="image-wrapper">
 							<img
@@ -90,97 +90,110 @@ templ ProductDetails(product productDetailViewModel) {
 							@mobileStepper(imageBasePath, product.selectedImage, product.images)
 						</div>
 					}
-					@infoWrapper() {
-						@descriptor("Nazwa produktu")
-						<h1 class="font-bold ">{ product.name }</h1>
-					}
-					@infoWrapper() {
-						@descriptor("Cena")
-						<h2 class="font-bold ">{ product.price }</h2>
-					}
-					@infoWrapper() {
-						@descriptor("Opis produktu")
-						<h3>
-							{{
+					<div class="md:max-w-md">
+						@infoWrapper() {
+							@descriptor("Nazwa produktu", "")
+							<h1 class="font-bold ">{ product.name }</h1>
+						}
+						@infoWrapper() {
+							@descriptor("Cena", "")
+							<h2 class="font-bold ">{ product.price }</h2>
+						}
+						@infoWrapper() {
+							@descriptor("Opis produktu", "")
+							<h3>
+								{{
 productInfo := "Świetny produkt"
 if len(product.productInfo) > 0 {
 	productInfo = product.productInfo[0]
 }
-							}}
-							{ productInfo }
-						</h3>
-					}
+								}}
+								{ productInfo }
+							</h3>
+						}
+					</div>
 				</div>
-				<div>
-					@infoWrapper() {
-						@descriptor("Dodatkowe informacje")
-						{{
+				<div class="md:flex md:gap-6">
+					<div class="md:min-w-3/5">
+						@infoWrapper() {
+							@descriptor("Dodatkowe informacje", "xl:text-center")
+							{{
 	additionalProductInfo := "Świetny produkt"
 	if len(product.productInfo) > 1 {
 		additionalProductInfo = strings.Join(product.productInfo[1:], "\n")
 	}
-						}}
-						@slideMenu() {
-							@templ.Fragment(ExpandProductInfoFragment) {
-								@slideMenuItem("prod-info",
-									"/public/icons/additional-info.svg",
-									"Informacje o produkcie",
-									additionalProductInfo,
-									product.isProductInfoExpanded,
-									basePath+"?info=",
-								)
-							}
-							@templ.Fragment(ExpandTechnicalParametersFragment) {
-								@slideMenuItem("tech-params",
-									"/public/icons/tech-params-info.svg",
-									"Parametry techniczne",
-									strings.Join(product.technicalParameters, "\n"),
-									product.isTechnicalParametersInfoExpanded,
-									basePath+"?tech-params=",
-								)
-							}
-						}
-					}
-					@infoWrapper() {
-						@descriptor("Możliwości zakupu")
-						@slideMenu() {
-							@templ.Fragment(ExpandShippingInfoFragment) {
-								@slideMenuItem("shipping-info",
-									"/public/icons/shipping-info.svg",
-									"Dostawa",
-									"Placeholder",
-									product.isShippingInfoExpanded,
-									basePath+"?shipping=",
-								)
-							}
-							@templ.Fragment(ExpandLocalInfoFragment) {
-								@slideMenuItem("local-info",
-									"/public/icons/local-info.svg",
-									"Stacjonarnie",
-									"Placeholder",
-									product.isLocalInfoExpanded,
-									basePath+"?local=",
-								)
+							}}
+							@slideMenu() {
+								@templ.Fragment(ExpandProductInfoFragment) {
+									@slideMenuItem("prod-info",
+										"/public/icons/additional-info.svg",
+										"Informacje o produkcie",
+										additionalProductInfo,
+										product.isProductInfoExpanded,
+										basePath+"?info=",
+									)
+								}
+								@templ.Fragment(ExpandTechnicalParametersFragment) {
+									@slideMenuItem("tech-params",
+										"/public/icons/tech-params-info.svg",
+										"Parametry techniczne",
+										strings.Join(product.technicalParameters, "\n"),
+										product.isTechnicalParametersInfoExpanded,
+										basePath+"?tech-params=",
+									)
+								}
 							}
 						}
-					}
-					@infoWrapper() {
-						@descriptor("Dostosuj ilość")
-						@templ.Fragment(BasketAddCounter) {
-							<div id="basket-adder" class="flex px-2 gap-6 items-center justify-center">
-								{{
+						@infoWrapper() {
+							@descriptor("Możliwości zakupu", "xl:text-center")
+							@slideMenu() {
+								@templ.Fragment(ExpandShippingInfoFragment) {
+									@slideMenuItem("shipping-info",
+										"/public/icons/shipping-info.svg",
+										"Dostawa",
+										"Placeholder",
+										product.isShippingInfoExpanded,
+										basePath+"?shipping=",
+									)
+								}
+								@templ.Fragment(ExpandLocalInfoFragment) {
+									@slideMenuItem("local-info",
+										"/public/icons/local-info.svg",
+										"Stacjonarnie",
+										"Placeholder",
+										product.isLocalInfoExpanded,
+										basePath+"?local=",
+									)
+								}
+							}
+						}
+					</div>
+					<div class="flex flex-col gap-4 md:gap-6 px-2 md:min-w-2/5">
+						@infoWrapper() {
+							@descriptor("Dostosuj ilość", "")
+							@templ.Fragment(BasketAddCounter) {
+								<div id="basket-adder" class="flex justify-center gap-6 md:gap-4 min-h-14 md:flex-col">
+									{{
 								decrementPath := basePath + "/decrement"
 								incrementPath := basePath + "/increment"
 								addBasketPath := basePath + "/basket-add"
-								}}
-								@counter(product.addBasketCount, decrementPath, incrementPath)
-								<form method="post" action={ addBasketPath }>
-									@counterInput(product.addBasketCount, hidden)
-									@iconButton(primary, shop, addBasketPath)
-								</form>
-							</div>
+									}}
+									@counter(product.addBasketCount, decrementPath, incrementPath)
+									<form method="post" action={ addBasketPath } class="flex items-center justify-center">
+										@counterInput(product.addBasketCount, hidden)
+										@iconButton(primary, shop, addBasketPath)
+									</form>
+								</div>
+							}
 						}
-					}
+						<a
+							href="/products"
+							class="flex items-center justify-center gap-1 md:gap-2 lg:gap-4 px-4 md:px-5 lg:px-6 py-2 md:py-3 mx-2 text-secondary-900 border-2 border-secondary-500 rounded-xl text-center text-sm"
+						>
+							<img src="/public/icons/chevron-left-secondary.svg" alt="back icon" width="24px" height="24px"/>
+							Pozostałe produkty
+						</a>
+					</div>
 				</div>
 			</div>
 		</section>
@@ -188,7 +201,7 @@ if len(product.productInfo) > 0 {
 }
 
 templ counter(value int, decrementPath, incrementPath string) {
-	<div class="flex gap-6 px-3 py-2 rounded-lg border-2 border-secondary-300">
+	<div class="flex gap-6 justify-center px-3 py-2 rounded-lg border-2 border-secondary-300">
 		<form method="post" action={ decrementPath }>
 			@iconButton(secondary, minus, decrementPath)
 			@counterInput(value, hidden)
@@ -236,9 +249,9 @@ templ iconButton(buttonType buttonType, icon icon, submitPath string) {
 
 		switch buttonType {
 		case primary:
-			style = "bg-primary-300 rounded-full p-3"
+			style = "flex justify-center items-center gap-1 md:gap-2 lg:gap-4 bg-primary-300 rounded-full p-3 md:px-5 lg:px-6 md:py-3 md:rounded-xl md:w-full min-w-[48px] min-h-[48px]"
 		case secondary:
-			style = "bg-secondary-200 rounded-xl p-3"
+			style = "bg-secondary-200 rounded-xl p-3 min-w-[48px] min-h-[48px]"
 		}
 	}}
 	<button
@@ -250,7 +263,12 @@ templ iconButton(buttonType buttonType, icon icon, submitPath string) {
 		<img
 			src={ iconPath }
 			alt={ iconAlt }
+			width="24px"
+			height="24px"
 		/>
+		if iconAlt == "shop cart icon" {
+			<span class="hidden md:inline text-primary-900 text-sm">Dodaj do koszyka</span>
+		}
 	</button>
 }
 
@@ -273,12 +291,20 @@ templ counterInput(value int, isHidden isHidden) {
 	/>
 }
 
-templ descriptor(content string) {
-	<p class="text-grey-700 text-xs font-medium">{ content }</p>
+type align int
+
+const (
+	alignLeft align = iota
+	alignCenter
+	alignRight
+)
+
+templ descriptor(content string, class string) {
+	<p class={ class + " text-grey-700 text-xs font-medium" }>{ content }</p>
 }
 
 templ infoWrapper() {
-	<div class="flex flex-col gap-2 pt-4 px-2">
+	<div class="flex flex-col gap-2 pt-4 px-2 md:gap-4">
 		{ children... }
 	</div>
 }
@@ -294,7 +320,7 @@ templ slideMenuItem(id, icon, content, expandedContent string, isExpanded bool, 
 		}}
 		<a
 			href={ requestPath }
-			class="flex gap-2 w-full px-4 py-3"
+			class="flex gap-2 md:gap-3 lg:gap-4 w-full px-4 py-3 md:py-4"
 			hx-swap="outerHTML swap:0.1s"
 			hx-target={ "#" + id }
 			hx-get={ requestPath }
