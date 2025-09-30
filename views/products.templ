@@ -1,14 +1,23 @@
 package views
 
 import "strconv"
+import "fmt"
 
 type Product struct {
-	id    string
+	ID    string
 	name  string
 	image string
 	price float32
 
 	addBasketCount int
+}
+
+func (p *Product) Increment() {
+	p.addBasketCount += 1
+}
+
+func (p *Product) Decrement() {
+	p.addBasketCount -= 1
 }
 
 type productsViewModel struct {
@@ -18,12 +27,12 @@ type productsViewModel struct {
 	maxPagesBoundary int
 }
 
-func NewProduct(id, name, image string, price float32, addBasketCount int) Product {
+func NewProduct(ID, name, image string, price float32, addBasketCount int) Product {
 	if addBasketCount < 1 {
 		addBasketCount = 1
 	}
 	return Product{
-		id:             id,
+		ID:             ID,
 		name:           name,
 		image:          image,
 		price:          price,
@@ -49,14 +58,14 @@ templ Products(productsViewModel productsViewModel) {
 	@layout() {
 		<section class="flex flex-col py-8 items-center justify-center gap-4 md:gap-6 lg:gap-8">
 			for _, product := range productsViewModel.products {
-				@productItem(product)
+				@productItem(product, productsViewModel.actualPage)
 			}
 			@paginator(productsViewModel.actualPage, productsViewModel.maxPagesBoundary)
 		</section>
 	}
 }
 
-templ productItem(product Product) {
+templ productItem(product Product, page int) {
 	<div class="flex flex-col md:flex-row py-8 px-2 md:p-8 gap-3 shadow-sm rounded-2xl bg-grey-200">
 		<img src={ product.image } alt={ product.name + " image" } class="rounded-2xl lg:rounded-3xl shadow-lg max-w-72 max-h-72 mx-auto"/>
 		<div class="flex flex-col gap-3 md:gap-6">
@@ -71,18 +80,22 @@ templ productItem(product Product) {
 		</div>
 		@infoWrapper() {
 			@descriptor("Dostosuj ilość", "")
-			@templ.Fragment(BasketAddCounter) {
-				<div id="basket-adder" class="flex justify-center gap-6 md:gap-4 min-h-14 md:flex-col">
+			@templ.Fragment(fmt.Sprintf("%+v-%s", BasketAddCounter, product.ID)) {
+				{{
+					targetID := "basket-adder-" + product.ID
+					hxTarget := "#" + targetID
+				}}
+				<div id={ targetID } class="flex justify-center gap-6 md:gap-4 min-h-14 md:flex-col">
 					{{
-								basePath := "/products/" + product.id
-								decrementPath := basePath + "/decrement"
-								incrementPath := basePath + "/increment"
-								addBasketPath := basePath + "/basket-add"
+								basePath := "/products/" + strconv.Itoa(page)
+								decrementPath := basePath + "/decrement?id=" + product.ID
+								incrementPath := basePath + "/increment?id=" + product.ID
+								addBasketPath := basePath + "/basket-add?id=" + product.ID
 					}}
-					@counter(product.addBasketCount, decrementPath, incrementPath)
+					@counter(product.addBasketCount, decrementPath, incrementPath, hxTarget)
 					<form method="post" action={ addBasketPath } class="flex items-center justify-center">
 						@counterInput(product.addBasketCount, hidden)
-						@iconButton(primary, shop, addBasketPath)
+						@iconButton(primary, shop, addBasketPath, hxTarget)
 					</form>
 				</div>
 			}
@@ -134,7 +147,7 @@ templ paginator(actualPage int, maxPagesBoundary int) {
 				<a
 					href={ "/products/" + navigator }
 					if onActualPage {
-						class="text-tertiary-900 bg-tertiary-300 p-2 rounded-lg"
+						class="text-tertiary-900 bg-tertiary-300 px-3 py-2 rounded-lg"
 					} else {
 						class="text-tertiary-900"
 					}
@@ -164,5 +177,5 @@ templ paginatorItem(page int, paginateDirection paginateDirection) {
 			imgAlt = "navigate back icon"
 		}
 	}}
-	<a href={ "/products/" + strconv.Itoa(page) } class="bg-tertiary-300 w-12 h-12 p-3 rounded-full"><img src={ imgPath } alt={ imgAlt } width="24px" height="24px"/></a>
+	<a href={ "/products/" + strconv.Itoa(page) } class="bg-tertiary-300 w-12 h-12 p-3 rounded-full"><img src={ imgPath } alt={ imgAlt } wIDth="24px" height="24px"/></a>
 }

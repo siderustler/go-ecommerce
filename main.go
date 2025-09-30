@@ -221,7 +221,6 @@ func main() {
 	httpServer.Get("/products/:page", func(c *fiber.Ctx) error {
 		pageParam := c.Params("page")
 
-		fmt.Printf("%+v",1)
 		page,err := strconv.Atoi(pageParam)
 		if err != nil || page < 1 {
 			page = 1
@@ -235,6 +234,116 @@ func main() {
 		return Render(c, views.Products(productsViewModel))
 	})
 
+	httpServer.Post("/products/:prod/increment", func(c *fiber.Ctx) error {
+		countQueryParam := c.FormValue("count")
+		basketCount := 1
+		parsedCount, _ := strconv.Atoi(countQueryParam)
+		if parsedCount > 1 {
+			basketCount = parsedCount
+		}
+		pageParam := c.Params("prod")
+
+		page,err := strconv.Atoi(pageParam)
+		if err != nil || page < 1 {
+			page = 1
+		}
+
+		productIDQuery := c.Query("id")
+		products := []views.Product{
+			views.NewProduct("1", "essa","/public/products/essa/1.webp", 1.99, 1),
+			views.NewProduct("2", "dwa", "/public/products/essa/1.webp", 2.99, 1),
+			views.NewProduct("3", "trzy", "/public/products/essa/1.webp", 3.99, 1),
+		}
+		for i:=0;i<len(products);i++ {
+			if products[i].ID == productIDQuery {
+				products[i].ChangeBasketCount(basketCount)
+				products[i].Increment()
+			}
+		}
+		productsViewModel := views.NewProductsViewModel(products, page, 10)
+		if isHTMXRequest(c) {
+			fragments := append([]any{}, fmt.Sprintf("%+v-%s",views.BasketAddCounter, productIDQuery))
+
+			return Render(c, views.Products(productsViewModel), fragments...)
+		}
+		
+		return Render(c, views.Products(productsViewModel))
+	})
+
+
+	httpServer.Post("/products/:prod/decrement", func(c *fiber.Ctx) error {
+		countQueryParam := c.FormValue("count")
+		basketCount := 1
+		parsedCount, _ := strconv.Atoi(countQueryParam)
+		if parsedCount > 1 {
+			basketCount = parsedCount
+		}
+		pageParam := c.Params("prod")
+
+		page,err := strconv.Atoi(pageParam)
+		if err != nil || page < 1 {
+			page = 1
+		}
+
+		productIDQuery := c.Query("id")
+		products := []views.Product{
+			views.NewProduct("1", "essa","/public/products/essa/1.webp", 1.99, 1),
+			views.NewProduct("2", "dwa", "/public/products/essa/1.webp", 2.99, 1),
+			views.NewProduct("3", "trzy", "/public/products/essa/1.webp", 3.99, 1),
+		}
+		for i:=0;i<len(products);i++ {
+			if products[i].ID == productIDQuery {
+				products[i].ChangeBasketCount(basketCount)
+				products[i].Decrement()
+			}
+		}
+		productsViewModel := views.NewProductsViewModel(products, page, 10)
+		if isHTMXRequest(c) {
+			fragments := append([]any{}, fmt.Sprintf("%+v-%s",views.BasketAddCounter, productIDQuery))
+
+			return Render(c, views.Products(productsViewModel), fragments...)
+		}
+		
+		return Render(c, views.Products(productsViewModel))
+	})
+
+	httpServer.Post("/products/:prod/basket-add", func(c *fiber.Ctx) error {
+		countQueryParam := c.FormValue("count")
+		basketCount := 1
+		parsedCount, _ := strconv.Atoi(countQueryParam)
+		if parsedCount > 1 {
+			basketCount = parsedCount
+		}
+		pageParam := c.Params("prod")
+
+		page,err := strconv.Atoi(pageParam)
+		if err != nil || page < 1 {
+			page = 1
+		}
+
+		productIDQuery := c.Query("id")
+		products := []views.Product{
+			views.NewProduct("1", "essa","/public/products/essa/1.webp", 1.99, 1),
+			views.NewProduct("2", "dwa", "/public/products/essa/1.webp", 2.99, 1),
+			views.NewProduct("3", "trzy", "/public/products/essa/1.webp", 3.99, 1),
+		}
+
+		for i:=0;i<len(products);i++{
+			if products[i].ID == productIDQuery {
+				products[i].ChangeBasketCount(basketCount)
+			}
+		}
+		fmt.Printf("Adding to basket: %s", productIDQuery)
+
+		productsViewModel := views.NewProductsViewModel(products, page, 10)
+		if isHTMXRequest(c) {
+			fragments := append([]any{}, fmt.Sprintf("%+v-%s",views.BasketAddCounter, productIDQuery))
+
+			return Render(c, views.Products(productsViewModel), fragments...)
+		}
+		
+		return Render(c, views.Products(productsViewModel))
+	})
 
 	httpServer.Use("/public", func(c *fiber.Ctx) error {
 		if os.Getenv("ENVIRONMENT") == "DEV" {

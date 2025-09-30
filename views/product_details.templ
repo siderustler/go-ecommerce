@@ -78,7 +78,7 @@ var BasketAddCounter = basketAddCounter{}
 
 templ ProductDetails(product productDetailViewModel) {
 	@layout() {
-		{{ basePath := "/products/" + product.id }}
+		{{ basePath := "/products/details/" + product.id }}
 		<section class="flex flex-col items-center justify-center">
 			<div class="min-w-sm max-w-md md:max-w-3xl">
 				<div class="md:flex gap-6">
@@ -89,7 +89,7 @@ templ ProductDetails(product productDetailViewModel) {
 								src={ product.images[product.selectedImage] }
 								class="rounded-2xl shadow-xl htmx-swapping:opacity-0 transition-opacity duration-200 htmx-settling:opacity-100 min-w-80 min-h-80"
 							/>
-							{{ imageBasePath := "/products/" + product.id + "?img=" }}
+							{{ imageBasePath := "/products/details/" + product.id + "?img=" }}
 							@mobileStepper(imageBasePath, product.selectedImage, product.images)
 						</div>
 					}
@@ -181,10 +181,10 @@ if len(product.productInfo) > 0 {
 								incrementPath := basePath + "/increment"
 								addBasketPath := basePath + "/basket-add"
 									}}
-									@counter(product.addBasketCount, decrementPath, incrementPath)
+									@counter(product.addBasketCount, decrementPath, incrementPath, "#basket-adder")
 									<form method="post" action={ addBasketPath } class="flex items-center justify-center">
 										@counterInput(product.addBasketCount, hidden)
-										@iconButton(primary, shop, addBasketPath)
+										@iconButton(primary, shop, addBasketPath, "#basket-adder")
 									</form>
 								</div>
 							}
@@ -203,15 +203,15 @@ if len(product.productInfo) > 0 {
 	}
 }
 
-templ counter(value int, decrementPath, incrementPath string) {
+templ counter(value int, decrementPath, incrementPath, hxTarget string) {
 	<div class="flex gap-6 justify-center px-3 py-2 rounded-lg border-2 border-secondary-300">
 		<form method="post" action={ decrementPath }>
-			@iconButton(secondary, minus, decrementPath)
+			@iconButton(secondary, minus, decrementPath, hxTarget)
 			@counterInput(value, hidden)
 		</form>
 		@counterInput(value, shown)
 		<form method="post" action={ incrementPath }>
-			@iconButton(secondary, plus, incrementPath)
+			@iconButton(secondary, plus, incrementPath, hxTarget)
 			@counterInput(value, hidden)
 		</form>
 	</div>
@@ -232,7 +232,7 @@ const (
 	shop
 )
 
-templ iconButton(buttonType buttonType, icon icon, submitPath string) {
+templ iconButton(buttonType buttonType, icon icon, submitPath, hxTarget string) {
 	{{
 		var iconPath string
 		var iconAlt string
@@ -260,7 +260,7 @@ templ iconButton(buttonType buttonType, icon icon, submitPath string) {
 	<button
 		class={ style }
 		hx-post={ submitPath }
-		hx-target="#basket-adder"
+		hx-target={ hxTarget }
 		hx-swap="outerHTML"
 	>
 		<img
