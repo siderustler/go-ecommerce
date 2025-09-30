@@ -17,7 +17,13 @@ func (p *Product) Increment() {
 }
 
 func (p *Product) Decrement() {
-	p.addBasketCount -= 1
+	if p.addBasketCount > 1 {
+		p.addBasketCount -= 1
+	}
+}
+
+func (p *Product) ChangeBasketCount(count int) {
+	p.addBasketCount = count
 }
 
 type productsViewModel struct {
@@ -67,16 +73,20 @@ templ Products(productsViewModel productsViewModel) {
 
 templ productItem(product Product, page int) {
 	<div class="flex flex-col md:flex-row py-8 px-2 md:p-8 gap-3 shadow-sm rounded-2xl bg-grey-200">
-		<img src={ product.image } alt={ product.name + " image" } class="rounded-2xl lg:rounded-3xl shadow-lg max-w-72 max-h-72 mx-auto"/>
+		<a href={ "/products/details/" + product.ID }>
+			<img src={ product.image } alt={ product.name + " image" } class="rounded-2xl lg:rounded-3xl shadow-lg max-w-72 max-h-72 mx-auto"/>
+		</a>
 		<div class="flex flex-col gap-3 md:gap-6">
-			@infoWrapper() {
-				@descriptor("Nazwa produktu", "")
-				<h1 class="text-xl">{ product.name }</h1>
-			}
-			@infoWrapper() {
-				@descriptor("Cena", "")
-				<h2 class="text-primary-700 text-xl">{ strconv.FormatFloat(float64(product.price), 'f', 4, 32) + " zł" }</h2>
-			}
+			<a href={ "/products/details/" + product.ID }>
+				@infoWrapper() {
+					@descriptor("Nazwa produktu", "")
+					<h1 class="text-xl">{ product.name }</h1>
+				}
+				@infoWrapper() {
+					@descriptor("Cena", "")
+					<h2 class="text-primary-700 text-xl">{ strconv.FormatFloat(float64(product.price), 'f', 4, 32) + " zł" }</h2>
+				}
+			</a>
 		</div>
 		@infoWrapper() {
 			@descriptor("Dostosuj ilość", "")
