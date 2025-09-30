@@ -611,7 +611,7 @@ func ProductDetails(product productDetailViewModel) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<a href=\"/products\" class=\"flex items-center justify-center gap-1 md:gap-2 lg:gap-4 px-4 md:px-5 lg:px-6 py-2 md:py-3 mx-2 text-secondary-900 border-2 border-secondary-500 rounded-xl text-center text-sm\"><img src=\"/public/icons/chevron-left-secondary.svg\" alt=\"back icon\" width=\"24px\" height=\"24px\"> Pozostałe produkty</a></div></div></div></section>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<a href=\"/products/1\" class=\"flex items-center justify-center gap-1 md:gap-2 lg:gap-4 px-4 md:px-5 lg:px-6 py-2 md:py-3 mx-2 text-secondary-900 border-2 border-secondary-500 rounded-xl text-center text-sm\"><img src=\"/public/icons/chevron-left-secondary.svg\" alt=\"back icon\" width=\"24px\" height=\"24px\"> Pozostałe produkty</a></div></div></div></section>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
