@@ -427,7 +427,7 @@ func paginator(actualPage int, maxPagesBoundary int) templ.Component {
 		if nextPage > maxPagesBoundary {
 			nextPage = 1
 		}
-		navigators := make([]string, 0, 5)
+		navigators := make([]string, 0, 6)
 		isSmallPageCount := maxPagesBoundary < cap(navigators)
 		if isSmallPageCount {
 			for next := 1; next <= maxPagesBoundary; next++ {
@@ -436,14 +436,23 @@ func paginator(actualPage int, maxPagesBoundary int) templ.Component {
 		}
 		if !isSmallPageCount {
 			boundary := 2
-			isEndNearer := actualPage+boundary >= maxPagesBoundary
-			if isEndNearer {
+			isNearBeginning := actualPage <= boundary
+			if isNearBeginning {
+				for next := 1; next <= boundary+1; next++ {
+					navigators = append(navigators, strconv.Itoa(next))
+				}
+				navigators = append(navigators, "...", strconv.Itoa(maxPagesBoundary))
+			}
+			isNearEnd := actualPage+boundary >= maxPagesBoundary
+			if isNearEnd {
 				navigators = append(navigators, "1", "...")
 				for next := maxPagesBoundary - boundary; next <= maxPagesBoundary; next++ {
 					navigators = append(navigators, strconv.Itoa(next))
 				}
-			} else {
-				for next := actualPage; next <= actualPage+boundary; next++ {
+			}
+			if !isNearBeginning && !isNearEnd {
+				navigators = append(navigators, "1", "...")
+				for next := actualPage - 1; next < actualPage+boundary && next < maxPagesBoundary; next++ {
 					navigators = append(navigators, strconv.Itoa(next))
 				}
 				navigators = append(navigators, "...", strconv.Itoa(maxPagesBoundary))
@@ -473,7 +482,7 @@ func paginator(actualPage int, maxPagesBoundary int) templ.Component {
 				var templ_7745c5c3_Var17 templ.SafeURL
 				templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinURLErrs("/products/" + navigator)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/products.templ`, Line: 158, Col: 36}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/products.templ`, Line: 167, Col: 36}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 				if templ_7745c5c3_Err != nil {
@@ -501,7 +510,7 @@ func paginator(actualPage int, maxPagesBoundary int) templ.Component {
 				var templ_7745c5c3_Var18 string
 				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(navigator)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/products.templ`, Line: 164, Col: 16}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/products.templ`, Line: 173, Col: 16}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 				if templ_7745c5c3_Err != nil {
@@ -570,7 +579,7 @@ func paginatorItem(page int, paginateDirection paginateDirection) templ.Componen
 		var templ_7745c5c3_Var20 templ.SafeURL
 		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinURLErrs("/products/" + strconv.Itoa(page))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/products.templ`, Line: 190, Col: 44}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/products.templ`, Line: 199, Col: 44}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {
@@ -583,7 +592,7 @@ func paginatorItem(page int, paginateDirection paginateDirection) templ.Componen
 		var templ_7745c5c3_Var21 string
 		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(imgPath)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/products.templ`, Line: 190, Col: 116}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/products.templ`, Line: 199, Col: 116}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 		if templ_7745c5c3_Err != nil {
@@ -596,7 +605,7 @@ func paginatorItem(page int, paginateDirection paginateDirection) templ.Componen
 		var templ_7745c5c3_Var22 string
 		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(imgAlt)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/products.templ`, Line: 190, Col: 131}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/products.templ`, Line: 199, Col: 131}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 		if templ_7745c5c3_Err != nil {

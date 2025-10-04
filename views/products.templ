@@ -122,7 +122,7 @@ templ paginator(actualPage int, maxPagesBoundary int) {
 		if nextPage > maxPagesBoundary {
 			nextPage = 1
 		}
-		navigators := make([]string, 0, 5)
+		navigators := make([]string, 0, 6)
 		isSmallPageCount := maxPagesBoundary < cap(navigators)
 		if isSmallPageCount {
 			for next := 1; next <= maxPagesBoundary; next++ {
@@ -131,14 +131,23 @@ templ paginator(actualPage int, maxPagesBoundary int) {
 		}
 		if !isSmallPageCount {
 			boundary := 2
-			isEndNearer := actualPage+boundary >= maxPagesBoundary
-			if isEndNearer {
+			isNearBeginning := actualPage <= boundary
+			if isNearBeginning {
+				for next := 1; next <= boundary+1; next++ {
+					navigators = append(navigators, strconv.Itoa(next))
+				}
+				navigators = append(navigators, "...", strconv.Itoa(maxPagesBoundary))
+			}
+			isNearEnd := actualPage+boundary >= maxPagesBoundary
+			if isNearEnd {
 				navigators = append(navigators, "1", "...")
 				for next := maxPagesBoundary - boundary; next <= maxPagesBoundary; next++ {
 					navigators = append(navigators, strconv.Itoa(next))
 				}
-			} else {
-				for next := actualPage; next <= actualPage+boundary; next++ {
+			}
+			if !isNearBeginning && !isNearEnd {
+				navigators = append(navigators, "1", "...")
+				for next := actualPage - 1; next < actualPage+boundary && next < maxPagesBoundary; next++ {
 					navigators = append(navigators, strconv.Itoa(next))
 				}
 				navigators = append(navigators, "...", strconv.Itoa(maxPagesBoundary))
