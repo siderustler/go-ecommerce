@@ -345,6 +345,10 @@ func main() {
 		return Render(c, views.Products(productsViewModel))
 	})
 
+	httpServer.Get("/products/", func(c *fiber.Ctx) error {
+		return c.Redirect("/products/1")
+	})
+
 	httpServer.Use("/public", func(c *fiber.Ctx) error {
 		if os.Getenv("ENVIRONMENT") == "DEV" {
 			c.Response().Header.Set("Cache-Control", "no-store")
