@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/siderustler/go-ecommerce/views"
+	"github.com/siderustler/go-ecommerce/ports/views"
 )
 
 func getProductsRedirect(c *fiber.Ctx) error {
