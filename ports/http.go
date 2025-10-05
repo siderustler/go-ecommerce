@@ -26,7 +26,7 @@ func NewHttpServer() *httpServer {
 	h.srv.Post("/products/:prod/decrement", postProductsDecrement)
 	h.srv.Post("/products/:prod/basket-add", postProductsBasketAdd)
 
-	h.srv.Static("/public", "./views/public")
+	h.srv.Static("/public", "./ports/views/public")
 	return h
 }
 

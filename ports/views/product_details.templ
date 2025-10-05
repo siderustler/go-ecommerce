@@ -2,14 +2,10 @@ package views
 
 import "strconv"
 import "strings"
+import "github.com/siderustler/go-ecommerce/services"
 
 type productDetailViewModel struct {
-	id                  string
-	name                string
-	images              []string
-	price               float32
-	productInfo         []string
-	technicalParameters []string
+	domain services.ProductDetail
 
 	selectedImage                     int
 	addBasketCount                    int
@@ -20,9 +16,7 @@ type productDetailViewModel struct {
 }
 
 func NewProductDetailViewModel(
-	id, name string,
-	images, productInfo, technicalParameters []string,
-	price float32,
+	domain services.ProductDetail,
 	selectedImage int,
 	isProductInfoExpanded bool,
 	isTechnicalParametersInfoExpanded bool,
@@ -30,20 +24,15 @@ func NewProductDetailViewModel(
 	isLocalInfoExpanded bool,
 	addBasketCount int,
 ) productDetailViewModel {
-	if selectedImage < 0 || selectedImage > len(images)-1 {
+	if selectedImage < 0 || selectedImage > len(domain.Images)-1 {
 		selectedImage = 0
 	}
 	if addBasketCount < 1 {
 		addBasketCount = 1
 	}
 	return productDetailViewModel{
-		id:                                id,
-		name:                              name,
-		images:                            images,
-		productInfo:                       productInfo,
-		technicalParameters:               technicalParameters,
+		domain: domain,
 		selectedImage:                     selectedImage,
-		price:                             price,
 		isProductInfoExpanded:             isProductInfoExpanded,
 		isLocalInfoExpanded:               isLocalInfoExpanded,
 		isShippingInfoExpanded:            isShippingInfoExpanded,
@@ -78,37 +67,37 @@ var BasketAddCounter = basketAddCounter{}
 
 templ ProductDetails(product productDetailViewModel) {
 	@layout() {
-		{{ basePath := "/products/details/" + product.id }}
+		{{ basePath := "/products/details/" + product.domain.ID }}
 		<section class="flex flex-col items-center justify-center">
 			<div class="min-w-sm max-w-md md:max-w-3xl">
 				<div class="md:flex gap-6">
 					@templ.Fragment(ImageSelectorFragment) {
 						<div id="image-wrapper" class="flex flex-col items-center">
 							<img
-								alt={ product.name + " image" }
-								src={ product.images[product.selectedImage] }
+								alt={ product.domain.Name + " image" }
+								src={ product.domain.Images[product.selectedImage] }
 								class="rounded-2xl shadow-xl htmx-swapping:opacity-0 transition-opacity duration-200 htmx-settling:opacity-100 min-w-80 min-h-80"
 							/>
-							{{ imageBasePath := "/products/details/" + product.id + "?img=" }}
-							@mobileStepper(imageBasePath, product.selectedImage, product.images)
+							{{ imageBasePath := "/products/details/" + product.domain.ID + "?img=" }}
+							@mobileStepper(imageBasePath, product.selectedImage, product.domain.Images)
 						</div>
 					}
 					<div class="md:max-w-md">
 						@infoWrapper() {
 							@descriptor("Nazwa produktu", "")
-							<h1 class="text-xl">{ product.name }</h1>
+							<h1 class="text-xl">{ product.domain.Name }</h1>
 						}
 						@infoWrapper() {
 							@descriptor("Cena", "")
-							<h2 class="text-primary-700 text-xl">{ strconv.FormatFloat(float64(product.price), 'f', 4, 32) + " zł" }</h2>
+							<h2 class="text-primary-700 text-xl">{ strconv.FormatFloat(float64(product.domain.Price), 'f', 4, 32) + " zł" }</h2>
 						}
 						@infoWrapper() {
 							@descriptor("Opis produktu", "")
 							<h3>
 								{{
 productInfo := "Świetny produkt"
-if len(product.productInfo) > 0 {
-	productInfo = product.productInfo[0]
+if len(product.domain.ProductInfo) > 0 {
+	productInfo = product.domain.ProductInfo[0]
 }
 								}}
 								{ productInfo }
@@ -122,8 +111,8 @@ if len(product.productInfo) > 0 {
 							@descriptor("Dodatkowe informacje", "xl:text-center")
 							{{
 	additionalProductInfo := "Świetny produkt"
-	if len(product.productInfo) > 1 {
-		additionalProductInfo = strings.Join(product.productInfo[1:], "\n")
+	if len(product.domain.ProductInfo) > 1 {
+		additionalProductInfo = strings.Join(product.domain.ProductInfo[1:], "\n")
 	}
 							}}
 							@slideMenu() {
@@ -140,7 +129,7 @@ if len(product.productInfo) > 0 {
 									@slideMenuItem("tech-params",
 										"/public/icons/tech-params-info.svg",
 										"Parametry techniczne",
-										strings.Join(product.technicalParameters, "\n"),
+										strings.Join(product.domain.TechnicalParameters, "\n"),
 										product.isTechnicalParametersInfoExpanded,
 										basePath+"?tech-params=",
 									)

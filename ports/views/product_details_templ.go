@@ -10,14 +10,10 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import "strconv"
 import "strings"
+import "github.com/siderustler/go-ecommerce/services"
 
 type productDetailViewModel struct {
-	id                  string
-	name                string
-	images              []string
-	price               float32
-	productInfo         []string
-	technicalParameters []string
+	domain services.ProductDetail
 
 	selectedImage                     int
 	addBasketCount                    int
@@ -28,9 +24,7 @@ type productDetailViewModel struct {
 }
 
 func NewProductDetailViewModel(
-	id, name string,
-	images, productInfo, technicalParameters []string,
-	price float32,
+	domain services.ProductDetail,
 	selectedImage int,
 	isProductInfoExpanded bool,
 	isTechnicalParametersInfoExpanded bool,
@@ -38,20 +32,15 @@ func NewProductDetailViewModel(
 	isLocalInfoExpanded bool,
 	addBasketCount int,
 ) productDetailViewModel {
-	if selectedImage < 0 || selectedImage > len(images)-1 {
+	if selectedImage < 0 || selectedImage > len(domain.Images)-1 {
 		selectedImage = 0
 	}
 	if addBasketCount < 1 {
 		addBasketCount = 1
 	}
 	return productDetailViewModel{
-		id:                                id,
-		name:                              name,
-		images:                            images,
-		productInfo:                       productInfo,
-		technicalParameters:               technicalParameters,
+		domain:                            domain,
 		selectedImage:                     selectedImage,
-		price:                             price,
 		isProductInfoExpanded:             isProductInfoExpanded,
 		isLocalInfoExpanded:               isLocalInfoExpanded,
 		isShippingInfoExpanded:            isShippingInfoExpanded,
@@ -117,7 +106,7 @@ func ProductDetails(product productDetailViewModel) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			basePath := "/products/details/" + product.id
+			basePath := "/products/details/" + product.domain.ID
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section class=\"flex flex-col items-center justify-center\"><div class=\"min-w-sm max-w-md md:max-w-3xl\"><div class=\"md:flex gap-6\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -139,9 +128,9 @@ func ProductDetails(product productDetailViewModel) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var4 string
-				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(product.name + " image")
+				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(product.domain.Name + " image")
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 88, Col: 37}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 77, Col: 44}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -152,9 +141,9 @@ func ProductDetails(product productDetailViewModel) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var5 string
-				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(product.images[product.selectedImage])
+				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(product.domain.Images[product.selectedImage])
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 89, Col: 51}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 78, Col: 58}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
@@ -164,8 +153,8 @@ func ProductDetails(product productDetailViewModel) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				imageBasePath := "/products/details/" + product.id + "?img="
-				templ_7745c5c3_Err = mobileStepper(imageBasePath, product.selectedImage, product.images).Render(ctx, templ_7745c5c3_Buffer)
+				imageBasePath := "/products/details/" + product.domain.ID + "?img="
+				templ_7745c5c3_Err = mobileStepper(imageBasePath, product.selectedImage, product.domain.Images).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -204,9 +193,9 @@ func ProductDetails(product productDetailViewModel) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var7 string
-				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(product.name)
+				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(product.domain.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 99, Col: 41}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 88, Col: 48}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -243,9 +232,9 @@ func ProductDetails(product productDetailViewModel) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var9 string
-				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.FormatFloat(float64(product.price), 'f', 4, 32) + " zł")
+				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.FormatFloat(float64(product.domain.Price), 'f', 4, 32) + " zł")
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 103, Col: 110}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 92, Col: 117}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 				if templ_7745c5c3_Err != nil {
@@ -283,13 +272,13 @@ func ProductDetails(product productDetailViewModel) templ.Component {
 				}
 
 				productInfo := "Świetny produkt"
-				if len(product.productInfo) > 0 {
-					productInfo = product.productInfo[0]
+				if len(product.domain.ProductInfo) > 0 {
+					productInfo = product.domain.ProductInfo[0]
 				}
 				var templ_7745c5c3_Var11 string
 				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(productInfo)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 114, Col: 21}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 103, Col: 21}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 				if templ_7745c5c3_Err != nil {
@@ -331,8 +320,8 @@ func ProductDetails(product productDetailViewModel) templ.Component {
 				}
 
 				additionalProductInfo := "Świetny produkt"
-				if len(product.productInfo) > 1 {
-					additionalProductInfo = strings.Join(product.productInfo[1:], "\n")
+				if len(product.domain.ProductInfo) > 1 {
+					additionalProductInfo = strings.Join(product.domain.ProductInfo[1:], "\n")
 				}
 				templ_7745c5c3_Var13 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 					templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -393,7 +382,7 @@ func ProductDetails(product productDetailViewModel) templ.Component {
 						templ_7745c5c3_Err = slideMenuItem("tech-params",
 							"/public/icons/tech-params-info.svg",
 							"Parametry techniczne",
-							strings.Join(product.technicalParameters, "\n"),
+							strings.Join(product.domain.TechnicalParameters, "\n"),
 							product.isTechnicalParametersInfoExpanded,
 							basePath+"?tech-params=",
 						).Render(ctx, templ_7745c5c3_Buffer)
@@ -577,7 +566,7 @@ func ProductDetails(product productDetailViewModel) templ.Component {
 					var templ_7745c5c3_Var22 templ.SafeURL
 					templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinURLErrs(addBasketPath)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 185, Col: 51}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 174, Col: 51}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 					if templ_7745c5c3_Err != nil {
@@ -653,7 +642,7 @@ func counter(value int, decrementPath, incrementPath, hxTarget string) templ.Com
 		var templ_7745c5c3_Var24 templ.SafeURL
 		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinURLErrs(decrementPath)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 208, Col: 44}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 197, Col: 44}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 		if templ_7745c5c3_Err != nil {
@@ -686,7 +675,7 @@ func counter(value int, decrementPath, incrementPath, hxTarget string) templ.Com
 		var templ_7745c5c3_Var25 templ.SafeURL
 		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinURLErrs(incrementPath)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 213, Col: 44}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 202, Col: 44}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 		if templ_7745c5c3_Err != nil {
@@ -783,7 +772,7 @@ func iconButton(buttonType buttonType, icon icon, submitPath, hxTarget string) t
 		var templ_7745c5c3_Var28 string
 		templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var27).String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 1, Col: 0}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 1, Col: 0}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 		if templ_7745c5c3_Err != nil {
@@ -796,7 +785,7 @@ func iconButton(buttonType buttonType, icon icon, submitPath, hxTarget string) t
 		var templ_7745c5c3_Var29 string
 		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(submitPath)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 262, Col: 22}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 251, Col: 22}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 		if templ_7745c5c3_Err != nil {
@@ -809,7 +798,7 @@ func iconButton(buttonType buttonType, icon icon, submitPath, hxTarget string) t
 		var templ_7745c5c3_Var30 string
 		templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(hxTarget)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 263, Col: 22}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 252, Col: 22}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 		if templ_7745c5c3_Err != nil {
@@ -822,7 +811,7 @@ func iconButton(buttonType buttonType, icon icon, submitPath, hxTarget string) t
 		var templ_7745c5c3_Var31 string
 		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(iconPath)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 267, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 256, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 		if templ_7745c5c3_Err != nil {
@@ -835,7 +824,7 @@ func iconButton(buttonType buttonType, icon icon, submitPath, hxTarget string) t
 		var templ_7745c5c3_Var32 string
 		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(iconAlt)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 268, Col: 16}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 257, Col: 16}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 		if templ_7745c5c3_Err != nil {
@@ -894,7 +883,7 @@ func counterInput(value int, isHidden isHidden) templ.Component {
 		var templ_7745c5c3_Var34 string
 		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 289, Col: 15}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 278, Col: 15}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 		if templ_7745c5c3_Err != nil {
@@ -959,7 +948,7 @@ func descriptor(content string, class string) templ.Component {
 		var templ_7745c5c3_Var37 string
 		templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var36).String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 1, Col: 0}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 1, Col: 0}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 		if templ_7745c5c3_Err != nil {
@@ -972,7 +961,7 @@ func descriptor(content string, class string) templ.Component {
 		var templ_7745c5c3_Var38 string
 		templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(content)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 306, Col: 68}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 295, Col: 68}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 		if templ_7745c5c3_Err != nil {
@@ -1051,7 +1040,7 @@ func slideMenuItem(id, icon, content, expandedContent string, isExpanded bool, r
 		var templ_7745c5c3_Var41 string
 		templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(id)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 316, Col: 13}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 305, Col: 13}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 		if templ_7745c5c3_Err != nil {
@@ -1074,7 +1063,7 @@ func slideMenuItem(id, icon, content, expandedContent string, isExpanded bool, r
 		var templ_7745c5c3_Var42 templ.SafeURL
 		templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinURLErrs(requestPath)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 325, Col: 21}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 314, Col: 21}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 		if templ_7745c5c3_Err != nil {
@@ -1087,7 +1076,7 @@ func slideMenuItem(id, icon, content, expandedContent string, isExpanded bool, r
 		var templ_7745c5c3_Var43 string
 		templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs("#" + id)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 328, Col: 23}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 317, Col: 23}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 		if templ_7745c5c3_Err != nil {
@@ -1100,7 +1089,7 @@ func slideMenuItem(id, icon, content, expandedContent string, isExpanded bool, r
 		var templ_7745c5c3_Var44 string
 		templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(requestPath)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 329, Col: 23}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 318, Col: 23}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
 		if templ_7745c5c3_Err != nil {
@@ -1113,7 +1102,7 @@ func slideMenuItem(id, icon, content, expandedContent string, isExpanded bool, r
 		var templ_7745c5c3_Var45 string
 		templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(icon)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 331, Col: 18}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 320, Col: 18}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
 		if templ_7745c5c3_Err != nil {
@@ -1126,7 +1115,7 @@ func slideMenuItem(id, icon, content, expandedContent string, isExpanded bool, r
 		var templ_7745c5c3_Var46 string
 		templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(content + " icon")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 331, Col: 44}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 320, Col: 44}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
 		if templ_7745c5c3_Err != nil {
@@ -1139,7 +1128,7 @@ func slideMenuItem(id, icon, content, expandedContent string, isExpanded bool, r
 		var templ_7745c5c3_Var47 string
 		templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(content)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 332, Col: 43}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 321, Col: 43}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
 		if templ_7745c5c3_Err != nil {
@@ -1172,7 +1161,7 @@ func slideMenuItem(id, icon, content, expandedContent string, isExpanded bool, r
 			var templ_7745c5c3_Var48 string
 			templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.JoinStringErrs(expandedContent)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 344, Col: 21}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 333, Col: 21}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var48))
 			if templ_7745c5c3_Err != nil {
@@ -1262,7 +1251,7 @@ func mobileStepper(basePath string, selected int, productImages []string) templ.
 			var templ_7745c5c3_Var51 templ.SafeURL
 			templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinURLErrs(path)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 361, Col: 15}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 350, Col: 15}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
 			if templ_7745c5c3_Err != nil {
@@ -1290,7 +1279,7 @@ func mobileStepper(basePath string, selected int, productImages []string) templ.
 			var templ_7745c5c3_Var52 string
 			templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.JoinStringErrs(path)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 367, Col: 17}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 356, Col: 17}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var52))
 			if templ_7745c5c3_Err != nil {
@@ -1361,7 +1350,7 @@ func desktopStepperNavigator(direction direction, basePath string, actualStep in
 		var templ_7745c5c3_Var54 templ.SafeURL
 		templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinURLErrs(path)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 403, Col: 13}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 392, Col: 13}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var54))
 		if templ_7745c5c3_Err != nil {
@@ -1374,7 +1363,7 @@ func desktopStepperNavigator(direction direction, basePath string, actualStep in
 		var templ_7745c5c3_Var55 string
 		templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs(path)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 405, Col: 15}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 394, Col: 15}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var55))
 		if templ_7745c5c3_Err != nil {
@@ -1387,7 +1376,7 @@ func desktopStepperNavigator(direction direction, basePath string, actualStep in
 		var templ_7745c5c3_Var56 string
 		templ_7745c5c3_Var56, templ_7745c5c3_Err = templ.JoinStringErrs(icon)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 410, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 399, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var56))
 		if templ_7745c5c3_Err != nil {
@@ -1438,7 +1427,7 @@ func desktopStepper(productName, basePath string, selected int, productImages []
 			var templ_7745c5c3_Var58 string
 			templ_7745c5c3_Var58, templ_7745c5c3_Err = templ.JoinStringErrs(image)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 418, Col: 19}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 407, Col: 19}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var58))
 			if templ_7745c5c3_Err != nil {
@@ -1451,7 +1440,7 @@ func desktopStepper(productName, basePath string, selected int, productImages []
 			var templ_7745c5c3_Var59 string
 			templ_7745c5c3_Var59, templ_7745c5c3_Err = templ.JoinStringErrs(productName + " image")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 418, Col: 50}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 407, Col: 50}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var59))
 			if templ_7745c5c3_Err != nil {
@@ -1469,7 +1458,7 @@ func desktopStepper(productName, basePath string, selected int, productImages []
 			var templ_7745c5c3_Var60 templ.SafeURL
 			templ_7745c5c3_Var60, templ_7745c5c3_Err = templ.JoinURLErrs(image)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 421, Col: 16}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 410, Col: 16}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var60))
 			if templ_7745c5c3_Err != nil {
@@ -1497,7 +1486,7 @@ func desktopStepper(productName, basePath string, selected int, productImages []
 			var templ_7745c5c3_Var61 string
 			templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.JoinStringErrs(path)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/product_details.templ`, Line: 427, Col: 17}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/product_details.templ`, Line: 416, Col: 17}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var61))
 			if templ_7745c5c3_Err != nil {

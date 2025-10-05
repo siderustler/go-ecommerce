@@ -2,51 +2,50 @@ package views
 
 import "strconv"
 import "fmt"
+import "github.com/siderustler/go-ecommerce/services"
 
-type Product struct {
-	ID    string
-	name  string
-	image string
-	price float32
+type ProductViewModel struct {
+	domain services.Product
 
 	addBasketCount int
 }
 
-func (p *Product) Increment() {
+func (p *ProductViewModel) Increment() {
 	p.addBasketCount += 1
 }
 
-func (p *Product) Decrement() {
+func (p *ProductViewModel) Decrement() {
 	if p.addBasketCount > 1 {
 		p.addBasketCount -= 1
 	}
 }
 
-func (p *Product) ChangeBasketCount(count int) {
+func (p *ProductViewModel) ChangeBasketCount(count int) {
 	p.addBasketCount = count
 }
 
+func (p ProductViewModel) Domain() services.Product {
+	return p.domain
+}
+
 type productsViewModel struct {
-	products []Product
+	products []ProductViewModel
 
 	actualPage       int
 	maxPagesBoundary int
 }
 
-func NewProduct(ID, name, image string, price float32, addBasketCount int) Product {
+func NewProductViewModel(product services.Product, addBasketCount int) ProductViewModel {
 	if addBasketCount < 1 {
 		addBasketCount = 1
 	}
-	return Product{
-		ID:             ID,
-		name:           name,
-		image:          image,
-		price:          price,
+	return ProductViewModel{
+		domain: product,
 		addBasketCount: addBasketCount,
 	}
 }
 
-func NewProductsViewModel(products []Product, actualPage, maxPagesBoundary int) productsViewModel {
+func NewProductsViewModel(products []ProductViewModel, actualPage, maxPagesBoundary int) productsViewModel {
 	if actualPage < 1 {
 		actualPage = 1
 	}
@@ -71,40 +70,40 @@ templ Products(productsViewModel productsViewModel) {
 	}
 }
 
-templ productItem(product Product, page int) {
+templ productItem(viewModel ProductViewModel, page int) {
 	<div class="flex flex-col md:flex-row py-8 px-2 md:p-8 gap-3 shadow-sm rounded-2xl bg-grey-200">
-		<a href={ "/products/details/" + product.ID }>
-			<img src={ product.image } alt={ product.name + " image" } class="rounded-2xl lg:rounded-3xl shadow-lg max-w-72 max-h-72 mx-auto"/>
+		<a href={ "/products/details/" + viewModel.domain.ID }>
+			<img src={ viewModel.domain.Image } alt={ viewModel.domain.Name + " image" } class="rounded-2xl lg:rounded-3xl shadow-lg max-w-72 max-h-72 mx-auto"/>
 		</a>
 		<div class="flex flex-col gap-3 md:gap-6">
-			<a href={ "/products/details/" + product.ID }>
+			<a href={ "/products/details/" + viewModel.domain.ID }>
 				@infoWrapper() {
 					@descriptor("Nazwa produktu", "")
-					<h1 class="text-xl">{ product.name }</h1>
+					<h1 class="text-xl">{ viewModel.domain.Name }</h1>
 				}
 				@infoWrapper() {
 					@descriptor("Cena", "")
-					<h2 class="text-primary-700 text-xl">{ strconv.FormatFloat(float64(product.price), 'f', 4, 32) + " zł" }</h2>
+					<h2 class="text-primary-700 text-xl">{ strconv.FormatFloat(float64(viewModel.domain.Price), 'f', 4, 32) + " zł" }</h2>
 				}
 			</a>
 		</div>
 		@infoWrapper() {
 			@descriptor("Dostosuj ilość", "")
-			@templ.Fragment(fmt.Sprintf("%+v-%s", BasketAddCounter, product.ID)) {
+			@templ.Fragment(fmt.Sprintf("%+v-%s", BasketAddCounter, viewModel.domain.ID)) {
 				{{
-					targetID := "basket-adder-" + product.ID
+					targetID := "basket-adder-" + viewModel.domain.ID
 					hxTarget := "#" + targetID
 				}}
 				<div id={ targetID } class="flex justify-center gap-6 md:gap-4 min-h-14 md:flex-col">
 					{{
 								basePath := "/products/" + strconv.Itoa(page)
-								decrementPath := basePath + "/decrement?id=" + product.ID
-								incrementPath := basePath + "/increment?id=" + product.ID
-								addBasketPath := basePath + "/basket-add?id=" + product.ID
+								decrementPath := basePath + "/decrement?id=" + viewModel.domain.ID
+								incrementPath := basePath + "/increment?id=" + viewModel.domain.ID
+								addBasketPath := basePath + "/basket-add?id=" + viewModel.domain.ID
 					}}
-					@counter(product.addBasketCount, decrementPath, incrementPath, hxTarget)
+					@counter(viewModel.addBasketCount, decrementPath, incrementPath, hxTarget)
 					<form method="post" action={ addBasketPath } class="flex items-center justify-center">
-						@counterInput(product.addBasketCount, hidden)
+						@counterInput(viewModel.addBasketCount, hidden)
 						@iconButton(primary, shop, addBasketPath, hxTarget)
 					</form>
 				</div>

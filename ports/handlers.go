@@ -7,6 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/siderustler/go-ecommerce/ports/views"
+	"github.com/siderustler/go-ecommerce/services"
 )
 
 func getProductsRedirect(c *fiber.Ctx) error {
@@ -20,10 +21,10 @@ func getProducts(c *fiber.Ctx) error {
 	if err != nil || page < 1 {
 		page = 1
 	}
-	productsViewModel := views.NewProductsViewModel([]views.Product{
-		views.NewProduct("1", "essa", "/public/products/essa/1.webp", 1.99, 1),
-		views.NewProduct("2", "dwa", "/public/products/essa/1.webp", 2.99, 1),
-		views.NewProduct("3", "trzy", "/public/products/essa/1.webp", 3.99, 1),
+	productsViewModel := views.NewProductsViewModel([]views.ProductViewModel{
+		views.NewProductViewModel(services.NewProduct("1", "essa", "/public/products/essa/1.webp", 1.99), 1),
+		views.NewProductViewModel(services.NewProduct("2", "dwa", "/public/products/essa/1.webp", 2.99), 1),
+		views.NewProductViewModel(services.NewProduct("3", "trzy", "/public/products/essa/1.webp", 3.99), 1),
 	}, page, 10)
 
 	return render(c, views.Products(productsViewModel))
@@ -50,25 +51,26 @@ func getProductDetails(c *fiber.Ctx) error {
 	}
 
 	productViewModel := views.NewProductDetailViewModel(
-		"essa",
-		"essa",
-		[]string{"/public/products/essa/1.webp", "/public/products/essa/2.webp", "/public/products/essa/3.webp"},
-		[]string{
-			`Nowa podkaszarka Daewoo. 
+		services.NewProductDetail(
+			"essa",
+			"essa",
+			[]string{"/public/products/essa/1.webp", "/public/products/essa/2.webp", "/public/products/essa/3.webp"},
+			[]string{
+				`Nowa podkaszarka Daewoo. 
 				Dzięki niskiej wadze i niedużym rozmiarom 
 				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
 				`,
-			`Nowa podkaszarka Daewoo. 
+				`Nowa podkaszarka Daewoo. 
 				Dzięki niskiej wadze i niedużym rozmiarom 
 				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
 				`,
-			`Nowa podkaszarka Daewoo. 
+				`Nowa podkaszarka Daewoo. 
 				Dzięki niskiej wadze i niedużym rozmiarom 
 				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
 				`,
-		},
-		[]string{},
-		1.99,
+			},
+			[]string{},
+			1.99),
 		selectedImage(),
 		expandAdditionalInfo("info", func() {
 			fragments = append(fragments, views.ExpandProductInfoFragment)
@@ -100,25 +102,26 @@ func postProductDetailsDecrement(c *fiber.Ctx) error {
 		basketCount = parsedCount - 1
 	}
 	productViewModel := views.NewProductDetailViewModel(
-		"essa",
-		"essa",
-		[]string{"/public/products/essa/1.webp", "/public/products/essa/2.webp", "/public/products/essa/3.webp"},
-		[]string{
-			`Nowa podkaszarka Daewoo. 
+		services.NewProductDetail(
+			"essa",
+			"essa",
+			[]string{"/public/products/essa/1.webp", "/public/products/essa/2.webp", "/public/products/essa/3.webp"},
+			[]string{
+				`Nowa podkaszarka Daewoo. 
 				Dzięki niskiej wadze i niedużym rozmiarom 
 				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
 				`,
-			`Nowa podkaszarka Daewoo. 
+				`Nowa podkaszarka Daewoo. 
 				Dzięki niskiej wadze i niedużym rozmiarom 
 				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
 				`,
-			`Nowa podkaszarka Daewoo. 
+				`Nowa podkaszarka Daewoo. 
 				Dzięki niskiej wadze i niedużym rozmiarom 
 				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
 				`,
-		},
-		[]string{},
-		1.99,
+			},
+			[]string{},
+			1.99),
 		1,
 		false,
 		false,
@@ -143,25 +146,26 @@ func postProductDetailsIncrement(c *fiber.Ctx) error {
 		basketCount = parsedCount + 1
 	}
 	productViewModel := views.NewProductDetailViewModel(
-		"essa",
-		"essa",
-		[]string{"/public/products/essa/1.webp", "/public/products/essa/2.webp", "/public/products/essa/3.webp"},
-		[]string{
-			`Nowa podkaszarka Daewoo. 
+		services.NewProductDetail(
+			"essa",
+			"essa",
+			[]string{"/public/products/essa/1.webp", "/public/products/essa/2.webp", "/public/products/essa/3.webp"},
+			[]string{
+				`Nowa podkaszarka Daewoo. 
 				Dzięki niskiej wadze i niedużym rozmiarom 
 				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
 				`,
-			`Nowa podkaszarka Daewoo. 
+				`Nowa podkaszarka Daewoo. 
 				Dzięki niskiej wadze i niedużym rozmiarom 
 				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
 				`,
-			`Nowa podkaszarka Daewoo. 
+				`Nowa podkaszarka Daewoo. 
 				Dzięki niskiej wadze i niedużym rozmiarom 
 				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
 				`,
-		},
-		[]string{},
-		1.99,
+			},
+			[]string{},
+			1.99),
 		1,
 		false,
 		false,
@@ -186,25 +190,26 @@ func postProductDetailsBasketAdd(c *fiber.Ctx) error {
 		basketCount = parsedCount
 	}
 	productViewModel := views.NewProductDetailViewModel(
-		"essa",
-		"essa",
-		[]string{"/public/products/essa/1.webp", "/public/products/essa/2.webp", "/public/products/essa/3.webp"},
-		[]string{
-			`Nowa podkaszarka Daewoo. 
+		services.NewProductDetail(
+			"essa",
+			"essa",
+			[]string{"/public/products/essa/1.webp", "/public/products/essa/2.webp", "/public/products/essa/3.webp"},
+			[]string{
+				`Nowa podkaszarka Daewoo. 
 				Dzięki niskiej wadze i niedużym rozmiarom 
 				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
 				`,
-			`Nowa podkaszarka Daewoo. 
+				`Nowa podkaszarka Daewoo. 
 				Dzięki niskiej wadze i niedużym rozmiarom 
 				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
 				`,
-			`Nowa podkaszarka Daewoo. 
+				`Nowa podkaszarka Daewoo. 
 				Dzięki niskiej wadze i niedużym rozmiarom 
 				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
 				`,
-		},
-		[]string{},
-		1.99,
+			},
+			[]string{},
+			1.99),
 		1,
 		false,
 		false,
@@ -236,13 +241,13 @@ func postProductsIncrement(c *fiber.Ctx) error {
 	}
 
 	productIDQuery := c.Query("id")
-	products := []views.Product{
-		views.NewProduct("1", "essa", "/public/products/essa/1.webp", 1.99, 1),
-		views.NewProduct("2", "dwa", "/public/products/essa/1.webp", 2.99, 1),
-		views.NewProduct("3", "trzy", "/public/products/essa/1.webp", 3.99, 1),
+	products := []views.ProductViewModel{
+		views.NewProductViewModel(services.NewProduct("1", "essa", "/public/products/essa/1.webp", 1.99), 1),
+		views.NewProductViewModel(services.NewProduct("2", "dwa", "/public/products/essa/1.webp", 2.99), 1),
+		views.NewProductViewModel(services.NewProduct("3", "trzy", "/public/products/essa/1.webp", 3.99), 1),
 	}
 	for i := 0; i < len(products); i++ {
-		if products[i].ID == productIDQuery {
+		if products[i].Domain().ID == productIDQuery {
 			products[i].ChangeBasketCount(basketCount)
 			products[i].Increment()
 		}
@@ -272,13 +277,13 @@ func postProductsDecrement(c *fiber.Ctx) error {
 	}
 
 	productIDQuery := c.Query("id")
-	products := []views.Product{
-		views.NewProduct("1", "essa", "/public/products/essa/1.webp", 1.99, 1),
-		views.NewProduct("2", "dwa", "/public/products/essa/1.webp", 2.99, 1),
-		views.NewProduct("3", "trzy", "/public/products/essa/1.webp", 3.99, 1),
+	products := []views.ProductViewModel{
+		views.NewProductViewModel(services.NewProduct("1", "essa", "/public/products/essa/1.webp", 1.99), 1),
+		views.NewProductViewModel(services.NewProduct("2", "dwa", "/public/products/essa/1.webp", 2.99), 1),
+		views.NewProductViewModel(services.NewProduct("3", "trzy", "/public/products/essa/1.webp", 3.99), 1),
 	}
 	for i := 0; i < len(products); i++ {
-		if products[i].ID == productIDQuery {
+		if products[i].Domain().ID == productIDQuery {
 			products[i].ChangeBasketCount(basketCount)
 			products[i].Decrement()
 		}
@@ -307,14 +312,14 @@ func postProductsBasketAdd(c *fiber.Ctx) error {
 	}
 
 	productIDQuery := c.Query("id")
-	products := []views.Product{
-		views.NewProduct("1", "essa", "/public/products/essa/1.webp", 1.99, 1),
-		views.NewProduct("2", "dwa", "/public/products/essa/1.webp", 2.99, 1),
-		views.NewProduct("3", "trzy", "/public/products/essa/1.webp", 3.99, 1),
+	products := []views.ProductViewModel{
+		views.NewProductViewModel(services.NewProduct("1", "essa", "/public/products/essa/1.webp", 1.99), 1),
+		views.NewProductViewModel(services.NewProduct("2", "dwa", "/public/products/essa/1.webp", 2.99), 1),
+		views.NewProductViewModel(services.NewProduct("3", "trzy", "/public/products/essa/1.webp", 3.99), 1),
 	}
 
 	for i := 0; i < len(products); i++ {
-		if products[i].ID == productIDQuery {
+		if products[i].Domain().ID == productIDQuery {
 			products[i].ChangeBasketCount(basketCount)
 		}
 	}
