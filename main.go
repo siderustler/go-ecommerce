@@ -6,6 +6,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/siderustler/go-ecommerce/ports"
+	"github.com/siderustler/go-ecommerce/services"
 )
 
 func main() {
@@ -13,7 +14,8 @@ func main() {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
-	httpServer := ports.NewHttpServer()
+	services := services.NewServices()
+	httpServer := ports.NewHttpServer(services)
 	err = httpServer.Run(context.TODO(), ":8080")
 	if err != nil {
 		log.Fatal(err)

@@ -10,27 +10,33 @@ import (
 	"github.com/siderustler/go-ecommerce/services"
 )
 
-func getProductsRedirect(c *fiber.Ctx) error {
+type handlers struct {
+	services *services.Services
+}
+
+func (h handlers) getProductsRedirect(c *fiber.Ctx) error {
 	return c.Redirect("/products/1")
 }
 
-func getProducts(c *fiber.Ctx) error {
+func (h handlers) getProducts(c *fiber.Ctx) error {
 	pageParam := c.Params("page")
 
 	page, err := strconv.Atoi(pageParam)
 	if err != nil || page < 1 {
 		page = 1
 	}
-	productsViewModel := views.NewProductsViewModel([]views.ProductViewModel{
-		views.NewProductViewModel(services.NewProduct("1", "essa", "/public/products/essa/1.webp", 1.99), 1),
-		views.NewProductViewModel(services.NewProduct("2", "dwa", "/public/products/essa/1.webp", 2.99), 1),
-		views.NewProductViewModel(services.NewProduct("3", "trzy", "/public/products/essa/1.webp", 3.99), 1),
-	}, page, 10)
+
+	products, err := h.services.GetProducts(c.Context(), page)
+	if err != nil {
+		return c.Redirect("/products/1")
+	}
+
+	productsViewModel := views.NewProductsListViewModel(products, page, 10)
 
 	return render(c, views.Products(productsViewModel))
 }
 
-func getProductDetails(c *fiber.Ctx) error {
+func (h handlers) getProductDetails(c *fiber.Ctx) error {
 	var fragments []any
 	//go:inline
 	var selectedImage = func() int {
@@ -49,28 +55,12 @@ func getProductDetails(c *fiber.Ctx) error {
 		}
 		return additionalInfoQueryParam == "true"
 	}
-
+	productDetails, err := h.services.GetProductDetails(c.Context(), "essa")
+	if err != nil {
+		return c.Redirect("/products/1")
+	}
 	productViewModel := views.NewProductDetailViewModel(
-		services.NewProductDetail(
-			"essa",
-			"essa",
-			[]string{"/public/products/essa/1.webp", "/public/products/essa/2.webp", "/public/products/essa/3.webp"},
-			[]string{
-				`Nowa podkaszarka Daewoo. 
-				Dzięki niskiej wadze i niedużym rozmiarom 
-				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
-				`,
-				`Nowa podkaszarka Daewoo. 
-				Dzięki niskiej wadze i niedużym rozmiarom 
-				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
-				`,
-				`Nowa podkaszarka Daewoo. 
-				Dzięki niskiej wadze i niedużym rozmiarom 
-				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
-				`,
-			},
-			[]string{},
-			1.99),
+		productDetails,
 		selectedImage(),
 		expandAdditionalInfo("info", func() {
 			fragments = append(fragments, views.ExpandProductInfoFragment)
@@ -94,34 +84,68 @@ func getProductDetails(c *fiber.Ctx) error {
 	return render(c, views.ProductDetails(productViewModel), fragments...)
 }
 
-func postProductDetailsDecrement(c *fiber.Ctx) error {
-	countQueryParam := c.FormValue("count")
-	parsedCount, _ := strconv.Atoi(countQueryParam)
-	basketCount := 1
-	if parsedCount > 1 {
-		basketCount = parsedCount - 1
+func (h handlers) postProductDetailsDecrement(c *fiber.Ctx) error {
+	basketCount, _ := strconv.Atoi(c.FormValue("count"))
+
+	productDetails, err := h.services.GetProductDetails(c.Context(), "essa")
+	if err != nil {
+		return c.Redirect("/products/1")
 	}
 	productViewModel := views.NewProductDetailViewModel(
-		services.NewProductDetail(
-			"essa",
-			"essa",
-			[]string{"/public/products/essa/1.webp", "/public/products/essa/2.webp", "/public/products/essa/3.webp"},
-			[]string{
-				`Nowa podkaszarka Daewoo. 
-				Dzięki niskiej wadze i niedużym rozmiarom 
-				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
-				`,
-				`Nowa podkaszarka Daewoo. 
-				Dzięki niskiej wadze i niedużym rozmiarom 
-				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
-				`,
-				`Nowa podkaszarka Daewoo. 
-				Dzięki niskiej wadze i niedużym rozmiarom 
-				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
-				`,
-			},
-			[]string{},
-			1.99),
+		productDetails,
+		1,
+		false,
+		false,
+		false,
+		false,
+		basketCount,
+	)
+
+	productViewModel.DecrementBasketCount()
+	if !isHTMXRequest(c) {
+		return render(c, views.ProductDetails(productViewModel))
+	}
+	var fragments []any
+	fragments = append(fragments, views.BasketAddCounter)
+	return render(c, views.ProductDetails(productViewModel), fragments...)
+}
+
+func (h handlers) postProductDetailsIncrement(c *fiber.Ctx) error {
+	basketCount, _ := strconv.Atoi(c.FormValue("count"))
+
+	productDetails, err := h.services.GetProductDetails(c.Context(), "essa")
+	if err != nil {
+		return c.Redirect("/products/1")
+	}
+
+	productViewModel := views.NewProductDetailViewModel(
+		productDetails,
+		1,
+		false,
+		false,
+		false,
+		false,
+		basketCount,
+	)
+
+	productViewModel.IncrementBasketCount()
+	if !isHTMXRequest(c) {
+		return render(c, views.ProductDetails(productViewModel))
+	}
+	var fragments []any
+	fragments = append(fragments, views.BasketAddCounter)
+	return render(c, views.ProductDetails(productViewModel), fragments...)
+}
+
+func (h handlers) postProductDetailsBasketAdd(c *fiber.Ctx) error {
+	basketCount, _ := strconv.Atoi(c.FormValue("count"))
+
+	productDetails, err := h.services.GetProductDetails(c.Context(), "essa")
+	if err != nil {
+		return c.Redirect("/products/1")
+	}
+	productViewModel := views.NewProductDetailViewModel(
+		productDetails,
 		1,
 		false,
 		false,
@@ -138,199 +162,68 @@ func postProductDetailsDecrement(c *fiber.Ctx) error {
 	return render(c, views.ProductDetails(productViewModel), fragments...)
 }
 
-func postProductDetailsIncrement(c *fiber.Ctx) error {
-	countQueryParam := c.FormValue("count")
-	parsedCount, _ := strconv.Atoi(countQueryParam)
-	basketCount := 1
-	if parsedCount > 0 {
-		basketCount = parsedCount + 1
-	}
-	productViewModel := views.NewProductDetailViewModel(
-		services.NewProductDetail(
-			"essa",
-			"essa",
-			[]string{"/public/products/essa/1.webp", "/public/products/essa/2.webp", "/public/products/essa/3.webp"},
-			[]string{
-				`Nowa podkaszarka Daewoo. 
-				Dzięki niskiej wadze i niedużym rozmiarom 
-				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
-				`,
-				`Nowa podkaszarka Daewoo. 
-				Dzięki niskiej wadze i niedużym rozmiarom 
-				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
-				`,
-				`Nowa podkaszarka Daewoo. 
-				Dzięki niskiej wadze i niedużym rozmiarom 
-				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
-				`,
-			},
-			[]string{},
-			1.99),
-		1,
-		false,
-		false,
-		false,
-		false,
-		basketCount,
-	)
+func (h handlers) postProductsIncrement(c *fiber.Ctx) error {
+	productID := c.Query("id")
+	basketCount, _ := strconv.Atoi(c.FormValue("count"))
+	page, _ := strconv.Atoi(c.Params("prod"))
 
-	if !isHTMXRequest(c) {
-		return render(c, views.ProductDetails(productViewModel))
-	}
-	var fragments []any
-	fragments = append(fragments, views.BasketAddCounter)
-	return render(c, views.ProductDetails(productViewModel), fragments...)
-}
-
-func postProductDetailsBasketAdd(c *fiber.Ctx) error {
-	countQueryParam := c.FormValue("count")
-	basketCount := 1
-	parsedCount, _ := strconv.Atoi(countQueryParam)
-	if parsedCount > 1 {
-		basketCount = parsedCount
-	}
-	productViewModel := views.NewProductDetailViewModel(
-		services.NewProductDetail(
-			"essa",
-			"essa",
-			[]string{"/public/products/essa/1.webp", "/public/products/essa/2.webp", "/public/products/essa/3.webp"},
-			[]string{
-				`Nowa podkaszarka Daewoo. 
-				Dzięki niskiej wadze i niedużym rozmiarom 
-				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
-				`,
-				`Nowa podkaszarka Daewoo. 
-				Dzięki niskiej wadze i niedużym rozmiarom 
-				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
-				`,
-				`Nowa podkaszarka Daewoo. 
-				Dzięki niskiej wadze i niedużym rozmiarom 
-				podkaszarka DATR 800E świetnie sprawdzi się na małej działce czy w ogródku przydomowym.
-				`,
-			},
-			[]string{},
-			1.99),
-		1,
-		false,
-		false,
-		false,
-		false,
-		basketCount,
-	)
-
-	if !isHTMXRequest(c) {
-		return render(c, views.ProductDetails(productViewModel))
-	}
-	var fragments []any
-	fragments = append(fragments, views.BasketAddCounter)
-	return render(c, views.ProductDetails(productViewModel), fragments...)
-}
-
-func postProductsIncrement(c *fiber.Ctx) error {
-	countQueryParam := c.FormValue("count")
-	basketCount := 1
-	parsedCount, _ := strconv.Atoi(countQueryParam)
-	if parsedCount > 1 {
-		basketCount = parsedCount
-	}
-	pageParam := c.Params("prod")
-
-	page, err := strconv.Atoi(pageParam)
-	if err != nil || page < 1 {
-		page = 1
+	products, err := h.services.GetProducts(c.Context(), page)
+	if err != nil {
+		return c.Redirect("/products/1")
 	}
 
-	productIDQuery := c.Query("id")
-	products := []views.ProductViewModel{
-		views.NewProductViewModel(services.NewProduct("1", "essa", "/public/products/essa/1.webp", 1.99), 1),
-		views.NewProductViewModel(services.NewProduct("2", "dwa", "/public/products/essa/1.webp", 2.99), 1),
-		views.NewProductViewModel(services.NewProduct("3", "trzy", "/public/products/essa/1.webp", 3.99), 1),
-	}
-	for i := 0; i < len(products); i++ {
-		if products[i].Domain().ID == productIDQuery {
-			products[i].ChangeBasketCount(basketCount)
-			products[i].Increment()
-		}
-	}
-	productsViewModel := views.NewProductsViewModel(products, page, 10)
+	productsListViewModel := views.NewProductsListViewModel(products, page, 10)
+	productsListViewModel.ChangeProductBasketCount(productID, basketCount+1)
 	if isHTMXRequest(c) {
-		fragments := append([]any{}, fmt.Sprintf("%+v-%s", views.BasketAddCounter, productIDQuery))
+		fragments := append([]any{}, fmt.Sprintf("%+v-%s", views.BasketAddCounter, productID))
 
-		return render(c, views.Products(productsViewModel), fragments...)
+		return render(c, views.Products(productsListViewModel), fragments...)
 	}
 
-	return render(c, views.Products(productsViewModel))
+	return render(c, views.Products(productsListViewModel))
 }
 
-func postProductsDecrement(c *fiber.Ctx) error {
-	countQueryParam := c.FormValue("count")
-	basketCount := 1
-	parsedCount, _ := strconv.Atoi(countQueryParam)
-	if parsedCount > 1 {
-		basketCount = parsedCount
-	}
-	pageParam := c.Params("prod")
+func (h handlers) postProductsDecrement(c *fiber.Ctx) error {
+	basketCount, _ := strconv.Atoi(c.FormValue("count"))
+	page, _ := strconv.Atoi(c.Params("prod"))
+	productID := c.Query("id")
 
-	page, err := strconv.Atoi(pageParam)
-	if err != nil || page < 1 {
-		page = 1
+	products, err := h.services.GetProducts(c.Context(), page)
+	if err != nil {
+		return c.Redirect("/products/1")
 	}
 
-	productIDQuery := c.Query("id")
-	products := []views.ProductViewModel{
-		views.NewProductViewModel(services.NewProduct("1", "essa", "/public/products/essa/1.webp", 1.99), 1),
-		views.NewProductViewModel(services.NewProduct("2", "dwa", "/public/products/essa/1.webp", 2.99), 1),
-		views.NewProductViewModel(services.NewProduct("3", "trzy", "/public/products/essa/1.webp", 3.99), 1),
-	}
-	for i := 0; i < len(products); i++ {
-		if products[i].Domain().ID == productIDQuery {
-			products[i].ChangeBasketCount(basketCount)
-			products[i].Decrement()
-		}
-	}
-	productsViewModel := views.NewProductsViewModel(products, page, 10)
+	productsListViewModel := views.NewProductsListViewModel(products, page, 10)
+	productsListViewModel.ChangeProductBasketCount(productID, basketCount-1)
 	if isHTMXRequest(c) {
-		fragments := append([]any{}, fmt.Sprintf("%+v-%s", views.BasketAddCounter, productIDQuery))
+		fragments := append([]any{}, fmt.Sprintf("%+v-%s", views.BasketAddCounter, productID))
 
-		return render(c, views.Products(productsViewModel), fragments...)
+		return render(c, views.Products(productsListViewModel), fragments...)
 	}
 
-	return render(c, views.Products(productsViewModel))
+	return render(c, views.Products(productsListViewModel))
 }
-func postProductsBasketAdd(c *fiber.Ctx) error {
-	countQueryParam := c.FormValue("count")
-	basketCount := 1
-	parsedCount, _ := strconv.Atoi(countQueryParam)
-	if parsedCount > 1 {
-		basketCount = parsedCount
-	}
-	pageParam := c.Params("prod")
 
-	page, err := strconv.Atoi(pageParam)
-	if err != nil || page < 1 {
-		page = 1
+func (h handlers) postProductsBasketAdd(c *fiber.Ctx) error {
+	basketCount, _ := strconv.Atoi(c.FormValue("count"))
+	page, _ := strconv.Atoi(c.Params("prod"))
+	productID := c.Query("id")
+
+	products, err := h.services.GetProducts(c.Context(), page)
+	if err != nil {
+		return c.Redirect("/products/1")
 	}
 
-	productIDQuery := c.Query("id")
-	products := []views.ProductViewModel{
-		views.NewProductViewModel(services.NewProduct("1", "essa", "/public/products/essa/1.webp", 1.99), 1),
-		views.NewProductViewModel(services.NewProduct("2", "dwa", "/public/products/essa/1.webp", 2.99), 1),
-		views.NewProductViewModel(services.NewProduct("3", "trzy", "/public/products/essa/1.webp", 3.99), 1),
-	}
+	productsListViewModel := views.NewProductsListViewModel(products, page, 10)
+	productsListViewModel.ChangeProductBasketCount(productID, basketCount)
 
-	for i := 0; i < len(products); i++ {
-		if products[i].Domain().ID == productIDQuery {
-			products[i].ChangeBasketCount(basketCount)
-		}
-	}
-	fmt.Printf("Adding to basket: %s", productIDQuery)
+	fmt.Printf("Adding to basket: %s and count: %v", productID, productsListViewModel)
 
-	productsViewModel := views.NewProductsViewModel(products, page, 10)
 	if isHTMXRequest(c) {
-		fragments := append([]any{}, fmt.Sprintf("%+v-%s", views.BasketAddCounter, productIDQuery))
+		fragments := append([]any{}, fmt.Sprintf("%+v-%s", views.BasketAddCounter, productID))
 
-		return render(c, views.Products(productsViewModel), fragments...)
+		return render(c, views.Products(productsListViewModel), fragments...)
 	}
 
-	return render(c, views.Products(productsViewModel))
+	return render(c, views.Products(productsListViewModel))
 }

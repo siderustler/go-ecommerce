@@ -41,6 +41,16 @@ func NewProductDetailViewModel(
 	}
 }
 
+func (p *productDetailViewModel) DecrementBasketCount() {
+	if p.addBasketCount > 1 {
+		p.addBasketCount -= 1
+	}
+}
+
+func (p *productDetailViewModel) IncrementBasketCount() {
+	p.addBasketCount += 1
+}
+
 type imageSelector struct{}
 
 var ImageSelectorFragment = imageSelector{}
