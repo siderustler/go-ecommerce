@@ -35,20 +35,20 @@ func NewProductViewModel(product services.Product, addBasketCount int) productVi
 func mapDomainProductsToProductsViewModel(products []services.Product) map[productID]productViewModel {
 	productViewModels := make(map[productID]productViewModel, len(products))
 	for _, product := range products {
-		productViewModels[productID(product.ID)] = productViewModel{domain:product, addBasketCount: 1}
+		productViewModels[productID(product.ID)] = productViewModel{domain: product, addBasketCount: 1}
 	}
 	return productViewModels
 }
 
 type productsListViewModel struct {
 	products map[productID]productViewModel
+	filter   filterViewModel
 
 	actualPage       int
 	maxPagesBoundary int
 }
 
-
-func NewProductsListViewModel(domainProducts []services.Product, actualPage, maxPagesBoundary int) productsListViewModel {
+func NewProductsListViewModel(domainProducts []services.Product, filterViewModel filterViewModel, actualPage, maxPagesBoundary int) productsListViewModel {
 	if actualPage < 1 {
 		actualPage = 1
 	}
@@ -59,6 +59,7 @@ func NewProductsListViewModel(domainProducts []services.Product, actualPage, max
 		products:         mapDomainProductsToProductsViewModel(domainProducts),
 		actualPage:       actualPage,
 		maxPagesBoundary: maxPagesBoundary,
+		filter:           filterViewModel,
 	}
 }
 
@@ -73,19 +74,98 @@ func (p *productsListViewModel) ChangeProductBasketCount(id string, basketCount 
 	}
 }
 
+type productListFragment struct{}
+type sortFilterFragment struct{}
+
+var ProductListFragment = productListFragment{}
+var SortFilterFragment = sortFilterFragment{}
+
+// Desktop
+/*
+	dla Desktopu wyswietlamy po lewej sort filter i po prawej rpodukty
+	po sfiltrowaniu, updateujmy produkty i przekeirowujemy na 1 strone
+	po sortowaniu updatujemy produkty i zostajemy an aktualenj stronie
+
+	jak ograc?
+
+	get /rpoducts/1,
+	ktos chce przefiltrowac to post /products/filter i wyswietlenie bledu na inpucie lub zaktualizowanie produktow.
+*/
+// Mobile
+/*
+	dla Mobile wyswietlamy albo filtry albo sort albo produkty
+	Na poczatku wyswietlamy produkty
+	Jak ktos kliknie FIltruj, wyswietamy filtry
+	Jak ktos kliknie Sortuj wysweitlamy sorty
+	Jak ktos wybierze sortowanie / filtrowanie to wyswietlamy zaktualizowane produkty
+
+	jak to gorac?
+
+	get products/1
+	ktos chce przefiltrowac klika filter
+	get products/filter
+	wyswietlamy filtr
+	post products/filter
+	wyswietlamy produkty
+*/
+
 templ Products(productsListViewModel productsListViewModel) {
+	{{
+		_ = "/products/" + strconv.Itoa(productsListViewModel.actualPage)
+		filterPath := "/filter/products"
+	}}
 	@layout() {
-		<section class="flex flex-col py-8 items-center justify-center gap-4 md:gap-6 lg:gap-8">
+		<div class="flex flex-col xl:flex-row items-center justify-center">
+			<section class="flex flex-row gap-4 max-w-4xl items-center justify-center pb-4 xl:hidden">
+				@sortFilter(filterPath, "Sortuj")
+				@sortFilter(filterPath, "Filtruj")
+			</section>
+			<section class="flex flex-row gap-8">
+				@sortFilterSection(productsListViewModel.filter)
+				@templ.Fragment(ProductListFragment) {
+					@productListSection(productsListViewModel)
+				}
+			</section>
+		</div>
+	}
+}
+
+templ sectionHeader(icon, iconAlt, content string) {
+	<div class="flex flex-row gap-4 p-8">
+		<img src={ icon } alt={ iconAlt } width="24px" height="24px"/>
+		<p class="text-grey-700">{ content }</p>
+	</div>
+}
+
+templ sortFilter(endpoint, content string) {
+	<a
+		href={ endpoint }
+		class="px-2 py-2 flex flex-row gap-2 lg:gap-4 bg-grey-200 items-center justify-center min-w-36 rounded-xl text-tertiary-900"
+	>
+		{ content }
+		<img
+			src="/public/icons/chevron-right-tertiary.svg"
+			alt="expand icon"
+			width="24px"
+			height="24px"
+		/>
+	</a>
+}
+
+templ productListSection(productsListViewModel productsListViewModel) {
+	<section id="products" class="px-4 py-2 md:px-6 md:py-4 lg:px-12 lg:py-8 shadow-md rounded-3xl bg-grey-200 max-w-4xl" hx-swap-oob="true">
+		@descriptor("Products", "p-4")
+		<div class="flex flex-col pb-8 items-center justify-center gap-4 md:gap-6 lg:gap-12">
 			for _, product := range productsListViewModel.products {
 				@productItem(product, productsListViewModel.actualPage)
 			}
 			@paginator(productsListViewModel.actualPage, productsListViewModel.maxPagesBoundary)
-		</section>
-	}
+		</div>
+	</section>
 }
 
 templ productItem(viewModel productViewModel, page int) {
-	<div class="flex flex-col md:flex-row py-8 px-2 md:p-8 gap-3 shadow-sm rounded-2xl bg-grey-200">
+	<div class="flex flex-col md:flex-row py-8 px-2 md:p-8 gap-3 shadow-sm rounded-2xl bg-grey-100">
 		<a href={ "/products/details/" + viewModel.domain.ID }>
 			<img src={ viewModel.domain.Image } alt={ viewModel.domain.Name + " image" } class="rounded-2xl lg:rounded-3xl shadow-lg max-w-72 max-h-72 mx-auto"/>
 		</a>
@@ -210,4 +290,10 @@ templ paginatorItem(page int, paginateDirection paginateDirection) {
 		}
 	}}
 	<a href={ "/products/" + strconv.Itoa(page) } class="bg-tertiary-300 w-12 h-12 p-3 rounded-full"><img src={ imgPath } alt={ imgAlt } wIDth="24px" height="24px"/></a>
+}
+
+templ sortFilterSection(filterViewModel filterViewModel) {
+	<section class="px-2 py-8 md:px-6 md:py-8 rounded-3xl bg-grey-200 shadow-md max-w-xl hidden lg:block">
+		@filter(filterViewModel, desktop)
+	</section>
 }

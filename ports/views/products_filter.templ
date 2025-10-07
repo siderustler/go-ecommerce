@@ -1,0 +1,131 @@
+package views
+
+type filterViewModel struct {
+	priceFrom                                            float32
+	priceFromErr                                         string
+	priceTo                                              float32
+	machines, gardening, parts, electro, electromachines bool
+}
+
+func NewFilterViewModel(
+	priceFrom, priceTo float32,
+	machines, gardening, parts, electro, electromachines bool,
+) filterViewModel {
+	viewModel := filterViewModel{
+		priceFrom:       priceFrom,
+		priceTo:         priceTo,
+		machines:        machines,
+		gardening:       gardening,
+		parts:           parts,
+		electro:         electro,
+		electromachines: electromachines,
+	}
+	if viewModel.priceFrom < 0 {
+		viewModel.priceFrom = 0
+	}
+	if viewModel.priceTo < 0 {
+		viewModel.priceTo = 0
+	}
+	if viewModel.priceFrom > viewModel.priceTo {
+		viewModel.priceFromErr = "Cena od nie może być większa niż cena do"
+	}
+	return viewModel
+}
+
+func (f filterViewModel) HasError() bool {
+	return f.priceFromErr != ""
+}
+
+type priceFromInputErrFragment struct{}
+
+var PriceFromInputErrFragment = priceFromInputErrFragment{}
+
+templ ProductsFilter(filterViewModel filterViewModel) {
+	<section class="px-2 py-8 md:px-6 md:py-8 rounded-3xl bg-grey-200 shadow-md w-full">
+		@filter(filterViewModel, mobile)
+	</section>
+}
+
+type variant int
+
+const (
+	desktop variant = iota
+	mobile
+)
+
+templ filter(filterViewModel filterViewModel, variant variant) {
+	@sectionHeader("/public/icons/products-filter.svg", "filtr produktów ikona", "Filtruj")
+	{{ filterPath := "/filter/products" }}
+	<form method="post" action={ filterPath }>
+		<div class="flex gap-8 flex-wrap items-center justify-center">
+			@filterItem("machines", "/public/icons/machines.svg", "Maszyny budowlane ikona", "Maszyny budowlane", filterViewModel.machines)
+			@filterItem("gardening", "/public/icons/gardening.svg", "Sprzęt ogrodniczy ikona", "Sprzęt ogrodniczy", filterViewModel.gardening)
+			@filterItem("parts", "/public/icons/parts.svg", "Części i eksploatacja ikona", "Części i eksploatacja", filterViewModel.parts)
+			@filterItem("electro", "/public/icons/power-supply.svg", "Elektro narzędzia ikona", "Elektro narzędzia", filterViewModel.electro)
+			@filterItem("electromachines", "/public/icons/electric-machines.svg", "Maszyny i urządzenia zasilające ikona", "Maszyny i urządzenia zasilające", filterViewModel.electromachines)
+		</div>
+		<p class="text-center text-tertiary-900 mt-8 mb-3 lg:mb-4">Cena</p>
+		{{
+				inputClass := "mb-3 lg:mb-4"
+				if filterViewModel.priceFromErr != "" {
+					inputClass = ""
+				}
+		}}
+		@textInput("/public/icons/chevron-left-secondary.svg", "cena od ikona", "price-from", "Od...", inputClass, filterViewModel.priceFrom)
+		@templ.Fragment(PriceFromInputErrFragment) {
+			@inputError(filterViewModel.priceFromErr)
+		}
+		@textInput("/public/icons/chevron-left-secondary.svg", "cena do ikona", "price-to", "Do...", "mb-3 lg:mb-4", filterViewModel.priceTo)
+		<button
+			class="w-full max-w-4/5 mx-auto flex items-center justify-center gap-1 md:gap-2 lg:gap-4 px-4 md:px-5 lg:px-6 py-2 md:py-3 text-secondary-900 border-2 border-secondary-500 rounded-xl text-center text-sm hover:border-secondary-400 focus:border-secondary-700"
+			hx-post={ filterPath }
+			hx-swap="none"
+		>
+			<img src="/public/icons/products-filter.svg" alt="pokaż rezultat ikona" width="24px" height="24px"/>
+			Pokaż wyniki
+		</button>
+	</form>
+}
+
+templ inputError(content string) {
+	{{
+	var class string
+	if content == "" {
+		class = "hidden"
+	}
+	}}
+	<p id="price-from-err" class={ "text-error-500 px-4 py-2 mb-3 lg:mb-4 " + class } hx-swap-oob="true">{ content }</p>
+}
+
+templ textInput(icon, iconAlt, name, placeholder, class string, value float32) {
+	<div class={ "flex gap-2 md:gap-4 bg-grey-100 border-2 border-grey-500 rounded-xl hover:border-tertiary-300 has-focus:border-tertiary-500 max-w-4/5 mx-auto px-4 md:px-6 py-3 " + class }>
+		<img src={ icon } alt={ iconAlt } height="24px" width="24px"/>
+		<input
+			min="1"
+			type="number"
+			name={ name }
+			placeholder={ placeholder }
+			class="placeholder:text-grey-700 text-grey-900 outline-none w-full"
+			if value != 0 {
+				value={ value }
+			}
+		/>
+	</div>
+}
+
+templ filterItem(name, icon, iconAlt, content string, checked bool) {
+	<div
+		class="relative group p-3 bg-grey-100 has-checked:bg-primary-100 has-checked:inset-shadow-xs has-[input:not(:checked)]:shadow-lg rounded-xl flex flex-col items-center justify-center w-40 min-h-36 text-center hover:bg-primary-200"
+	>
+		<input
+			name={ name }
+			type="checkbox"
+			class="absolute left-0 top-0 z-10 w-full h-full opacity-0"
+			if checked {
+				checked
+			}
+		/>
+		<img src={ icon } alt={ iconAlt } height="24px" width="24px"/>
+		<p class="p-2 text-tertiary-900 group-has-checked:text-primary-900">{ content }</p>
+	</div>
+}

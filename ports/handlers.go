@@ -19,19 +19,36 @@ func (h handlers) getProductsRedirect(c *fiber.Ctx) error {
 }
 
 func (h handlers) getProducts(c *fiber.Ctx) error {
-	pageParam := c.Params("page")
-
-	page, err := strconv.Atoi(pageParam)
-	if err != nil || page < 1 {
-		page = 1
-	}
-
+	page, _ := strconv.Atoi(c.Params("page"))
+	priceFrom, _ := strconv.ParseFloat(c.Query("price-from"),32)
+	priceTo, _ := strconv.ParseFloat(c.Query("price-to"),32)
+	machinesFilter := c.Query("machines") == "true"
+	gardeningFilter := c.Query("gardening") == "true"
+	partsFilter := c.Query("parts") == "true"
+	electroFilter := c.Query("electro") == "true"
+	electroMachinesFilter := c.Query("electromachines") == "true"
 	products, err := h.services.GetProducts(c.Context(), page)
+
+	//FIXME -- display empty product list
 	if err != nil {
 		return c.Redirect("/products/1")
 	}
 
-	productsViewModel := views.NewProductsListViewModel(products, page, 10)
+	filterViewModel := views.NewFilterViewModel(float32(priceFrom),float32(priceTo),machinesFilter,gardeningFilter,partsFilter,electroFilter,electroMachinesFilter)
+	productsViewModel := views.NewProductsListViewModel(
+		products,
+		filterViewModel, 
+		page, 
+		10,
+	)
+
+	if isHTMXRequest(c) {
+		if filterViewModel.HasError() {
+			return render(c,views.Products(productsViewModel), views.PriceFromInputErrFragment)
+		}
+		return render(c,views.Products(productsViewModel),views.ProductListFragment)
+	}
+
 
 	return render(c, views.Products(productsViewModel))
 }
@@ -166,13 +183,16 @@ func (h handlers) postProductsIncrement(c *fiber.Ctx) error {
 	productID := c.Query("id")
 	basketCount, _ := strconv.Atoi(c.FormValue("count"))
 	page, _ := strconv.Atoi(c.Params("prod"))
+	priceFrom, _ := strconv.ParseFloat(c.Query("price-from"),32)
+	priceTo, _ := strconv.ParseFloat(c.Query("price-to"),32)
 
 	products, err := h.services.GetProducts(c.Context(), page)
 	if err != nil {
 		return c.Redirect("/products/1")
 	}
-
-	productsListViewModel := views.NewProductsListViewModel(products, page, 10)
+	var machinesFilter,electroFilter, gardeningFilter,partsFilter, electroMachinesFilter bool
+	productsListViewModel := views.NewProductsListViewModel(
+		products,		views.NewFilterViewModel(float32(priceFrom),float32(priceTo),machinesFilter,gardeningFilter,partsFilter,electroFilter,electroMachinesFilter), page, 10)
 	productsListViewModel.ChangeProductBasketCount(productID, basketCount+1)
 	if isHTMXRequest(c) {
 		fragments := append([]any{}, fmt.Sprintf("%+v-%s", views.BasketAddCounter, productID))
@@ -187,13 +207,15 @@ func (h handlers) postProductsDecrement(c *fiber.Ctx) error {
 	basketCount, _ := strconv.Atoi(c.FormValue("count"))
 	page, _ := strconv.Atoi(c.Params("prod"))
 	productID := c.Query("id")
+	priceFrom, _ := strconv.ParseFloat(c.Query("price-from"),32)
+	priceTo, _ := strconv.ParseFloat(c.Query("price-to"),32)
 
 	products, err := h.services.GetProducts(c.Context(), page)
 	if err != nil {
 		return c.Redirect("/products/1")
 	}
-
-	productsListViewModel := views.NewProductsListViewModel(products, page, 10)
+	var machinesFilter,electroFilter, gardeningFilter,partsFilter, electroMachinesFilter bool
+	productsListViewModel := views.NewProductsListViewModel(products, 		views.NewFilterViewModel(float32(priceFrom),float32(priceTo),machinesFilter,gardeningFilter,partsFilter,electroFilter,electroMachinesFilter),page, 10)
 	productsListViewModel.ChangeProductBasketCount(productID, basketCount-1)
 	if isHTMXRequest(c) {
 		fragments := append([]any{}, fmt.Sprintf("%+v-%s", views.BasketAddCounter, productID))
@@ -208,13 +230,15 @@ func (h handlers) postProductsBasketAdd(c *fiber.Ctx) error {
 	basketCount, _ := strconv.Atoi(c.FormValue("count"))
 	page, _ := strconv.Atoi(c.Params("prod"))
 	productID := c.Query("id")
-
+	priceFrom, _ := strconv.ParseFloat(c.Query("price-from"),32)
+	priceTo, _ := strconv.ParseFloat(c.Query("price-to"),32)
+	var machinesFilter,electroFilter, gardeningFilter,partsFilter, electroMachinesFilter bool
 	products, err := h.services.GetProducts(c.Context(), page)
 	if err != nil {
 		return c.Redirect("/products/1")
 	}
 
-	productsListViewModel := views.NewProductsListViewModel(products, page, 10)
+	productsListViewModel := views.NewProductsListViewModel(products,views.NewFilterViewModel(float32(priceFrom),float32(priceTo),machinesFilter,gardeningFilter,partsFilter,electroFilter,electroMachinesFilter), page, 10)
 	productsListViewModel.ChangeProductBasketCount(productID, basketCount)
 
 	fmt.Printf("Adding to basket: %s and count: %v", productID, productsListViewModel)
@@ -226,4 +250,46 @@ func (h handlers) postProductsBasketAdd(c *fiber.Ctx) error {
 	}
 
 	return render(c, views.Products(productsListViewModel))
+}
+
+
+func (h handlers) getFilterProducts(c *fiber.Ctx) error {
+	priceFrom,_ := strconv.ParseFloat(c.FormValue("price-from"), 32)
+	priceTo,_ := strconv.ParseFloat(c.FormValue("price-to"),32)
+	machines := c.FormValue("machines") == "true"
+	gardening := c.FormValue("gardening") == "true"
+	parts := c.FormValue("parts") == "true"
+	electro := c.FormValue("electro") == "true"
+	electroMachines := c.FormValue("electromachines") == "true"
+	filterViewModel := views.NewFilterViewModel(float32(priceFrom),float32(priceTo),machines,gardening,parts,electro,electroMachines)
+	if isHTMXRequest(c) && filterViewModel.HasError() {
+		return render(c,views.ProductsFilter(filterViewModel), views.PriceFromInputErrFragment)
+	}
+	return render(c, views.ProductsFilter(filterViewModel))
+}
+
+func (h handlers) postFilterProducts(c *fiber.Ctx) error {
+	page,_ := c.ParamsInt("prod")
+	priceFrom,_ := strconv.ParseFloat(c.FormValue("price-from"), 32)
+	priceTo,_ := strconv.ParseFloat(c.FormValue("price-to"),32)
+	machines := c.FormValue("machines") == "true"
+	gardening := c.FormValue("gardening") == "true"
+	parts := c.FormValue("parts") == "true"
+	electro := c.FormValue("electro") == "true"
+	electroMachines := c.FormValue("electromachines") == "true"
+
+	filterViewModel := views.NewFilterViewModel(float32(priceFrom),float32(priceTo),machines,gardening,parts,electro,electroMachines)
+	products,err := h.services.GetProducts(c.Context(), 1)
+	//FIXME -- render empty list
+	if err != nil {
+		return c.Redirect("/products/1")
+	}
+	productsListViewModel := views.NewProductsListViewModel(products,filterViewModel,page,10)
+	if isHTMXRequest(c) {
+		if filterViewModel.HasError() {
+			return render(c,views.Products(productsListViewModel), views.PriceFromInputErrFragment)
+		}
+		return render(c,views.Products(productsListViewModel), views.ProductListFragment, views.PriceFromInputErrFragment)
+	}
+	return render(c,views.Products(productsListViewModel))
 }
