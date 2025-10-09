@@ -262,10 +262,26 @@ func (h handlers) getFilterProducts(c *fiber.Ctx) error {
 	electro := c.FormValue("electro") == "true"
 	electroMachines := c.FormValue("electromachines") == "true"
 	filterViewModel := views.NewFilterViewModel(float32(priceFrom),float32(priceTo),machines,gardening,parts,electro,electroMachines)
-	if isHTMXRequest(c) && filterViewModel.HasError() {
-		return render(c,views.ProductsFilter(filterViewModel), views.PriceFromInputErrFragment)
+	if isHTMXRequest(c) {
+		currentUrl, ok :=  c.GetReqHeaders()["Hx-Current-Url"]
+			fmt.Printf("%+v",c.GetReqHeaders())
+
+		if ok && len(currentUrl) >= 1 && !strings.HasSuffix(currentUrl[0], "/filter/products") {
+			fmt.Printf("%+v",true)
+			c.Response().Header.Add("HX-Push-Url", "/filter/products")
+		}
+		return render(c, views.ProductsFilter(filterViewModel), views.ProductsFilterFragment)
 	}
 	return render(c, views.ProductsFilter(filterViewModel))
+}
+
+func (h handlers) filterProductsPriceValidate(c *fiber.Ctx) error {
+	priceFrom, _ := strconv.ParseFloat(c.FormValue("price-from"),32)
+	priceTo, _ := strconv.ParseFloat(c.FormValue("price-to"),32)
+
+	filterViewModel := views.NewFilterViewModel(float32(priceFrom), float32(priceTo),false,false,false,false,false)
+	fmt.Printf("%+v", filterViewModel)
+	return render(c,views.ProductsFilter(filterViewModel), views.PriceFromInputErrFragment,views.ProductFilterSubmitButtonFragment)
 }
 
 func (h handlers) postFilterProducts(c *fiber.Ctx) error {
@@ -289,7 +305,8 @@ func (h handlers) postFilterProducts(c *fiber.Ctx) error {
 		if filterViewModel.HasError() {
 			return render(c,views.Products(productsListViewModel), views.PriceFromInputErrFragment)
 		}
-		return render(c,views.Products(productsListViewModel), views.ProductListFragment, views.PriceFromInputErrFragment)
+		c.Response().Header.Add("HX-Push-Url", "/products/1")
+		return render(c,views.Products(productsListViewModel), views.ProductListFragment)
 	}
 	return render(c,views.Products(productsListViewModel))
 }

@@ -37,23 +37,30 @@ func (f filterViewModel) HasError() bool {
 }
 
 type priceFromInputErrFragment struct{}
+type productsFilterFragment struct{}
+type productFilterSubmitButtonFragment struct{}
 
 var PriceFromInputErrFragment = priceFromInputErrFragment{}
+var ProductsFilterFragment = productsFilterFragment{}
+var ProductFilterSubmitButtonFragment = productFilterSubmitButtonFragment{}
 
 templ ProductsFilter(filterViewModel filterViewModel) {
-	<section class="px-2 py-8 md:px-6 md:py-8 rounded-3xl bg-grey-200 shadow-md w-full">
-		@filter(filterViewModel, mobile)
-	</section>
+	@layout() {
+		<div class="flex flex-col xl:flex-row items-center justify-center">
+			<section class="flex flex-row gap-4 max-w-4xl items-center justify-center pb-4 xl:hidden">
+				@sortFilter("/filter/products", "Sortuj")
+				@sortFilter("/filter/products", "Filtruj")
+			</section>
+			@templ.Fragment(ProductsFilterFragment) {
+				<section id="products" class="px-2 py-8 md:px-6 md:py-8 rounded-3xl bg-grey-200 shadow-md w-full">
+					@filter(filterViewModel)
+				</section>
+			}
+		</div>
+	}
 }
 
-type variant int
-
-const (
-	desktop variant = iota
-	mobile
-)
-
-templ filter(filterViewModel filterViewModel, variant variant) {
+templ filter(filterViewModel filterViewModel) {
 	@sectionHeader("/public/icons/products-filter.svg", "filtr produktów ikona", "Filtruj")
 	{{ filterPath := "/filter/products" }}
 	<form method="post" action={ filterPath }>
@@ -76,14 +83,22 @@ templ filter(filterViewModel filterViewModel, variant variant) {
 			@inputError(filterViewModel.priceFromErr)
 		}
 		@textInput("/public/icons/chevron-left-secondary.svg", "cena do ikona", "price-to", "Do...", "mb-3 lg:mb-4", filterViewModel.priceTo)
-		<button
-			class="w-full max-w-4/5 mx-auto flex items-center justify-center gap-1 md:gap-2 lg:gap-4 px-4 md:px-5 lg:px-6 py-2 md:py-3 text-secondary-900 border-2 border-secondary-500 rounded-xl text-center text-sm hover:border-secondary-400 focus:border-secondary-700"
-			hx-post={ filterPath }
-			hx-swap="none"
-		>
-			<img src="/public/icons/products-filter.svg" alt="pokaż rezultat ikona" width="24px" height="24px"/>
-			Pokaż wyniki
-		</button>
+		@templ.Fragment(ProductFilterSubmitButtonFragment) {
+			<button
+				id="submit-btn"
+				class="group w-full max-w-4/5 mx-auto flex items-center justify-center gap-1 md:gap-2 lg:gap-4 px-4 md:px-5 lg:px-6 py-2 md:py-3 text-secondary-900 border-2 border-secondary-500 rounded-xl text-center text-sm hover:border-secondary-400 focus:border-secondary-700 disabled:border-grey-500 disabled:text-grey-500"
+				hx-post={ filterPath }
+				hx-swap="outerHTML"
+				hx-target="#products"
+				hx-swap-oob="true"
+				if filterViewModel.HasError() {
+					disabled="true"
+				}
+			>
+				<img src="/public/icons/products-filter.svg" alt="pokaż rezultat ikona" width="24px" height="24px" class="group-disabled:opacity-50"/>
+				Pokaż wyniki
+			</button>
+		}
 	</form>
 }
 
@@ -94,7 +109,9 @@ templ inputError(content string) {
 		class = "hidden"
 	}
 	}}
-	<p id="price-from-err" class={ "text-error-500 px-4 py-2 mb-3 lg:mb-4 " + class } hx-swap-oob="true">{ content }</p>
+	<p id="price-from-err" class={ "text-error-500 px-4 py-2 mb-2 mx-auto max-w-4/5 " + class }>
+		{ content }
+	</p>
 }
 
 templ textInput(icon, iconAlt, name, placeholder, class string, value float32) {
@@ -109,6 +126,10 @@ templ textInput(icon, iconAlt, name, placeholder, class string, value float32) {
 			if value != 0 {
 				value={ value }
 			}
+			hx-trigger="input changed delay:0.2s"
+			hx-post="/filter/products/validate/price"
+			hx-swap="outerHTML"
+			hx-target="#price-from-err"
 		/>
 	</div>
 }
