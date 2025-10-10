@@ -50,13 +50,13 @@ func mapDomainProductsToProductsViewModel(products []services.Product) map[produ
 
 type productsListViewModel struct {
 	products map[productID]productViewModel
-	filter   filterViewModel
+	filter   FilterViewModel
 
 	actualPage       int
 	maxPagesBoundary int
 }
 
-func NewProductsListViewModel(domainProducts []services.Product, filterViewModel filterViewModel, actualPage, maxPagesBoundary int) productsListViewModel {
+func NewProductsListViewModel(domainProducts []services.Product, filterViewModel FilterViewModel, actualPage, maxPagesBoundary int) productsListViewModel {
 	if actualPage < 1 {
 		actualPage = 1
 	}
@@ -873,7 +873,7 @@ func paginatorItem(page int, paginateDirection paginateDirection) templ.Componen
 	})
 }
 
-func sortFilterSection(filterViewModel filterViewModel) templ.Component {
+func sortFilterSection(filterViewModel FilterViewModel) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {

@@ -1,17 +1,33 @@
 package views
 
-type filterViewModel struct {
-	priceFrom                                            float32
-	priceFromErr                                         string
-	priceTo                                              float32
-	machines, gardening, parts, electro, electromachines bool
+type FilterViewModel struct {
+	priceFrom       float32 `form:"price-from"`
+	priceFromErr    string
+	priceTo         float32 `form:"price-to"`
+	machines        bool    `form:"machines"`
+	gardening       bool    `form:"gardening"`
+	parts           bool    `form:"parts"`
+	electro         bool    `form:"electro"`
+	electromachines bool    `form:"electroMachines"`
+}
+
+func (f *FilterViewModel) Validate() {
+	if f.priceFrom < 0 {
+		f.priceFrom = 0
+	}
+	if f.priceTo < 0 {
+		f.priceTo = 0
+	}
+	if f.priceFrom > f.priceTo {
+		f.priceFromErr = "Cena od nie może być większa niż cena do"
+	}
 }
 
 func NewFilterViewModel(
 	priceFrom, priceTo float32,
 	machines, gardening, parts, electro, electromachines bool,
-) filterViewModel {
-	viewModel := filterViewModel{
+) FilterViewModel {
+	viewModel := FilterViewModel{
 		priceFrom:       priceFrom,
 		priceTo:         priceTo,
 		machines:        machines,
@@ -32,8 +48,8 @@ func NewFilterViewModel(
 	return viewModel
 }
 
-func (f filterViewModel) HasError() bool {
-	return f.priceFromErr != ""
+func (f FilterViewModel) HasError() bool {
+	return len(f.priceFromErr) > 0
 }
 
 type priceFromInputErrFragment struct{}
@@ -44,7 +60,7 @@ var PriceFromInputErrFragment = priceFromInputErrFragment{}
 var ProductsFilterFragment = productsFilterFragment{}
 var ProductFilterSubmitButtonFragment = productFilterSubmitButtonFragment{}
 
-templ ProductsFilter(filterViewModel filterViewModel) {
+templ ProductsFilter(filterViewModel FilterViewModel) {
 	@layout() {
 		<div class="flex flex-col xl:flex-row items-center justify-center">
 			<section class="flex flex-row gap-4 max-w-4xl items-center justify-center pb-4 xl:hidden">
@@ -60,7 +76,7 @@ templ ProductsFilter(filterViewModel filterViewModel) {
 	}
 }
 
-templ filter(filterViewModel filterViewModel) {
+templ filter(filterViewModel FilterViewModel) {
 	@sectionHeader("/public/icons/products-filter.svg", "filtr produktów ikona", "Filtruj")
 	{{ filterPath := "/filter/products" }}
 	<form method="post" action={ filterPath }>
