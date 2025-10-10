@@ -30,9 +30,7 @@ func (h handlers) getProducts(c *fiber.Ctx) error {
 
 	var filterViewModel views.FilterViewModel
 	//FIXME render error
-	if err := c.BodyParser(&filterViewModel); err != nil {
-		return err
-	}
+	_ = c.BodyParser(&filterViewModel)
 	filterViewModel.Validate()
 
 	productsViewModel := views.NewProductsListViewModel(
@@ -44,9 +42,10 @@ func (h handlers) getProducts(c *fiber.Ctx) error {
 
 	if isHTMXRequest(c) {
 		if filterViewModel.HasError() {
-			return render(c,views.Products(productsViewModel), views.PriceFromInputErrFragment)
+			c.Response().Header.Add("HX-Trigger", "validatePrice")
+			return nil
 		}
-		return render(c,views.Products(productsViewModel),views.ProductListFragment)
+		return render(c,views.Products(productsViewModel), views.ProductListFragment)
 	}
 
 
@@ -192,9 +191,7 @@ func (h handlers) postProductsIncrement(c *fiber.Ctx) error {
 
 	var filterViewModel views.FilterViewModel
 	//FIXME render error
-	if err := c.BodyParser(&filterViewModel); err != nil {
-		return err
-	}
+	_ = c.BodyParser(&filterViewModel)
 	filterViewModel.Validate()
 
 	productsListViewModel := views.NewProductsListViewModel(products,filterViewModel, page, 10)
@@ -220,9 +217,7 @@ func (h handlers) postProductsDecrement(c *fiber.Ctx) error {
 	}
 	var filterViewModel views.FilterViewModel
 	//FIXME render error
-	if err := c.BodyParser(&filterViewModel); err != nil {
-		return err
-	}
+	_ = c.BodyParser(&filterViewModel)
 	filterViewModel.Validate()
 	productsListViewModel := views.NewProductsListViewModel(products, filterViewModel,page, 10)
 	productsListViewModel.ChangeProductBasketCount(productID, basketCount-1)
@@ -245,9 +240,7 @@ func (h handlers) postProductsBasketAdd(c *fiber.Ctx) error {
 	}
 	var filterViewModel views.FilterViewModel
 	//FIXME render error
-	if err := c.BodyParser(&filterViewModel); err != nil {
-		return err
-	}
+	_ = c.BodyParser(&filterViewModel)
 	filterViewModel.Validate()
 	productsListViewModel := views.NewProductsListViewModel(products,filterViewModel, page, 10)
 	productsListViewModel.ChangeProductBasketCount(productID, basketCount)
@@ -267,16 +260,11 @@ func (h handlers) postProductsBasketAdd(c *fiber.Ctx) error {
 func (h handlers) getFilterProducts(c *fiber.Ctx) error {
 	var filterViewModel views.FilterViewModel
 	//FIXME render error
-	if err := c.BodyParser(&filterViewModel); err != nil {
-		return err
-	}
+	_ = c.BodyParser(&filterViewModel)
 	filterViewModel.Validate()
 	if isHTMXRequest(c) {
 		currentUrl, ok :=  c.GetReqHeaders()["Hx-Current-Url"]
-			fmt.Printf("%+v",c.GetReqHeaders())
-
 		if ok && len(currentUrl) >= 1 && !strings.HasSuffix(currentUrl[0], "/filter/products") {
-			fmt.Printf("%+v",true)
 			c.Response().Header.Add("HX-Push-Url", "/filter/products")
 		}
 		return render(c, views.ProductsFilter(filterViewModel), views.ProductsFilterFragment)
@@ -287,12 +275,19 @@ func (h handlers) getFilterProducts(c *fiber.Ctx) error {
 func (h handlers) filterProductsPriceValidate(c *fiber.Ctx) error {
 	var filterViewModel views.FilterViewModel
 	//FIXME render error
-	if err := c.BodyParser(&filterViewModel); err != nil {
-		return err
-	}
+	_ = c.BodyParser(&filterViewModel)
 	filterViewModel.Validate()
 
-	return render(c,views.ProductsFilter(filterViewModel), views.PriceFromInputErrFragment, views.ProductFilterSubmitButtonFragment)
+	var preserveFocus = func() {
+		trigger, ok := c.GetReqHeaders()["Hx-Trigger"]
+		if !ok || len(trigger) < 1 {
+			return
+		}
+		fmt.Printf("%+v",c.GetReqHeaders())
+		c.Response().Header.Add("Hx-Trigger",fmt.Sprintf(`{"preserveFilterInputFocus":{"triggerElement" : "%s"}}`, trigger[0]))
+	}
+	preserveFocus()
+	return render(c,views.ProductsFilter(filterViewModel), views.PriceFilterFragment)
 }
 
 
@@ -300,9 +295,7 @@ func (h handlers) filterProductsPriceValidate(c *fiber.Ctx) error {
 func (h handlers) postFilterProducts(c *fiber.Ctx) error {
 	var filterViewModel views.FilterViewModel
 	//FIXME render error
-	if err := c.BodyParser(&filterViewModel); err != nil {
-		return err
-	}
+	_ = c.BodyParser(&filterViewModel)
 	filterViewModel.Validate()
 	page,_ := c.ParamsInt("prod")
 
@@ -315,7 +308,7 @@ func (h handlers) postFilterProducts(c *fiber.Ctx) error {
 	productsListViewModel := views.NewProductsListViewModel(products,filterViewModel,page,10)
 	if isHTMXRequest(c) {
 		if filterViewModel.HasError() {
-			return render(c,views.Products(productsListViewModel), views.PriceFromInputErrFragment)
+			c.Response().Header.Add("HX-Trigger", "validatePrice")
 		}
 		c.Response().Header.Add("HX-Push-Url", "/products/1")
 		return render(c,views.Products(productsListViewModel), views.ProductListFragment)

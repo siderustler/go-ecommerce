@@ -1,69 +1,44 @@
 package views
 
 type FilterViewModel struct {
-	priceFrom       float32 `form:"price-from"`
+	PriceFrom       float32 `form:"price-from"`
 	priceFromErr    string
-	priceTo         float32 `form:"price-to"`
-	machines        bool    `form:"machines"`
-	gardening       bool    `form:"gardening"`
-	parts           bool    `form:"parts"`
-	electro         bool    `form:"electro"`
-	electromachines bool    `form:"electroMachines"`
+	PriceTo         float32 `form:"price-to"`
+	Machines        bool    `form:"machines"`
+	Gardening       bool    `form:"gardening"`
+	Parts           bool    `form:"parts"`
+	Electro         bool    `form:"electro"`
+	Electromachines bool    `form:"electroMachines"`
 }
 
 func (f *FilterViewModel) Validate() {
-	if f.priceFrom < 0 {
-		f.priceFrom = 0
+	if f.PriceFrom < 0 {
+		f.PriceFrom = 0
 	}
-	if f.priceTo < 0 {
-		f.priceTo = 0
+	if f.PriceTo < 0 {
+		f.PriceTo = 0
 	}
-	if f.priceFrom > f.priceTo {
+	if f.PriceFrom > f.PriceTo {
 		f.priceFromErr = "Cena od nie może być większa niż cena do"
 	}
 }
 
-func NewFilterViewModel(
-	priceFrom, priceTo float32,
-	machines, gardening, parts, electro, electromachines bool,
-) FilterViewModel {
-	viewModel := FilterViewModel{
-		priceFrom:       priceFrom,
-		priceTo:         priceTo,
-		machines:        machines,
-		gardening:       gardening,
-		parts:           parts,
-		electro:         electro,
-		electromachines: electromachines,
-	}
-	if viewModel.priceFrom < 0 {
-		viewModel.priceFrom = 0
-	}
-	if viewModel.priceTo < 0 {
-		viewModel.priceTo = 0
-	}
-	if viewModel.priceFrom > viewModel.priceTo {
-		viewModel.priceFromErr = "Cena od nie może być większa niż cena do"
-	}
-	return viewModel
-}
+var preserveFocusOnceHandler = templ.NewOnceHandle()
 
 func (f FilterViewModel) HasError() bool {
 	return len(f.priceFromErr) > 0
 }
 
-type priceFromInputErrFragment struct{}
+type priceFilterFragment struct{}
 type productsFilterFragment struct{}
-type productFilterSubmitButtonFragment struct{}
 
-var PriceFromInputErrFragment = priceFromInputErrFragment{}
+var PriceFilterFragment = priceFilterFragment{}
 var ProductsFilterFragment = productsFilterFragment{}
-var ProductFilterSubmitButtonFragment = productFilterSubmitButtonFragment{}
 
 templ ProductsFilter(filterViewModel FilterViewModel) {
 	@layout() {
 		<div class="flex flex-col xl:flex-row items-center justify-center">
-			<section class="flex flex-row gap-4 max-w-4xl items-center justify-center pb-4 xl:hidden">
+			<section class="flex flex-row gap-4 max-w-4xl items-center justify-center pb-4">
 				@sortFilter("/filter/products", "Sortuj")
 				@sortFilter("/filter/products", "Filtruj")
 			</section>
@@ -81,40 +56,48 @@ templ filter(filterViewModel FilterViewModel) {
 	{{ filterPath := "/filter/products" }}
 	<form method="post" action={ filterPath }>
 		<div class="flex gap-8 flex-wrap items-center justify-center">
-			@filterItem("machines", "/public/icons/machines.svg", "Maszyny budowlane ikona", "Maszyny budowlane", filterViewModel.machines)
-			@filterItem("gardening", "/public/icons/gardening.svg", "Sprzęt ogrodniczy ikona", "Sprzęt ogrodniczy", filterViewModel.gardening)
-			@filterItem("parts", "/public/icons/parts.svg", "Części i eksploatacja ikona", "Części i eksploatacja", filterViewModel.parts)
-			@filterItem("electro", "/public/icons/power-supply.svg", "Elektro narzędzia ikona", "Elektro narzędzia", filterViewModel.electro)
-			@filterItem("electromachines", "/public/icons/electric-machines.svg", "Maszyny i urządzenia zasilające ikona", "Maszyny i urządzenia zasilające", filterViewModel.electromachines)
+			@filterItem("machines", "/public/icons/machines.svg", "Maszyny budowlane ikona", "Maszyny budowlane", filterViewModel.Machines)
+			@filterItem("gardening", "/public/icons/gardening.svg", "Sprzęt ogrodniczy ikona", "Sprzęt ogrodniczy", filterViewModel.Gardening)
+			@filterItem("parts", "/public/icons/parts.svg", "Części i eksploatacja ikona", "Części i eksploatacja", filterViewModel.Parts)
+			@filterItem("electro", "/public/icons/power-supply.svg", "Elektro narzędzia ikona", "Elektro narzędzia", filterViewModel.Electro)
+			@filterItem("electromachines", "/public/icons/electric-machines.svg", "Maszyny i urządzenia zasilające ikona", "Maszyny i urządzenia zasilające", filterViewModel.Electromachines)
 		</div>
 		<p class="text-center text-tertiary-900 mt-8 mb-3 lg:mb-4">Cena</p>
-		{{
-				inputClass := "mb-3 lg:mb-4"
-				if filterViewModel.priceFromErr != "" {
-					inputClass = ""
+		<div
+			id="price-filter"
+			class="flex flex-col gap-3 lg:gap-4"
+		>
+			@templ.Fragment(PriceFilterFragment) {
+				@textInput("price-from", "/public/icons/chevron-left-secondary.svg", "cena od ikona", "price-from", "Od...", filterViewModel.PriceFrom, filterViewModel.HasError())
+				@inputError(filterViewModel.priceFromErr)
+				@textInput("price-to", "/public/icons/chevron-left-secondary.svg", "cena do ikona", "price-to", "Do...", filterViewModel.PriceTo, false)
+				<button
+					id="submit-btn"
+					class="group flex items-center justify-center gap-1 md:gap-2 lg:gap-4 px-4 md:px-5 lg:px-6 py-2 md:py-3 text-secondary-900 border-2 border-secondary-500 rounded-xl text-center text-sm hover:border-secondary-400 focus:border-secondary-700 disabled:border-grey-500 disabled:text-grey-500"
+					hx-post={ filterPath }
+					hx-swap="outerHTML"
+					hx-target="#products"
+					if filterViewModel.HasError() {
+						disabled="true"
+					}
+				>
+					<img src="/public/icons/products-filter.svg" alt="pokaż rezultat ikona" width="24px" height="24px" class="group-disabled:opacity-50"/>
+					Pokaż wyniki
+				</button>
+				@preserveFocusOnceHandler.Once() {
+					<script>
+					// FIXME -- remove event somehow to prevent memory leaks, actually its adding listeners on every refresh
+					// FIXME -- not focusing element
+					document.addEventListener("preserveFilterInputFocus", function(evt) {
+						const element = document.getElementById(evt.detail.triggerElement)
+						if (element) {	
+							element.focus()
+						}
+					})
+				</script>
 				}
-		}}
-		@textInput("/public/icons/chevron-left-secondary.svg", "cena od ikona", "price-from", "Od...", inputClass, filterViewModel.priceFrom)
-		@templ.Fragment(PriceFromInputErrFragment) {
-			@inputError(filterViewModel.priceFromErr)
-		}
-		@textInput("/public/icons/chevron-left-secondary.svg", "cena do ikona", "price-to", "Do...", "mb-3 lg:mb-4", filterViewModel.priceTo)
-		@templ.Fragment(ProductFilterSubmitButtonFragment) {
-			<button
-				id="submit-btn"
-				class="group w-full max-w-4/5 mx-auto flex items-center justify-center gap-1 md:gap-2 lg:gap-4 px-4 md:px-5 lg:px-6 py-2 md:py-3 text-secondary-900 border-2 border-secondary-500 rounded-xl text-center text-sm hover:border-secondary-400 focus:border-secondary-700 disabled:border-grey-500 disabled:text-grey-500"
-				hx-post={ filterPath }
-				hx-swap="outerHTML"
-				hx-target="#products"
-				hx-swap-oob="true"
-				if filterViewModel.HasError() {
-					disabled="true"
-				}
-			>
-				<img src="/public/icons/products-filter.svg" alt="pokaż rezultat ikona" width="24px" height="24px" class="group-disabled:opacity-50"/>
-				Pokaż wyniki
-			</button>
-		}
+			}
+		</div>
 	</form>
 }
 
@@ -125,15 +108,24 @@ templ inputError(content string) {
 		class = "hidden"
 	}
 	}}
-	<p id="price-from-err" class={ "text-error-500 px-4 py-2 mb-2 mx-auto max-w-4/5 " + class }>
+	<p id="price-from-err" class={ "text-error-500 px-4 py-2 mx-auto max-w-4/5 " + class }>
 		{ content }
 	</p>
 }
 
-templ textInput(icon, iconAlt, name, placeholder, class string, value float32) {
-	<div class={ "flex gap-2 md:gap-4 bg-grey-100 border-2 border-grey-500 rounded-xl hover:border-tertiary-300 has-focus:border-tertiary-500 max-w-4/5 mx-auto px-4 md:px-6 py-3 " + class }>
+templ textInput(id, icon, iconAlt, name, placeholder string, value float32, isError bool) {
+	{{
+		var class string
+		if isError {
+			class = "flex gap-2 md:gap-4 bg-grey-100 border-2 rounded-xl hover:border-tertiary-300 has-focus:border-tertiary-500 px-4 md:px-6 py-3 border-error-300!"
+		} else {
+			class = "flex gap-2 md:gap-4 bg-grey-100 border-2 border-grey-500 rounded-xl hover:border-tertiary-300 has-focus:border-tertiary-500 px-4 md:px-6 py-3"
+		}
+	}}
+	<div class={ class }>
 		<img src={ icon } alt={ iconAlt } height="24px" width="24px"/>
 		<input
+			id={ id }
 			min="1"
 			type="number"
 			name={ name }
@@ -142,10 +134,11 @@ templ textInput(icon, iconAlt, name, placeholder, class string, value float32) {
 			if value != 0 {
 				value={ value }
 			}
-			hx-trigger="input changed delay:0.2s"
+			hx-trigger="validatePrice from:body, input changed delay:0.2s"
 			hx-post="/filter/products/validate/price"
-			hx-swap="outerHTML"
-			hx-target="#price-from-err"
+			hx-swap="innerHTML"
+			hx-target="#price-filter"
+			hx-preserve
 		/>
 	</div>
 }
@@ -155,6 +148,7 @@ templ filterItem(name, icon, iconAlt, content string, checked bool) {
 		class="relative group p-3 bg-grey-100 has-checked:bg-primary-100 has-checked:inset-shadow-xs has-[input:not(:checked)]:shadow-lg rounded-xl flex flex-col items-center justify-center w-40 min-h-36 text-center hover:bg-primary-200"
 	>
 		<input
+			id="price-input"
 			name={ name }
 			type="checkbox"
 			class="absolute left-0 top-0 z-10 w-full h-full opacity-0"

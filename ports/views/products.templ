@@ -121,9 +121,19 @@ templ Products(productsListViewModel productsListViewModel) {
 				@sortFilter(filterPath, "Filtruj")
 			</section>
 			<section class="flex flex-row gap-8">
-				@sortFilterSection(productsListViewModel.filter)
+				<section class="px-2 py-8 md:px-6 md:py-8 rounded-3xl bg-grey-200 shadow-md max-w-xl hidden lg:block">
+					@filter(productsListViewModel.filter)
+				</section>
 				@templ.Fragment(ProductListFragment) {
-					@productListSection(productsListViewModel)
+					<section id="products" class="px-4 py-2 md:px-6 md:py-4 lg:px-12 lg:py-8 shadow-md rounded-3xl bg-grey-200 max-w-4xl">
+						@descriptor("Products", "p-4")
+						<div class="flex flex-col pb-8 items-center justify-center gap-4 md:gap-6 lg:gap-12">
+							for _, product := range productsListViewModel.products {
+								@productItem(product, productsListViewModel.actualPage)
+							}
+							@paginator(productsListViewModel.actualPage, productsListViewModel.maxPagesBoundary)
+						</div>
+					</section>
 				}
 			</section>
 		</div>
@@ -153,18 +163,6 @@ templ sortFilter(endpoint, content string) {
 			height="24px"
 		/>
 	</a>
-}
-
-templ productListSection(productsListViewModel productsListViewModel) {
-	<section id="products" class="px-4 py-2 md:px-6 md:py-4 lg:px-12 lg:py-8 shadow-md rounded-3xl bg-grey-200 max-w-4xl">
-		@descriptor("Products", "p-4")
-		<div class="flex flex-col pb-8 items-center justify-center gap-4 md:gap-6 lg:gap-12">
-			for _, product := range productsListViewModel.products {
-				@productItem(product, productsListViewModel.actualPage)
-			}
-			@paginator(productsListViewModel.actualPage, productsListViewModel.maxPagesBoundary)
-		</div>
-	</section>
 }
 
 templ productItem(viewModel productViewModel, page int) {
@@ -293,10 +291,4 @@ templ paginatorItem(page int, paginateDirection paginateDirection) {
 		}
 	}}
 	<a href={ "/products/" + strconv.Itoa(page) } class="bg-tertiary-300 w-12 h-12 p-3 rounded-full"><img src={ imgPath } alt={ imgAlt } wIDth="24px" height="24px"/></a>
-}
-
-templ sortFilterSection(filterViewModel FilterViewModel) {
-	<section class="px-2 py-8 md:px-6 md:py-8 rounded-3xl bg-grey-200 shadow-md max-w-xl hidden lg:block">
-		@filter(filterViewModel)
-	</section>
 }
