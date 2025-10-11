@@ -42,7 +42,7 @@ func (h handlers) getProducts(c *fiber.Ctx) error {
 
 	if isHTMXRequest(c) {
 		if filterViewModel.HasError() {
-			c.Response().Header.Add("HX-Trigger", "validatePrice")
+			c.Append("HX-Trigger", "validatePrice")
 			return nil
 		}
 		return render(c,views.Products(productsViewModel), views.ProductListFragment)
@@ -265,7 +265,7 @@ func (h handlers) getFilterProducts(c *fiber.Ctx) error {
 	if isHTMXRequest(c) {
 		currentUrl, ok :=  c.GetReqHeaders()["Hx-Current-Url"]
 		if ok && len(currentUrl) >= 1 && !strings.HasSuffix(currentUrl[0], "/filter/products") {
-			c.Response().Header.Add("HX-Push-Url", "/filter/products")
+			c.Append("HX-Push-Url", "/filter/products")
 		}
 		return render(c, views.ProductsFilter(filterViewModel), views.ProductsFilterFragment)
 	}
@@ -283,8 +283,7 @@ func (h handlers) filterProductsPriceValidate(c *fiber.Ctx) error {
 		if !ok || len(trigger) < 1 {
 			return
 		}
-		fmt.Printf("%+v",c.GetReqHeaders())
-		c.Response().Header.Add("Hx-Trigger",fmt.Sprintf(`{"preserveFilterInputFocus":{"triggerElement" : "%s"}}`, trigger[0]))
+		c.Append("Hx-Trigger",fmt.Sprintf(`{"preserveFilterInputFocus":{"triggerElement" : "%s"}}`, trigger[0]))
 	}
 	preserveFocus()
 	return render(c,views.ProductsFilter(filterViewModel), views.PriceFilterFragment)
@@ -307,10 +306,12 @@ func (h handlers) postFilterProducts(c *fiber.Ctx) error {
 	}
 	productsListViewModel := views.NewProductsListViewModel(products,filterViewModel,page,10)
 	if isHTMXRequest(c) {
+		//FIXME -- rather than using events, 
+		// use response target extension which allows to filter change target based on resp status
 		if filterViewModel.HasError() {
-			c.Response().Header.Add("HX-Trigger", "validatePrice")
+			c.Append("HX-Trigger", "validatePrice")
 		}
-		c.Response().Header.Add("HX-Push-Url", "/products/1")
+		c.Append("HX-Push-Url", "/products/1")
 		return render(c,views.Products(productsListViewModel), views.ProductListFragment)
 	}
 	return render(c,views.Products(productsListViewModel))

@@ -23,6 +23,10 @@ func (f *FilterViewModel) Validate() {
 	}
 }
 
+func (f FilterViewModel) QueryUrl() {
+
+}
+
 var preserveFocusOnceHandler = templ.NewOnceHandle()
 
 func (f FilterViewModel) HasError() bool {
