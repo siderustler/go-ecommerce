@@ -81,15 +81,15 @@ var ProductListFragment = productListFragment{}
 
 templ Products(productsListViewModel productsListViewModel) {
 	{{
+		filterPath := "/filter/products"
 		backUrl := "/products/" + strconv.Itoa(productsListViewModel.actualPage)
-		var filterPath string
 		queries, _ := query.Values(productsListViewModel.filter)
+		filterQuery := queries.Encode()
+
 		isAnyFilterIncluded := len(queries) > 0
 		if isAnyFilterIncluded {
-			filterPath = "/filter/products?" + queries.Encode()
-			backUrl += "?" + queries.Encode()
-		} else {
-			filterPath = "/filter/products"
+			filterPath += "?" + filterQuery
+			backUrl += "?" + filterQuery
 		}
 	}}
 	@layout() {
@@ -109,7 +109,7 @@ templ Products(productsListViewModel productsListViewModel) {
 							for _, product := range productsListViewModel.products {
 								@productItem(product, productsListViewModel.actualPage, backUrl)
 							}
-							@paginator(productsListViewModel.actualPage, productsListViewModel.maxPagesBoundary)
+							@paginator(productsListViewModel.actualPage, productsListViewModel.maxPagesBoundary, filterQuery)
 						</div>
 					</section>
 				}
@@ -185,7 +185,7 @@ templ productItem(viewModel productViewModel, page int, backUrl string) {
 	</div>
 }
 
-templ paginator(actualPage int, maxPagesBoundary int) {
+templ paginator(actualPage int, maxPagesBoundary int, filterQuery string) {
 	{{
 		prevPage, nextPage := actualPage-1, actualPage+1
 		if prevPage < 1 {
@@ -236,7 +236,7 @@ templ paginator(actualPage int, maxPagesBoundary int) {
 					onActualPage := strconv.Itoa(actualPage) == navigator
 				}}
 				<a
-					href={ "/products/" + navigator }
+					href={ fmt.Sprintf("/products/%s?%s", navigator, filterQuery) }
 					if onActualPage {
 						class="text-tertiary-900 bg-tertiary-300 px-3 py-2 rounded-lg"
 					} else {

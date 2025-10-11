@@ -20,8 +20,7 @@ func (h handlers) getProductsRedirect(c *fiber.Ctx) error {
 }
 
 func (h handlers) getProducts(c *fiber.Ctx) error {
-	page, _ := strconv.Atoi(c.Params("page"))
-
+	page, _ := strconv.Atoi(c.Params("prod"))
 	products, err := h.services.GetProducts(c.Context(), page)
 
 	//FIXME -- display empty product list

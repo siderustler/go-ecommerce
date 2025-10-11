@@ -109,15 +109,15 @@ func Products(productsListViewModel productsListViewModel) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 
+		filterPath := "/filter/products"
 		backUrl := "/products/" + strconv.Itoa(productsListViewModel.actualPage)
-		var filterPath string
 		queries, _ := query.Values(productsListViewModel.filter)
+		filterQuery := queries.Encode()
+
 		isAnyFilterIncluded := len(queries) > 0
 		if isAnyFilterIncluded {
-			filterPath = "/filter/products?" + queries.Encode()
-			backUrl += "?" + queries.Encode()
-		} else {
-			filterPath = "/filter/products"
+			filterPath += "?" + filterQuery
+			backUrl += "?" + filterQuery
 		}
 		templ_7745c5c3_Var2 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -185,7 +185,7 @@ func Products(productsListViewModel productsListViewModel) templ.Component {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = paginator(productsListViewModel.actualPage, productsListViewModel.maxPagesBoundary).Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = paginator(productsListViewModel.actualPage, productsListViewModel.maxPagesBoundary, filterQuery).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -605,7 +605,7 @@ func productItem(viewModel productViewModel, page int, backUrl string) templ.Com
 	})
 }
 
-func paginator(actualPage int, maxPagesBoundary int) templ.Component {
+func paginator(actualPage int, maxPagesBoundary int, filterQuery string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -687,9 +687,9 @@ func paginator(actualPage int, maxPagesBoundary int) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var25 templ.SafeURL
-				templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinURLErrs("/products/" + navigator)
+				templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/products/%s?%s", navigator, filterQuery))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 239, Col: 36}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 239, Col: 66}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 				if templ_7745c5c3_Err != nil {
