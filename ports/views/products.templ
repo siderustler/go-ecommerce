@@ -3,6 +3,7 @@ package views
 import "strconv"
 import "fmt"
 import "github.com/siderustler/go-ecommerce/services"
+import "github.com/google/go-querystring/query"
 
 type productViewModel struct {
 	domain services.Product
@@ -75,44 +76,21 @@ func (p *productsListViewModel) ChangeProductBasketCount(id string, basketCount 
 }
 
 type productListFragment struct{}
-type sortFilterFragment struct{}
 
 var ProductListFragment = productListFragment{}
-var SortFilterFragment = sortFilterFragment{}
-
-// Desktop
-/*
-	dla Desktopu wyswietlamy po lewej sort filter i po prawej rpodukty
-	po sfiltrowaniu, updateujmy produkty i przekeirowujemy na 1 strone
-	po sortowaniu updatujemy produkty i zostajemy an aktualenj stronie
-
-	jak ograc?
-
-	get /rpoducts/1,
-	ktos chce przefiltrowac to post /products/filter i wyswietlenie bledu na inpucie lub zaktualizowanie produktow.
-*/
-// Mobile
-/*
-	dla Mobile wyswietlamy albo filtry albo sort albo produkty
-	Na poczatku wyswietlamy produkty
-	Jak ktos kliknie FIltruj, wyswietamy filtry
-	Jak ktos kliknie Sortuj wysweitlamy sorty
-	Jak ktos wybierze sortowanie / filtrowanie to wyswietlamy zaktualizowane produkty
-
-	jak to gorac?
-
-	get products/1
-	ktos chce przefiltrowac klika filter
-	get products/filter
-	wyswietlamy filtr
-	post products/filter
-	wyswietlamy produkty
-*/
 
 templ Products(productsListViewModel productsListViewModel) {
 	{{
-		_ = "/products/" + strconv.Itoa(productsListViewModel.actualPage)
-		filterPath := "/filter/products"
+		backUrl := "/products/" + strconv.Itoa(productsListViewModel.actualPage)
+		var filterPath string
+		queries, _ := query.Values(productsListViewModel.filter)
+		isAnyFilterIncluded := len(queries) > 0
+		if isAnyFilterIncluded {
+			filterPath = "/filter/products?" + queries.Encode()
+			backUrl += "?" + queries.Encode()
+		} else {
+			filterPath = "/filter/products"
+		}
 	}}
 	@layout() {
 		<div class="flex flex-col xl:flex-row items-center justify-center">
@@ -120,16 +98,16 @@ templ Products(productsListViewModel productsListViewModel) {
 				@sortFilter(filterPath, "Sortuj")
 				@sortFilter(filterPath, "Filtruj")
 			</section>
-			<section class="flex flex-row gap-8">
-				<section class="px-2 py-8 md:px-6 md:py-8 rounded-3xl bg-grey-200 shadow-md max-w-xl hidden lg:block">
+			<section class="flex flex-row gap-8 w-full justify-center">
+				<section class="px-2 py-8 md:px-6 md:py-8 rounded-3xl bg-grey-200 shadow-md min-w-1/4 max-w-1/3 hidden xl:block">
 					@filter(productsListViewModel.filter)
 				</section>
 				@templ.Fragment(ProductListFragment) {
-					<section id="products" class="px-4 py-2 md:px-6 md:py-4 lg:px-12 lg:py-8 shadow-md rounded-3xl bg-grey-200 max-w-4xl">
+					<section id="products" class="flex flex-col w-fit sm:min-w-2/3 xl:min-w-1/2 px-4 py-2 sm:px-6 sm:py-4 lg:px-12 lg:py-8 shadow-md rounded-3xl bg-grey-200 max-w-4xl">
 						@descriptor("Products", "p-4")
-						<div class="flex flex-col pb-8 items-center justify-center gap-4 md:gap-6 lg:gap-12">
+						<div class="flex flex-col pb-8 items-center justify-center gap-4 sm:gap-6 lg:gap-12">
 							for _, product := range productsListViewModel.products {
-								@productItem(product, productsListViewModel.actualPage)
+								@productItem(product, productsListViewModel.actualPage, backUrl)
 							}
 							@paginator(productsListViewModel.actualPage, productsListViewModel.maxPagesBoundary)
 						</div>
@@ -165,13 +143,13 @@ templ sortFilter(endpoint, content string) {
 	</a>
 }
 
-templ productItem(viewModel productViewModel, page int) {
-	<div class="flex flex-col md:flex-row py-8 px-2 md:p-8 gap-3 shadow-sm rounded-2xl bg-grey-100">
+templ productItem(viewModel productViewModel, page int, backUrl string) {
+	<div class="flex flex-col md:flex-row py-8 px-2 md:p-8 gap-3 min-w-full xl:min-w-1/2 shadow-sm rounded-2xl bg-grey-100">
 		<a href={ "/products/details/" + viewModel.domain.ID }>
 			<img src={ viewModel.domain.Image } alt={ viewModel.domain.Name + " image" } class="rounded-2xl lg:rounded-3xl shadow-lg max-w-72 max-h-72 mx-auto"/>
 		</a>
 		<div class="flex flex-col gap-3 md:gap-6">
-			<a href={ "/products/details/" + viewModel.domain.ID }>
+			<a href={ fmt.Sprintf("/products/details/%s?back=%s", viewModel.domain.ID, backUrl) }>
 				@infoWrapper() {
 					@descriptor("Nazwa produktu", "")
 					<h1 class="text-xl">{ viewModel.domain.Name }</h1>

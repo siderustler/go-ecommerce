@@ -1,14 +1,14 @@
 package views
 
 type FilterViewModel struct {
-	PriceFrom       float32 `form:"price-from"`
+	PriceFrom       float32 `form:"price-from,omitempty" query:"price-from,omitempty" url:"price-from,omitempty"`
 	priceFromErr    string
-	PriceTo         float32 `form:"price-to"`
-	Machines        bool    `form:"machines"`
-	Gardening       bool    `form:"gardening"`
-	Parts           bool    `form:"parts"`
-	Electro         bool    `form:"electro"`
-	Electromachines bool    `form:"electroMachines"`
+	PriceTo         float32 `form:"price-to" query:"price-to" url:"price-to,omitempty"`
+	Machines        bool    `form:"machines" query:"machines" url:"machines,omitempty"`
+	Gardening       bool    `form:"gardening" query:"gardening" url:"gardening,omitempty"`
+	Parts           bool    `form:"parts" query:"parts" url:"parts,omitempty"`
+	Electro         bool    `form:"electro" query:"electro" url:"electro,omitempty"`
+	Electromachines bool    `form:"electroMachines" query:"electroMachines" url:"electroMachines,omitempty"`
 }
 
 func (f *FilterViewModel) Validate() {
@@ -152,7 +152,6 @@ templ filterItem(name, icon, iconAlt, content string, checked bool) {
 		class="relative group p-3 bg-grey-100 has-checked:bg-primary-100 has-checked:inset-shadow-xs has-[input:not(:checked)]:shadow-lg rounded-xl flex flex-col items-center justify-center w-40 min-h-36 text-center hover:bg-primary-200"
 	>
 		<input
-			id="price-input"
 			name={ name }
 			type="checkbox"
 			class="absolute left-0 top-0 z-10 w-full h-full opacity-0"

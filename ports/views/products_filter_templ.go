@@ -9,14 +9,14 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 type FilterViewModel struct {
-	PriceFrom       float32 `form:"price-from"`
+	PriceFrom       float32 `form:"price-from,omitempty" query:"price-from,omitempty" url:"price-from,omitempty"`
 	priceFromErr    string
-	PriceTo         float32 `form:"price-to"`
-	Machines        bool    `form:"machines"`
-	Gardening       bool    `form:"gardening"`
-	Parts           bool    `form:"parts"`
-	Electro         bool    `form:"electro"`
-	Electromachines bool    `form:"electroMachines"`
+	PriceTo         float32 `form:"price-to" query:"price-to" url:"price-to,omitempty"`
+	Machines        bool    `form:"machines" query:"machines" url:"machines,omitempty"`
+	Gardening       bool    `form:"gardening" query:"gardening" url:"gardening,omitempty"`
+	Parts           bool    `form:"parts" query:"parts" url:"parts,omitempty"`
+	Electro         bool    `form:"electro" query:"electro" url:"electro,omitempty"`
+	Electromachines bool    `form:"electroMachines" query:"electroMachines" url:"electroMachines,omitempty"`
 }
 
 func (f *FilterViewModel) Validate() {
@@ -530,14 +530,14 @@ func filterItem(name, icon, iconAlt, content string, checked bool) templ.Compone
 			templ_7745c5c3_Var22 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "<div class=\"relative group p-3 bg-grey-100 has-checked:bg-primary-100 has-checked:inset-shadow-xs has-[input:not(:checked)]:shadow-lg rounded-xl flex flex-col items-center justify-center w-40 min-h-36 text-center hover:bg-primary-200\"><input id=\"price-input\" name=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "<div class=\"relative group p-3 bg-grey-100 has-checked:bg-primary-100 has-checked:inset-shadow-xs has-[input:not(:checked)]:shadow-lg rounded-xl flex flex-col items-center justify-center w-40 min-h-36 text-center hover:bg-primary-200\"><input name=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var23 string
 		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 156, Col: 14}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 155, Col: 14}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 		if templ_7745c5c3_Err != nil {
@@ -560,7 +560,7 @@ func filterItem(name, icon, iconAlt, content string, checked bool) templ.Compone
 		var templ_7745c5c3_Var24 string
 		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(icon)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 163, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 162, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 		if templ_7745c5c3_Err != nil {
@@ -573,7 +573,7 @@ func filterItem(name, icon, iconAlt, content string, checked bool) templ.Compone
 		var templ_7745c5c3_Var25 string
 		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(iconAlt)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 163, Col: 33}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 162, Col: 33}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 		if templ_7745c5c3_Err != nil {
@@ -586,7 +586,7 @@ func filterItem(name, icon, iconAlt, content string, checked bool) templ.Compone
 		var templ_7745c5c3_Var26 string
 		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(content)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 164, Col: 79}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 163, Col: 79}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 		if templ_7745c5c3_Err != nil {

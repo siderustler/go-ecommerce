@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/go-querystring/query"
 	"github.com/siderustler/go-ecommerce/ports/views"
 	"github.com/siderustler/go-ecommerce/services"
 )
@@ -30,7 +31,7 @@ func (h handlers) getProducts(c *fiber.Ctx) error {
 
 	var filterViewModel views.FilterViewModel
 	//FIXME render error
-	_ = c.BodyParser(&filterViewModel)
+	_ = c.QueryParser(&filterViewModel)
 	filterViewModel.Validate()
 
 	productsViewModel := views.NewProductsListViewModel(
@@ -45,9 +46,7 @@ func (h handlers) getProducts(c *fiber.Ctx) error {
 			c.Append("HX-Trigger", "validatePrice")
 			return nil
 		}
-		return render(c,views.Products(productsViewModel), views.ProductListFragment)
 	}
-
 
 	return render(c, views.Products(productsViewModel))
 }
@@ -71,6 +70,8 @@ func (h handlers) getProductDetails(c *fiber.Ctx) error {
 		}
 		return additionalInfoQueryParam == "true"
 	}
+
+	backUrl := c.Query("back")
 	productDetails, err := h.services.GetProductDetails(c.Context(), "essa")
 	if err != nil {
 		return c.Redirect("/products/1")
@@ -91,6 +92,7 @@ func (h handlers) getProductDetails(c *fiber.Ctx) error {
 			fragments = append(fragments, views.ExpandLocalInfoFragment)
 		}),
 		1,
+		backUrl,
 	)
 
 	if !isHTMXRequest(c) {
@@ -107,6 +109,7 @@ func (h handlers) postProductDetailsDecrement(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Redirect("/products/1")
 	}
+	backUrl := c.Query("back")
 	productViewModel := views.NewProductDetailViewModel(
 		productDetails,
 		1,
@@ -115,6 +118,7 @@ func (h handlers) postProductDetailsDecrement(c *fiber.Ctx) error {
 		false,
 		false,
 		basketCount,
+		backUrl,
 	)
 
 	productViewModel.DecrementBasketCount()
@@ -133,7 +137,7 @@ func (h handlers) postProductDetailsIncrement(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Redirect("/products/1")
 	}
-
+	backUrl := c.Query("back")
 	productViewModel := views.NewProductDetailViewModel(
 		productDetails,
 		1,
@@ -142,6 +146,7 @@ func (h handlers) postProductDetailsIncrement(c *fiber.Ctx) error {
 		false,
 		false,
 		basketCount,
+		backUrl,
 	)
 
 	productViewModel.IncrementBasketCount()
@@ -160,6 +165,7 @@ func (h handlers) postProductDetailsBasketAdd(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Redirect("/products/1")
 	}
+	backUrl := c.Query("back")
 	productViewModel := views.NewProductDetailViewModel(
 		productDetails,
 		1,
@@ -168,6 +174,7 @@ func (h handlers) postProductDetailsBasketAdd(c *fiber.Ctx) error {
 		false,
 		false,
 		basketCount,
+		backUrl,
 	)
 
 	if !isHTMXRequest(c) {
@@ -260,12 +267,21 @@ func (h handlers) postProductsBasketAdd(c *fiber.Ctx) error {
 func (h handlers) getFilterProducts(c *fiber.Ctx) error {
 	var filterViewModel views.FilterViewModel
 	//FIXME render error
-	_ = c.BodyParser(&filterViewModel)
+	_ = c.QueryParser(&filterViewModel)
 	filterViewModel.Validate()
+
+	queries,_ := query.Values(filterViewModel)
+	isAnyQueryIncluded := len(queries) > 0
+	var url string
+	if isAnyQueryIncluded {
+		url = "/filter/products?"+queries.Encode()
+	} else {
+		url = "/filter/products"
+	}
 	if isHTMXRequest(c) {
 		currentUrl, ok :=  c.GetReqHeaders()["Hx-Current-Url"]
 		if ok && len(currentUrl) >= 1 && !strings.HasSuffix(currentUrl[0], "/filter/products") {
-			c.Append("HX-Push-Url", "/filter/products")
+			c.Append("HX-Push-Url", url)
 		}
 		return render(c, views.ProductsFilter(filterViewModel), views.ProductsFilterFragment)
 	}
@@ -293,7 +309,6 @@ func (h handlers) filterProductsPriceValidate(c *fiber.Ctx) error {
 
 func (h handlers) postFilterProducts(c *fiber.Ctx) error {
 	var filterViewModel views.FilterViewModel
-	//FIXME render error
 	_ = c.BodyParser(&filterViewModel)
 	filterViewModel.Validate()
 	page,_ := c.ParamsInt("prod")
@@ -304,6 +319,16 @@ func (h handlers) postFilterProducts(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Redirect("/products/1")
 	}
+
+	queries,_ := query.Values(filterViewModel)
+	var url string
+	isAnyQueryIncluded := len(queries) > 0
+	if isAnyQueryIncluded {
+		url = "/products/1?"+queries.Encode()
+	} else {
+		url = "/products/1"
+	}
+
 	productsListViewModel := views.NewProductsListViewModel(products,filterViewModel,page,10)
 	if isHTMXRequest(c) {
 		//FIXME -- rather than using events, 
@@ -311,8 +336,9 @@ func (h handlers) postFilterProducts(c *fiber.Ctx) error {
 		if filterViewModel.HasError() {
 			c.Append("HX-Trigger", "validatePrice")
 		}
-		c.Append("HX-Push-Url", "/products/1")
+
+		c.Append("HX-Push-Url", url)
 		return render(c,views.Products(productsListViewModel), views.ProductListFragment)
 	}
-	return render(c,views.Products(productsListViewModel))
+	return c.Redirect(url)
 }

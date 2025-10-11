@@ -3,6 +3,7 @@ package views
 import "strconv"
 import "strings"
 import "github.com/siderustler/go-ecommerce/services"
+import string
 
 type productDetailViewModel struct {
 	domain services.ProductDetail
@@ -13,6 +14,7 @@ type productDetailViewModel struct {
 	isTechnicalParametersInfoExpanded bool
 	isShippingInfoExpanded            bool
 	isLocalInfoExpanded               bool
+	backUrl                           string
 }
 
 func NewProductDetailViewModel(
@@ -23,6 +25,7 @@ func NewProductDetailViewModel(
 	isShippingInfoExpanded bool,
 	isLocalInfoExpanded bool,
 	addBasketCount int,
+	backUrl string,
 ) productDetailViewModel {
 	if selectedImage < 0 || selectedImage > len(domain.Images)-1 {
 		selectedImage = 0
@@ -31,13 +34,14 @@ func NewProductDetailViewModel(
 		addBasketCount = 1
 	}
 	return productDetailViewModel{
-		domain: domain,
+		domain:                            domain,
 		selectedImage:                     selectedImage,
 		isProductInfoExpanded:             isProductInfoExpanded,
 		isLocalInfoExpanded:               isLocalInfoExpanded,
 		isShippingInfoExpanded:            isShippingInfoExpanded,
 		isTechnicalParametersInfoExpanded: isTechnicalParametersInfoExpanded,
 		addBasketCount:                    addBasketCount,
+		backUrl:                           backUrl,
 	}
 }
 
@@ -189,7 +193,7 @@ if len(product.domain.ProductInfo) > 0 {
 							}
 						}
 						<a
-							href="/products/1"
+							href={ product.backUrl }
 							class="flex items-center justify-center gap-1 md:gap-2 lg:gap-4 px-4 md:px-5 lg:px-6 py-2 md:py-3 mx-2 text-secondary-900 border-2 border-secondary-500 rounded-xl text-center text-sm"
 						>
 							<img src="/public/icons/chevron-left-secondary.svg" alt="back icon" width="24px" height="24px"/>
