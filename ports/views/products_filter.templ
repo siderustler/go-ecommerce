@@ -211,8 +211,8 @@ templ radioInput(label, value string, sort SortSpecifier) {
 	{{
 		checked := string(sort) == label
 	}}
-	<div class="group has-checked:bg-tertiary-300 flex gap-2 md:gap-4 lg:gap-6 px-12 py-3 border-2 border-tertiary-500 rounded-2xl w-full items-center">
-		<input id={ value } type="radio" name="sort" value={ value } class="w-12 h-12" checked={ checked }/>
+	<div class="group shadow-lg has-checked:bg-tertiary-300 flex gap-2 md:gap-4 lg:gap-6 px-12 py-3 border-2 border-tertiary-500 rounded-2xl w-full items-center">
+		<input id={ value } type="radio" name="sort" value={ value } class="w-10 h-10" checked={ checked }/>
 		<label for={ value } class="text-tertiary-900">{ label }</label>
 	</div>
 }
