@@ -72,17 +72,17 @@ templ ProductsFilter(filterViewModel FilterViewModel) {
 		}
 	}}
 	@layout() {
+		//<div id="products" class="flex flex-col xl:flex-row items-center justify-center">
+		// <section class="flex flex-row gap-4 max-w-4xl items-center justify-center pb-4">
+		// 	@sortFilter(filterPath, "Sortuj")
+		// 	@sortFilter(filterPath, "Filtruj")
+		// </section>
 		@templ.Fragment(ProductsFilterFragment) {
-			<div id="products" class="flex flex-col xl:flex-row items-center justify-center">
-				<section class="flex flex-row gap-4 max-w-4xl items-center justify-center pb-4">
-					@sortFilter(filterPath, "Sortuj")
-					@sortFilter(filterPath, "Filtruj")
-				</section>
-				<section class="px-2 py-8 md:px-6 md:py-8 rounded-3xl bg-grey-200 shadow-md w-full">
-					@filter(filterViewModel)
-				</section>
-			</div>
+			<section id="products" class="px-2 py-8 md:px-6 md:py-8 rounded-3xl bg-grey-200 shadow-md w-full">
+				@filter(filterViewModel)
+			</section>
 		}
+		//</div>
 	}
 }
 
@@ -211,8 +211,8 @@ templ radioInput(label, value string, sort SortSpecifier) {
 	{{
 		checked := string(sort) == label
 	}}
-	<div class="group shadow-lg has-checked:bg-tertiary-300 flex gap-2 md:gap-4 lg:gap-6 px-12 py-3 border-2 border-tertiary-500 rounded-2xl w-full items-center">
-		<input id={ value } type="radio" name="sort" value={ value } class="w-10 h-10" checked={ checked }/>
+	<div class="group shadow-lg has-checked:bg-tertiary-300 flex gap-2 md:gap-4 lg:gap-6 px-4 py-3 border-2 border-tertiary-500 rounded-2xl w-full items-center">
+		<input id={ value } type="radio" name="sort" value={ value } class="w-10 h-10 ml-4" checked={ checked }/>
 		<label for={ value } class="text-tertiary-900">{ label }</label>
 	</div>
 }
