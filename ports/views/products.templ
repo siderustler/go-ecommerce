@@ -93,17 +93,17 @@ templ Products(productsListViewModel productsListViewModel) {
 		}
 	}}
 	@layout() {
-		<div class="flex flex-col xl:flex-row items-center justify-center">
-			<section class="flex flex-row gap-4 max-w-4xl items-center justify-center pb-4 xl:hidden">
-				@sortFilter(filterPath, "Sortuj")
-				@sortFilter(filterPath, "Filtruj")
-			</section>
-			<section class="flex flex-row gap-8 w-full justify-center">
-				<section class="px-2 py-8 md:px-6 md:py-8 rounded-3xl bg-grey-200 shadow-md min-w-1/4 max-w-1/3 hidden xl:block">
-					@filter(productsListViewModel.filter)
+		@templ.Fragment(ProductListFragment) {
+			<div id="products" class="flex flex-col xl:flex-row items-center justify-center">
+				<section class="flex flex-row gap-4 max-w-4xl items-center justify-center pb-4 xl:hidden">
+					@sortFilter(filterPath, "Sortuj")
+					@sortFilter(filterPath, "Filtruj")
 				</section>
-				@templ.Fragment(ProductListFragment) {
-					<section id="products" class="flex flex-col w-fit sm:min-w-2/3 xl:min-w-1/2 px-4 py-2 sm:px-6 sm:py-4 lg:px-12 lg:py-8 shadow-md rounded-3xl bg-grey-200 max-w-4xl">
+				<section class="flex flex-row gap-8 w-full justify-center">
+					<section class="px-2 py-8 md:px-6 md:py-8 rounded-3xl bg-grey-200 shadow-md min-w-1/4 max-w-1/3 hidden xl:block">
+						@filter(productsListViewModel.filter)
+					</section>
+					<section class="flex flex-col w-fit sm:min-w-2/3 xl:min-w-1/2 px-4 py-2 sm:px-6 sm:py-4 lg:px-12 lg:py-8 shadow-md rounded-3xl bg-grey-200 max-w-4xl">
 						@descriptor("Products", "p-4")
 						<div class="flex flex-col pb-8 items-center justify-center gap-4 sm:gap-6 lg:gap-12">
 							for _, product := range productsListViewModel.products {
@@ -112,9 +112,9 @@ templ Products(productsListViewModel productsListViewModel) {
 							@paginator(productsListViewModel.actualPage, productsListViewModel.maxPagesBoundary, filterQuery)
 						</div>
 					</section>
-				}
-			</section>
-		</div>
+				</section>
+			</div>
+		}
 	}
 }
 
@@ -129,8 +129,8 @@ templ sortFilter(endpoint, content string) {
 	<a
 		href={ endpoint }
 		class="px-2 py-2 flex flex-row gap-2 lg:gap-4 bg-grey-200 items-center justify-center min-w-36 rounded-xl text-tertiary-900"
-		hx-get="/filter/products"
-		hx-target="next section"
+		hx-get={ endpoint }
+		hx-target="#products"
 		hx-swap="outerHTML"
 	>
 		{ content }
