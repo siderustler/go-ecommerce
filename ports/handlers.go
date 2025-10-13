@@ -341,3 +341,7 @@ func (h handlers) postFilterProducts(c *fiber.Ctx) error {
 	}
 	return c.Redirect(url)
 }
+
+func (h handlers) getDashboard(c *fiber.Ctx) error {
+	return render(c,views.Dashboard())
+}

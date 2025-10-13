@@ -1,0 +1,79 @@
+package views
+
+import "github.com/siderustler/go-ecommerce/services"
+
+type dashboardViewModel struct {
+	products           []services.Product
+	selectedProduct    int
+	maxDisplayedImages int
+}
+
+type mobileImageSelectorFragment struct{}
+
+var MobileImageSelectorFragment = mobileImageSelectorFragment{}
+
+func NewDashboardViewModel(products []services.Product, selectedProduct int) dashboardViewModel {
+	isOutOfBounds := selectedProduct < 0 || selectedProduct > len(products)-1
+	if isOutOfBounds {
+		selectedProduct = 0
+	}
+	return dashboardViewModel{
+		products:           products,
+		selectedProduct:    selectedProduct,
+		maxDisplayedImages: 3,
+	}
+}
+
+templ Dashboard() {
+	@layout() {
+		<section class="flex flex-col gap-4 md:gap-8 lg:gap-16">
+			@dashSection() {
+				@dashHeading("Polecane produkty", "/public/icons/additional-info.svg", "polecane produkty ikona")
+			}
+			@dashSection() {
+				@dashHeading("Polecane produkty", "/public/icons/additional-info.svg", "polecane produkty ikona")
+			}
+			@dashSection() {
+				@dashHeading("Polecane produkty", "/public/icons/additional-info.svg", "polecane produkty ikona")
+			}
+		</section>
+	}
+}
+
+templ dashHeading(content, icon, iconAlt string) {
+	<div class="rounded-xl p-4 shadow-lg w-fit">
+		<div class="flex gap-3 md:gap-4 lg:gap-6 border-b-2 pb-2 lg:pb-3 pt-4 px-3 md:px-4 border-b-grey-300 w-fit">
+			<img src={ icon } alt={ iconAlt } width="24px" height="24px"/>
+			<h2 class="text-grey-700">{ content }</h2>
+		</div>
+	</div>
+}
+
+templ dashSection() {
+	<section class="p-4 md:p-6 lg:p-8">
+		<div class="flex flex-col gap-4 md:gap-6 lg:gap-8 pb-4 px-2 py-2 rounded-2xl shadow-lg">
+			{ children... }
+		</div>
+	</section>
+}
+
+templ promotedProductsSection(dashboardViewModel dashboardViewModel) {
+	@templ.Fragment(MobileImageSelectorFragment) {
+		<div id="image-wrapper" class="flex flex-col items-center">
+			{{ selectedProduct := dashboardViewModel.products[dashboardViewModel.selectedProduct] }}
+			<img
+				alt={ selectedProduct.Name + " image" }
+				src={ selectedProduct.Image }
+				class="rounded-2xl shadow-xl htmx-swapping:opacity-0 transition-opacity duration-200 htmx-settling:opacity-100 min-w-80 min-h-80"
+			/>
+		</div>
+		{{
+			imageBasePath := "/products/details/" + selectedProduct.ID + "?img="
+			images := make([]string, 0, len(dashboardViewModel.products))
+			for _, product := range dashboardViewModel.products {
+				images = append(images, product.Image)
+			}
+		}}
+		@mobileStepper(imageBasePath, dashboardViewModel.selectedProduct, images)
+	}
+}

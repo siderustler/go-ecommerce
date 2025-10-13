@@ -24,6 +24,7 @@ func NewHttpServer(services *services.Services) *httpServer {
 	h.srv.Get("/products/:prod", h.handlers.getProducts)
 	h.srv.Get("/products/details/:product", h.handlers.getProductDetails)
 	h.srv.Get("/filter/products", h.handlers.getFilterProducts)
+	h.srv.Get("/", h.handlers.getDashboard)
 
 	h.srv.Post("/products/details/:product/decrement", h.handlers.postProductDetailsDecrement)
 	h.srv.Post("/products/details/:product/increment", h.handlers.postProductDetailsIncrement)
