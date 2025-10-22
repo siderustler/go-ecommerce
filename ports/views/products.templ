@@ -33,16 +33,16 @@ func NewProductViewModel(product services.Product, addBasketCount int) productVi
 	}
 }
 
-func mapDomainProductsToProductsViewModel(products []services.Product) map[productID]productViewModel {
-	productViewModels := make(map[productID]productViewModel, len(products))
+func mapDomainProductsToProductsViewModel(products []services.Product) []productViewModel {
+	productViewModels := make([]productViewModel, 0,len(products))
 	for _, product := range products {
-		productViewModels[productID(product.ID)] = productViewModel{domain: product, addBasketCount: 1}
+		productViewModels = append(productViewModels,productViewModel{domain: product, addBasketCount: 1})
 	}
 	return productViewModels
 }
 
 type productsListViewModel struct {
-	products map[productID]productViewModel
+	products []productViewModel
 	filter   FilterViewModel
 
 	actualPage       int
@@ -68,10 +68,10 @@ func (p *productsListViewModel) ChangeProductBasketCount(id string, basketCount 
 	if basketCount < 1 {
 		basketCount = 1
 	}
-	product, ok := p.products[productID(id)]
-	if ok {
-		product.addBasketCount = basketCount
-		p.products[productID(id)] = product
+	for i :=0; i <len(p.products);i++ {
+		if p.products[i].domain.ID == id {
+			p.products[i].addBasketCount = basketCount
+		}
 	}
 }
 

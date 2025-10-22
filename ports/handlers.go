@@ -251,7 +251,7 @@ func (h handlers) postProductsBasketAdd(c *fiber.Ctx) error {
 	productsListViewModel := views.NewProductsListViewModel(products,filterViewModel, page, 10)
 	productsListViewModel.ChangeProductBasketCount(productID, basketCount)
 
-	fmt.Printf("Adding to basket: %s and count: %v", productID, productsListViewModel)
+	fmt.Printf("Adding to basket count %d of item %s\n", basketCount, productID)
 
 	if isHTMXRequest(c) {
 		fragments := append([]any{}, fmt.Sprintf("%+v-%s", views.BasketAddCounter, productID))
