@@ -649,7 +649,7 @@ func radioInput(label, value string, sort SortSpecifier) templ.Component {
 		var templ_7745c5c3_Var26 string
 		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 215, Col: 19}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 213, Col: 19}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 		if templ_7745c5c3_Err != nil {
@@ -662,7 +662,7 @@ func radioInput(label, value string, sort SortSpecifier) templ.Component {
 		var templ_7745c5c3_Var27 string
 		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 215, Col: 60}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 213, Col: 60}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 		if templ_7745c5c3_Err != nil {
@@ -675,7 +675,7 @@ func radioInput(label, value string, sort SortSpecifier) templ.Component {
 		var templ_7745c5c3_Var28 string
 		templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(checked)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 215, Col: 103}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 213, Col: 103}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 		if templ_7745c5c3_Err != nil {
@@ -688,7 +688,7 @@ func radioInput(label, value string, sort SortSpecifier) templ.Component {
 		var templ_7745c5c3_Var29 string
 		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 216, Col: 20}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 214, Col: 20}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 		if templ_7745c5c3_Err != nil {
@@ -701,7 +701,7 @@ func radioInput(label, value string, sort SortSpecifier) templ.Component {
 		var templ_7745c5c3_Var30 string
 		templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 216, Col: 56}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 214, Col: 56}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 		if templ_7745c5c3_Err != nil {

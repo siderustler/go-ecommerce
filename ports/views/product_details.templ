@@ -85,15 +85,7 @@ templ ProductDetails(product productDetailViewModel) {
 			<div class="min-w-sm max-w-md md:max-w-3xl">
 				<div class="md:flex gap-6">
 					@templ.Fragment(ImageSelectorFragment) {
-						<div id="image-wrapper" class="flex flex-col items-center">
-							<img
-								alt={ product.domain.Name + " image" }
-								src={ product.domain.Images[product.selectedImage] }
-								class="rounded-2xl shadow-xl htmx-swapping:opacity-0 transition-opacity duration-200 htmx-settling:opacity-100 min-w-80 min-h-80"
-							/>
-							{{ imageBasePath := "/products/details/" + product.domain.ID + "?img=" }}
-							@mobileStepper(imageBasePath, product.selectedImage, product.domain.Images)
-						</div>
+						@imageSlider(product)
 					}
 					<div class="md:max-w-md">
 						@infoWrapper() {
@@ -102,16 +94,16 @@ templ ProductDetails(product productDetailViewModel) {
 						}
 						@infoWrapper() {
 							@descriptor("Cena", "")
-							<h2 class="text-primary-700 text-xl">{ strconv.FormatFloat(float64(product.domain.Price), 'f', 4, 32) + " zł" }</h2>
+							<h2 class="text-primary-700 text-xl">{ strconv.FormatFloat(float64(product.domain.Price), 'f', 2, 32) + " zł" }</h2>
 						}
 						@infoWrapper() {
 							@descriptor("Opis produktu", "")
 							<h3>
 								{{
-productInfo := "Świetny produkt"
-if len(product.domain.ProductInfo) > 0 {
-	productInfo = product.domain.ProductInfo[0]
-}
+									productInfo := "Świetny produkt"
+									if len(product.domain.ProductInfo) > 0 {
+										productInfo = product.domain.ProductInfo[0]
+									}
 								}}
 								{ productInfo }
 							</h3>
@@ -123,10 +115,10 @@ if len(product.domain.ProductInfo) > 0 {
 						@infoWrapper() {
 							@descriptor("Dodatkowe informacje", "xl:text-center")
 							{{
-	additionalProductInfo := "Świetny produkt"
-	if len(product.domain.ProductInfo) > 1 {
-		additionalProductInfo = strings.Join(product.domain.ProductInfo[1:], "\n")
-	}
+								additionalProductInfo := "Świetny produkt"
+								if len(product.domain.ProductInfo) > 1 {
+									additionalProductInfo = strings.Join(product.domain.ProductInfo[1:], "\n")
+								}
 							}}
 							@slideMenu() {
 								@templ.Fragment(ExpandProductInfoFragment) {
@@ -179,9 +171,9 @@ if len(product.domain.ProductInfo) > 0 {
 							@templ.Fragment(BasketAddCounter) {
 								<div id="basket-adder" class="flex justify-center gap-6 md:gap-4 min-h-14 md:flex-col">
 									{{
-								decrementPath := basePath + "/decrement"
-								incrementPath := basePath + "/increment"
-								addBasketPath := basePath + "/basket-add"
+										decrementPath := basePath + "/decrement"
+										incrementPath := basePath + "/increment"
+										addBasketPath := basePath + "/basket-add"
 									}}
 									@counter(product.addBasketCount, decrementPath, incrementPath, "#basket-adder")
 									<form method="post" action={ addBasketPath } class="flex items-center justify-center">
@@ -317,11 +309,11 @@ templ infoWrapper() {
 templ slideMenuItem(id, icon, content, expandedContent string, isExpanded bool, requestPath string) {
 	<div id={ id }>
 		{{
-	if isExpanded {
-		requestPath += "false"
-	} else {
-		requestPath += "true"
-	}
+			if isExpanded {
+				requestPath += "false"
+			} else {
+				requestPath += "true"
+			}
 		}}
 		<a
 			href={ requestPath }
@@ -355,23 +347,31 @@ templ slideMenu() {
 	</div>
 }
 
-templ mobileStepper(basePath string, selected int, productImages []string) {
-	<div class="flex gap-6 p-6 justify-center items-center">
-		for idx, _ := range productImages {
-			{{ path := basePath + strconv.Itoa(idx) }}
-			<a
-				href={ path }
-				if selected == idx {
-					class="bg-primary-700 w-2 h-2 rounded-full shadow-xl"
-				} else {
-					class="bg-primary-500 w-1.5 h-1.5 rounded-full shadow-xl"
-				}
-				hx-get={ path }
-				hx-target="#image-wrapper"
-				hx-swap="outerHTML swap:0.2s settle:0.2s"
-				hx-push-url="true"
-			></a>
-		}
+templ imageSlider(productViewModel productDetailViewModel) {
+	{{ imageBasePath := "/products/details/" + productViewModel.domain.ID + "?img=" }}
+	<div id="image-wrapper" class="flex flex-col items-center">
+		<img
+			alt={ productViewModel.domain.Name + " image" }
+			src={ productViewModel.domain.Images[productViewModel.selectedImage] }
+			class="rounded-2xl shadow-xl htmx-swapping:opacity-0 transition-opacity duration-200 htmx-settling:opacity-100 min-w-80 min-h-80"
+		/>
+		<div class="flex gap-6 p-6 justify-center items-center">
+			for i:=0; i<len(productViewModel.domain.Images); i++ {
+				{{ path := imageBasePath + strconv.Itoa(i) }}
+				<a
+					href={ path }
+					if productViewModel.selectedImage == i {
+						class="bg-primary-700 w-2 h-2 rounded-full shadow-xl"
+					} else {
+						class="bg-primary-500 w-1.5 h-1.5 rounded-full shadow-xl"
+					}
+					hx-get={ path }
+					hx-target="#image-wrapper"
+					hx-swap="outerHTML swap:0.2s settle:0.2s"
+					hx-push-url="true"
+				></a>
+			}
+		</div>
 	</div>
 }
 
@@ -384,22 +384,22 @@ const (
 
 templ desktopStepperNavigator(direction direction, basePath string, actualStep int, boundary int) {
 	{{
-	prevImage, nextImage := actualStep-1, actualStep+1
-	if prevImage < 0 {
-		prevImage = boundary
-	}
-	if nextImage > boundary {
-		nextImage = 0
-	}
-	var path, icon string
-	if direction == left {
-		path = basePath + strconv.Itoa(prevImage)
-		icon = "/icons/chevron-left"
-	}
-	if direction == right {
-		path = basePath + strconv.Itoa(nextImage)
-		icon = "/icons/chevron-right"
-	}
+		prevImage, nextImage := actualStep-1, actualStep+1
+		if prevImage < 0 {
+			prevImage = boundary
+		}
+		if nextImage > boundary {
+			nextImage = 0
+		}
+		var path, icon string
+		if direction == left {
+			path = basePath + strconv.Itoa(prevImage)
+			icon = "/icons/chevron-left"
+		}
+		if direction == right {
+			path = basePath + strconv.Itoa(nextImage)
+			icon = "/icons/chevron-right"
+		}
 	}}
 	<a
 		href={ path }

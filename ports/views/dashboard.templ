@@ -59,21 +59,7 @@ templ dashSection() {
 
 templ promotedProductsSection(dashboardViewModel dashboardViewModel) {
 	@templ.Fragment(MobileImageSelectorFragment) {
-		<div id="image-wrapper" class="flex flex-col items-center">
-			{{ selectedProduct := dashboardViewModel.products[dashboardViewModel.selectedProduct] }}
-			<img
-				alt={ selectedProduct.Name + " image" }
-				src={ selectedProduct.Image }
-				class="rounded-2xl shadow-xl htmx-swapping:opacity-0 transition-opacity duration-200 htmx-settling:opacity-100 min-w-80 min-h-80"
-			/>
-		</div>
-		{{
-			imageBasePath := "/products/details/" + selectedProduct.ID + "?img="
-			images := make([]string, 0, len(dashboardViewModel.products))
-			for _, product := range dashboardViewModel.products {
-				images = append(images, product.Image)
-			}
-		}}
-		@mobileStepper(imageBasePath, dashboardViewModel.selectedProduct, images)
+		<div class="md:hidden"></div>
+		<div class="hidden md:flex"></div>
 	}
 }
