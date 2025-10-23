@@ -43,8 +43,8 @@ func (h handlers) getProducts(c *fiber.Ctx) error {
 	if isHTMXRequest(c) {
 		if filterViewModel.HasError() {
 			c.Append("HX-Trigger", "validatePrice")
-			return nil
 		}
+		return render(c,views.Products(productsViewModel), views.ProductListFragment)
 	}
 
 	return render(c, views.Products(productsViewModel))
@@ -343,5 +343,17 @@ func (h handlers) postFilterProducts(c *fiber.Ctx) error {
 }
 
 func (h handlers) getDashboard(c *fiber.Ctx) error {
-	return render(c,views.Dashboard())
+	slide := c.QueryInt("slide", 0)
+	promotionPage := c.QueryInt("promotions",0)
+	promos, err := h.services.GetPromotions(c.Context())
+	//FIXME
+	if err != nil {
+		fmt.Printf("retrieving promotions: %v",err)
+		return c.Redirect("/")
+	}
+
+	if isHTMXRequest(c) {
+		return render(c,views.Dashboard(views.NewDashboardViewModel(promos,slide,promotionPage)), views.PromotedProductSelectorFragment)
+	}
+	return render(c,views.Dashboard(views.NewDashboardViewModel(promos,slide,promotionPage)))
 }

@@ -1,39 +1,60 @@
 package views
 
 import "github.com/siderustler/go-ecommerce/services"
+import "strconv"
+import "math"
 
 type dashboardViewModel struct {
-	products           []services.Product
-	selectedProduct    int
-	maxDisplayedImages int
+	products            []services.Product
+	selectedProduct     int
+	displayedPromotions int
+	maxPromotions       int
+	maxProductsPerPage  int
 }
 
-type mobileImageSelectorFragment struct{}
+type promotedProductSelectorFragment struct{}
 
-var MobileImageSelectorFragment = mobileImageSelectorFragment{}
+var PromotedProductSelectorFragment = promotedProductSelectorFragment{}
 
-func NewDashboardViewModel(products []services.Product, selectedProduct int) dashboardViewModel {
-	isOutOfBounds := selectedProduct < 0 || selectedProduct > len(products)-1
-	if isOutOfBounds {
+func maxPromotionPages(allProducts int, productsPerPage int) int {
+	return int(math.Ceil(float64(allProducts / productsPerPage)))
+}
+
+func NewDashboardViewModel(products []services.Product, selectedProduct, displayedPromotions int) dashboardViewModel {
+	isSelectedProductOutOfBounds := selectedProduct < 0 || selectedProduct > len(products)-1
+	if isSelectedProductOutOfBounds {
 		selectedProduct = 0
 	}
+
+	maxProductsPerPage := 3
+	maxPromotions := maxPromotionPages(len(products), maxProductsPerPage)
+
+	isDisplayedPromotionsOutOfBounds := displayedPromotions < 0 || displayedPromotions > maxPromotions
+	if isDisplayedPromotionsOutOfBounds {
+		displayedPromotions = 0
+	}
 	return dashboardViewModel{
-		products:           products,
-		selectedProduct:    selectedProduct,
-		maxDisplayedImages: 3,
+		products:            products,
+		selectedProduct:     selectedProduct,
+		displayedPromotions: displayedPromotions,
+		maxPromotions:       maxPromotions,
+		maxProductsPerPage:  maxProductsPerPage,
 	}
 }
 
-templ Dashboard() {
+templ Dashboard(dashboardViewModel dashboardViewModel) {
 	@layout() {
 		<section class="flex flex-col gap-4 md:gap-8 lg:gap-16">
-			@dashSection() {
+			@dashSection("promotions") {
+				@templ.Fragment(PromotedProductSelectorFragment) {
+					@dashHeading("Polecane produkty", "/public/icons/additional-info.svg", "polecane produkty ikona")
+					@promotedProductsSection(dashboardViewModel)
+				}
+			}
+			@dashSection("xx") {
 				@dashHeading("Polecane produkty", "/public/icons/additional-info.svg", "polecane produkty ikona")
 			}
-			@dashSection() {
-				@dashHeading("Polecane produkty", "/public/icons/additional-info.svg", "polecane produkty ikona")
-			}
-			@dashSection() {
+			@dashSection("xd") {
 				@dashHeading("Polecane produkty", "/public/icons/additional-info.svg", "polecane produkty ikona")
 			}
 		</section>
@@ -49,17 +70,106 @@ templ dashHeading(content, icon, iconAlt string) {
 	</div>
 }
 
-templ dashSection() {
+templ dashSection(section string) {
 	<section class="p-4 md:p-6 lg:p-8">
-		<div class="flex flex-col gap-4 md:gap-6 lg:gap-8 pb-4 px-2 py-2 rounded-2xl shadow-lg">
+		<div id={ section } class="flex flex-col gap-4 md:gap-6 lg:gap-8 pb-4 px-2 py-2 rounded-2xl shadow-lg">
 			{ children... }
 		</div>
 	</section>
 }
 
 templ promotedProductsSection(dashboardViewModel dashboardViewModel) {
-	@templ.Fragment(MobileImageSelectorFragment) {
-		<div class="md:hidden"></div>
-		<div class="hidden md:flex"></div>
-	}
+	<div class="md:hidden flex flex-col gap-2 items-center">
+		{{
+			product := dashboardViewModel.products[dashboardViewModel.selectedProduct]
+			productPath := "/products/details/" + product.ID
+		}}
+		<a
+			href={ productPath }
+			class="flex items-center justify-center"
+		>
+			<img
+				alt={ product.Name + " image" }
+				src={ product.Image }
+				class="rounded-2xl shadow-xl htmx-swapping:opacity-0 transition-opacity duration-200 htmx-settling:opacity-100 min-w-80 min-h-80 max-w-3/4 max-h-3/4"
+			/>
+		</a>
+		<div class="flex gap-6 p-6 justify-center items-center">
+			{{
+				actual := dashboardViewModel.selectedProduct
+				isAtBeginning := actual == 0
+				isAtEnd := actual == dashboardViewModel.maxPromotions
+				var first, second, third int
+				wrap := func(val int) int {
+					if val < 0 {
+						return dashboardViewModel.maxPromotions
+					}
+					if val > dashboardViewModel.maxPromotions {
+						return 0
+					}
+					return val
+				}
+				if isAtBeginning {
+					first, second, third = actual, wrap(actual+1), wrap(actual+2)
+				} else if isAtEnd {
+					first, second, third = wrap(actual-2), wrap(actual-1), actual
+				} else {
+					first, second, third = wrap(actual-1), actual, wrap(actual+1)
+				}
+
+				slider := [3]int{first, second, third}
+			}}
+			for i:=0; i<len(slider); i++ {
+				{{ path := "/?slide=" + strconv.Itoa(slider[i]) }}
+				<a
+					href={ path }
+					hx-get={ productPath }
+					hx-target="#promotions"
+					hx-swap="innerHTML"
+					if actual == slider[i] {
+						class="bg-primary-700 w-2 h-2 rounded-full shadow-xl"
+					} else {
+						class="bg-primary-500 w-1.5 h-1.5 rounded-full shadow-xl"
+					}
+					hx-get={ path }
+					hx-target="#promotions"
+					hx-swap="innerHTML swap:0.01s settle:0.01s"
+					hx-push-url="true"
+				></a>
+			}
+		</div>
+	</div>
+	<div class="hidden md:flex items-center justify-center gap-4 md:gap-8">
+		{{
+			backPage, nextPage := dashboardViewModel.displayedPromotions-1, dashboardViewModel.displayedPromotions+1
+			if backPage < 0 {
+				backPage = dashboardViewModel.maxPromotions
+			}
+			if nextPage > dashboardViewModel.maxPromotions {
+				nextPage = 0
+			}
+		}}
+		@paginatorItem("/?promotions="+strconv.Itoa(backPage), back, "#promotions", "innerHTML", true)
+		{{
+			actualPage := dashboardViewModel.displayedPromotions
+			start := actualPage * dashboardViewModel.maxProductsPerPage
+		}}
+		for i := start; i<start+dashboardViewModel.maxProductsPerPage && i<len(dashboardViewModel.products); i++ {
+			{{
+				product := dashboardViewModel.products[i]
+				productPath := "/products/details/" + product.ID
+			}}
+			<a
+				href={ productPath }
+				class="flex items-center justify-center"
+			>
+				<img
+					alt={ product.Name + " image" }
+					src={ product.Image }
+					class="rounded-2xl shadow-xl htmx-swapping:opacity-0 transition-opacity duration-200 htmx-settling:opacity-100 min-w-80 min-h-80 max-w-3/4 max-h-3/4"
+				/>
+			</a>
+		}
+		@paginatorItem("/?promotions="+strconv.Itoa(nextPage), forward, "#promotions", "innerHTML", true)
+	</div>
 }
