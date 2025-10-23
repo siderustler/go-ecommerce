@@ -210,7 +210,7 @@ templ paginator(actualPage int, maxPagesBoundary int, filterQuery string) {
 				}
 				navigators = append(navigators, "...", strconv.Itoa(maxPagesBoundary))
 			}
-			isNearEnd := actualPage+boundary >= maxPagesBoundary
+			isNearEnd := actualPage+boundary > maxPagesBoundary
 			if isNearEnd {
 				navigators = append(navigators, "1", "...")
 				for next := maxPagesBoundary - boundary; next <= maxPagesBoundary; next++ {
@@ -227,23 +227,30 @@ templ paginator(actualPage int, maxPagesBoundary int, filterQuery string) {
 		}
 	}}
 	<div class="flex flex-row p-4 gap-4 items-center">
-		@paginatorItem(prevPage, back)
+		@paginatorItem("/products/"+strconv.Itoa(prevPage), back, "#products", "outerHTML", false)
 		for _, navigator := range navigators {
 			if navigator == "..." {
 				<p class="text-tertiary-900 m-0">...</p>
 			} else {
-				{{ onActualPage := strconv.Itoa(actualPage) == navigator }}
+				{{
+					onActualPage := strconv.Itoa(actualPage) == navigator
+					path := fmt.Sprintf("/products/%s?%s", navigator, filterQuery)
+				}}
 				<a
-					href={ fmt.Sprintf("/products/%s?%s", navigator, filterQuery) }
+					href={ path }
 					if onActualPage {
 						class="text-tertiary-900 bg-tertiary-300 px-3 py-2 rounded-lg"
 					} else {
 						class="text-tertiary-900"
 					}
+					hx-get={ path }
+					hx-target="#products"
+					hx-swap="outerHTML"
+					hx-push-url="true"
 				>{ navigator }</a>
 			}
 		}
-		@paginatorItem(nextPage, forward)
+		@paginatorItem("/products/"+strconv.Itoa(nextPage), forward, "#products", "outerHTML", false)
 	</div>
 }
 
@@ -254,7 +261,7 @@ const (
 	forward
 )
 
-templ paginatorItem(page int, paginateDirection paginateDirection) {
+templ paginatorItem(page string, paginateDirection paginateDirection, hxTarget, hxSwap string, hxPushUrl bool) {
 	{{
 		var imgPath string
 		var imgAlt string
@@ -266,5 +273,16 @@ templ paginatorItem(page int, paginateDirection paginateDirection) {
 			imgAlt = "navigate back icon"
 		}
 	}}
-	<a href={ "/products/" + strconv.Itoa(page) } class="bg-tertiary-300 w-12 h-12 p-3 rounded-full"><img src={ imgPath } alt={ imgAlt } wIDth="24px" height="24px"/></a>
+	<a
+		href={ page }
+		hx-get={ page }
+		hx-target={ hxTarget }
+		hx-swap={ hxSwap }
+		if hxPushUrl {
+			hx-push-url="true"
+		}
+		class="bg-tertiary-300 w-12 h-12 p-3 rounded-full"
+	>
+		<img src={ imgPath } alt={ imgAlt } width="24px" height="24px"/>
+	</a>
 }
