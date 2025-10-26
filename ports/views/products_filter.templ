@@ -118,12 +118,14 @@ templ filter(filterViewModel FilterViewModel) {
 					hx-post="/filter/products"
 					hx-swap="outerHTML"
 					hx-target="#products"
+					hx-indicator="#spinner, #spinner2, #spinner3"
 					if filterViewModel.HasError() {
 						disabled="true"
 					}
 				>
 					<img src="/public/icons/products-filter.svg" alt="filtruj ikona" width="24px" height="24px" class="group-disabled:opacity-50"/>
 					Filtruj
+					<img id="spinner" src="/public/icons/spinner.svg" width="24px" height="24px" alt="Loading..." class="htmx-indicator"/>
 				</button>
 				@preserveFocusOnceHandler.Once() {
 					<script>
