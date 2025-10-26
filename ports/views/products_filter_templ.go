@@ -18,7 +18,7 @@ type FilterViewModel struct {
 	Gardening       bool          `form:"gardening" query:"gardening" url:"gardening,omitempty"`
 	Parts           bool          `form:"parts" query:"parts" url:"parts,omitempty"`
 	Electro         bool          `form:"electro" query:"electro" url:"electro,omitempty"`
-	Electromachines bool          `form:"electroMachines" query:"electroMachines" url:"electroMachines,omitempty"`
+	ElectroMachines bool          `form:"electroMachines" query:"electroMachines" url:"electroMachines,omitempty"`
 	Sort            SortSpecifier `form:"sort" query:"sort" url:"sort,omitempty"`
 }
 
@@ -202,7 +202,7 @@ func filter(filterViewModel FilterViewModel) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = filterItem("electromachines", "/public/icons/electric-machines.svg", "Maszyny i urządzenia zasilające ikona", "Maszyny i urządzenia zasilające", filterViewModel.Electromachines).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = filterItem("electroMachines", "/public/icons/electric-machines.svg", "Maszyny i urządzenia zasilające ikona", "Maszyny i urządzenia zasilające", filterViewModel.ElectroMachines).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

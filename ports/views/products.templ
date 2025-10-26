@@ -227,7 +227,7 @@ templ paginator(actualPage int, maxPagesBoundary int, filterQuery string) {
 		}
 	}}
 	<div class="flex flex-row p-4 gap-4 items-center">
-		@paginatorItem("/products/"+strconv.Itoa(prevPage), back, "#products", "outerHTML", false)
+		@paginatorItem("/products/"+strconv.Itoa(prevPage), back, "#products", "outerHTML", false, "")
 		for _, navigator := range navigators {
 			if navigator == "..." {
 				<p class="text-tertiary-900 m-0">...</p>
@@ -250,7 +250,7 @@ templ paginator(actualPage int, maxPagesBoundary int, filterQuery string) {
 				>{ navigator }</a>
 			}
 		}
-		@paginatorItem("/products/"+strconv.Itoa(nextPage), forward, "#products", "outerHTML", false)
+		@paginatorItem("/products/"+strconv.Itoa(nextPage), forward, "#products", "outerHTML", false, "")
 	</div>
 }
 
@@ -261,7 +261,7 @@ const (
 	forward
 )
 
-templ paginatorItem(page string, paginateDirection paginateDirection, hxTarget, hxSwap string, hxPushUrl bool) {
+templ paginatorItem(page string, paginateDirection paginateDirection, hxTarget, hxSwap string, hxPushUrl bool, classNames string) {
 	{{
 		var imgPath string
 		var imgAlt string
@@ -281,7 +281,11 @@ templ paginatorItem(page string, paginateDirection paginateDirection, hxTarget, 
 		if hxPushUrl {
 			hx-push-url="true"
 		}
-		class="bg-tertiary-300 w-12 h-12 p-3 rounded-full"
+		if classNames != "" {
+			class={ "bg-tertiary-300 min-w-12 min-h-12 p-3 rounded-full " + classNames }
+		} else {
+			class="bg-tertiary-300 min-w-12 min-h-12 p-3 rounded-full"
+		}
 	>
 		<img src={ imgPath } alt={ imgAlt } width="24px" height="24px"/>
 	</a>

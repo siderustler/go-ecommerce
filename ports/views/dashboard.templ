@@ -44,15 +44,16 @@ func NewDashboardViewModel(products []services.Product, selectedProduct, display
 
 templ Dashboard(dashboardViewModel dashboardViewModel) {
 	@layout() {
-		<section class="flex flex-col gap-4 md:gap-8 lg:gap-16">
+		<section id="products" class="flex flex-col items-center justify-center gap-4 md:gap-8 lg:gap-16">
 			@dashSection("promotions") {
 				@templ.Fragment(PromotedProductSelectorFragment) {
-					@dashHeading("Polecane produkty", "/public/icons/additional-info.svg", "polecane produkty ikona")
+					@dashHeading("Promocje", "/public/icons/promotion-section.svg", "promocje ikona")
 					@promotedProductsSection(dashboardViewModel)
 				}
 			}
-			@dashSection("xx") {
-				@dashHeading("Polecane produkty", "/public/icons/additional-info.svg", "polecane produkty ikona")
+			@dashSection("categories") {
+				@dashHeading("Kategorie", "/public/icons/category-section.svg", "kategorie ikona")
+				@categoriesSection()
 			}
 			@dashSection("xd") {
 				@dashHeading("Polecane produkty", "/public/icons/additional-info.svg", "polecane produkty ikona")
@@ -62,71 +63,54 @@ templ Dashboard(dashboardViewModel dashboardViewModel) {
 }
 
 templ dashHeading(content, icon, iconAlt string) {
-	<div class="rounded-xl p-4 shadow-lg w-fit">
-		<div class="flex gap-3 md:gap-4 lg:gap-6 border-b-2 pb-2 lg:pb-3 pt-4 px-3 md:px-4 border-b-grey-300 w-fit">
-			<img src={ icon } alt={ iconAlt } width="24px" height="24px"/>
-			<h2 class="text-grey-700">{ content }</h2>
+	<div class="rounded-xl px-8 py-6 shadow-lg bg-primary-100 absolute -top-20 left-1/2 -translate-x-1/2">
+		<div class="flex items-center justify-center gap-3 md:gap-4 lg:gap-6 py-3 lg:py-4 px-3 md:px-4 border-b-primary-200 border-b-2">
+			<img src={ icon } alt={ iconAlt } width="32px" height="32px"/>
+			<h2 class="text-primary-900 text-xl">{ content }</h2>
 		</div>
 	</div>
 }
 
 templ dashSection(section string) {
-	<section class="p-4 md:p-6 lg:p-8">
-		<div id={ section } class="flex flex-col gap-4 md:gap-6 lg:gap-8 pb-4 px-2 py-2 rounded-2xl shadow-lg">
+	<section class="p-4 md:p-6 lg:p-8 min-w-full">
+		<div id={ section } class="flex flex-col gap-4 md:gap-6 lg:gap-8 px-6 py-10 md:px-8 md:py-12 rounded-2xl shadow-lg bg-grey-200 relative">
 			{ children... }
 		</div>
 	</section>
 }
 
 templ promotedProductsSection(dashboardViewModel dashboardViewModel) {
-	<div class="md:hidden flex flex-col gap-2 items-center">
-		{{
-			product := dashboardViewModel.products[dashboardViewModel.selectedProduct]
-			productPath := "/products/details/" + product.ID
-		}}
-		<a
-			href={ productPath }
-			class="flex items-center justify-center"
-		>
-			<img
-				alt={ product.Name + " image" }
-				src={ product.Image }
-				class="rounded-2xl shadow-xl htmx-swapping:opacity-0 transition-opacity duration-200 htmx-settling:opacity-100 min-w-80 min-h-80 max-w-3/4 max-h-3/4"
-			/>
-		</a>
+	<div class="lg:hidden flex flex-col gap-2 items-center">
+		{{ product := dashboardViewModel.products[dashboardViewModel.selectedProduct] }}
+		@promoProduct(product)
 		<div class="flex gap-6 p-6 justify-center items-center">
 			{{
+				maxSliderLen := 3
+				arePromoProductsLessThanMaxSliderLen := len(dashboardViewModel.products) < maxSliderLen
+				if arePromoProductsLessThanMaxSliderLen {
+					maxSliderLen = len(dashboardViewModel.products)
+				}
+				slider := make([]int, 0, maxSliderLen)
+
 				actual := dashboardViewModel.selectedProduct
 				isAtBeginning := actual == 0
-				isAtEnd := actual == dashboardViewModel.maxPromotions
-				var first, second, third int
-				wrap := func(val int) int {
-					if val < 0 {
-						return dashboardViewModel.maxPromotions
-					}
-					if val > dashboardViewModel.maxPromotions {
-						return 0
-					}
-					return val
-				}
+				isAtEnd := actual == len(dashboardViewModel.products)-1
 				if isAtBeginning {
-					first, second, third = actual, wrap(actual+1), wrap(actual+2)
+					slider = append(slider, actual, actual+1, actual+2)
 				} else if isAtEnd {
-					first, second, third = wrap(actual-2), wrap(actual-1), actual
+					slider = append(slider, actual-2, actual-1, actual)
 				} else {
-					first, second, third = wrap(actual-1), actual, wrap(actual+1)
+					slider = append(slider, actual-1, actual, actual+1)
 				}
-
-				slider := [3]int{first, second, third}
 			}}
 			for i:=0; i<len(slider); i++ {
 				{{ path := "/?slide=" + strconv.Itoa(slider[i]) }}
 				<a
 					href={ path }
-					hx-get={ productPath }
+					hx-get={ path }
 					hx-target="#promotions"
 					hx-swap="innerHTML"
-					if actual == slider[i] {
+					if slider[i] == actual {
 						class="bg-primary-700 w-2 h-2 rounded-full shadow-xl"
 					} else {
 						class="bg-primary-500 w-1.5 h-1.5 rounded-full shadow-xl"
@@ -139,7 +123,7 @@ templ promotedProductsSection(dashboardViewModel dashboardViewModel) {
 			}
 		</div>
 	</div>
-	<div class="hidden md:flex items-center justify-center gap-4 md:gap-8">
+	<div class="hidden lg:flex items-center justify-center gap-4 lg:gap-6 xl:gap-12">
 		{{
 			backPage, nextPage := dashboardViewModel.displayedPromotions-1, dashboardViewModel.displayedPromotions+1
 			if backPage < 0 {
@@ -149,27 +133,130 @@ templ promotedProductsSection(dashboardViewModel dashboardViewModel) {
 				nextPage = 0
 			}
 		}}
-		@paginatorItem("/?promotions="+strconv.Itoa(backPage), back, "#promotions", "innerHTML", true)
+		@paginatorItem("/?promotions="+strconv.Itoa(backPage), back, "#promotions", "innerHTML", true, "absolute top-1/2 left-2 shadow-lg z-2")
 		{{
 			actualPage := dashboardViewModel.displayedPromotions
 			start := actualPage * dashboardViewModel.maxProductsPerPage
 		}}
 		for i := start; i<start+dashboardViewModel.maxProductsPerPage && i<len(dashboardViewModel.products); i++ {
-			{{
-				product := dashboardViewModel.products[i]
-				productPath := "/products/details/" + product.ID
-			}}
-			<a
-				href={ productPath }
-				class="flex items-center justify-center"
-			>
-				<img
-					alt={ product.Name + " image" }
-					src={ product.Image }
-					class="rounded-2xl shadow-xl htmx-swapping:opacity-0 transition-opacity duration-200 htmx-settling:opacity-100 min-w-80 min-h-80 max-w-3/4 max-h-3/4"
-				/>
-			</a>
+			{{ product := dashboardViewModel.products[i] }}
+			@promoProduct(product)
 		}
-		@paginatorItem("/?promotions="+strconv.Itoa(nextPage), forward, "#promotions", "innerHTML", true)
+		@paginatorItem("/?promotions="+strconv.Itoa(nextPage), forward, "#promotions", "innerHTML", true, "absolute top-1/2 right-2 shadow-lg z-2")
+	</div>
+}
+
+templ promoProduct(product services.Product) {
+	{{ productPath := "/products/details/" + product.ID }}
+	<div class="flex flex-col gap-6 lg:gap-8 p-6 md:p-8 items-center justify-center rounded-xl border-primary-400 border-2 shadow-lg bg-grey-100 max-w-sm relative">
+		<img src="/public/icons/product-sale.svg" alt="produkt w promocji ikona" height="48px" width="48px" class="absolute -top-3 -left-2"/>
+		<a
+			href={ productPath }
+			class="flex flex-col gap-4 items-center justify-center"
+		>
+			<img
+				alt={ product.Name + " image" }
+				src={ product.Image }
+				class="rounded-2xl shadow-xl htmx-swapping:opacity-0 transition-opacity duration-200 htmx-settling:opacity-100 w-full h-full"
+			/>
+			<div class="flex flex-col gap-2">
+				<img
+					alt="product name"
+					src="/public/icons/product-name.svg"
+					width="24px"
+					height="24px"
+				/>
+				<p class="pl-4 pr-2 text-primary-800 text-lg">{ product.Name }</p>
+			</div>
+		</a>
+		@promotionPrice(product.PriceBefore, product.Price)
+		<button
+			class="flex justify-center items-center gap-1 md:gap-2 lg:gap-4 bg-primary-300 p-3 md:px-5 lg:px-6 md:py-3 lg:py-4 rounded-xl w-full"
+			hx-post="/basket/add"
+			hx-target="#basket"
+			hx-swap="innerHTML"
+		>
+			<img
+				src="/public/icons/shop-cart.svg"
+				alt="dodaj do koszyka ikona"
+				width="24px"
+				height="24px"
+			/>
+			<span class="text-primary-900 text-sm">Dodaj do koszyka</span>
+		</button>
+	</div>
+}
+
+templ promotionPrice(priceBefore, actualPrice float32) {
+	<div class="flex flex-col xl:flex-row gap-4 md:justify-around px-4 w-full">
+		<div class="flex gap-2 flex-col">
+			<p class="text-error-700 text-sm">Cena przed:</p>
+			<p class="flex gap-2 md:gap-3">
+				<img alt="price before promotion" src="/public/icons/promo-price-before.svg" width="24px" height="24px"/>
+				<span class="text-error-800 line-through text-lg">{ priceBefore }</span>
+			</p>
+		</div>
+		<div class="flex gap-2 flex-col">
+			<p class="text-primary-700 text-sm">Aktualna cena:</p>
+			<p class="flex gap-2 md:gap-3">
+				<img alt="price with promotion" src="/public/icons/promo-price-after.svg" width="24px" height="24px"/>
+				<span class="text-primary-800 text-lg">{ actualPrice }</span>
+			</p>
+		</div>
+	</div>
+}
+
+templ categoriesSection() {
+	<div class="flex items-center gap-4 md:gap-8 lg:gap-12 flex-wrap justify-center">
+		<a
+			class="p-3 bg-grey-100 shadow-lg rounded-xl flex flex-col items-center justify-center w-40 min-h-36 text-center hover:bg-primary-200"
+			href="/products/1?machines=true"
+			hx-get="/products/1?machines=true"
+			hx-target="#products"
+			hx-swap="outerHTML"
+		>
+			<img alt="maszyny budowlane ikona" src="/public/icons/machines.svg" width="24px" height="24px"/>
+			<p class="p-2 text-tertiary-900">Maszyny budowlane</p>
+		</a>
+		<a
+			class="p-3 bg-grey-100 shadow-lg rounded-xl flex flex-col items-center justify-center w-40 min-h-36 text-center hover:bg-primary-200"
+			href="/products/1?gardening=true"
+			hx-get="/products/1?gardening=true"
+			hx-target="#products"
+			hx-swap="outerHTML"
+		>
+			<img alt="sprzęt ogrodniczy ikona" src="/public/icons/gardening.svg" width="24px" height="24px"/>
+			<p class="p-2 text-tertiary-900">Sprzęt ogrodniczy</p>
+		</a>
+		<a
+			class="p-3 bg-grey-100 shadow-lg rounded-xl flex flex-col items-center justify-center w-40 min-h-36 text-center hover:bg-primary-200"
+			href="/products/1?parts=true"
+			hx-get="/products/1?parts=true"
+			hx-target="#products"
+			hx-swap="outerHTML"
+		>
+			<img alt="części i eksploatacja ikona" src="/public/icons/parts.svg" width="24px" height="24px"/>
+			<p class="p-2 text-tertiary-900">Części i eksploatacja</p>
+		</a>
+		<a
+			class="p-3 bg-grey-100 shadow-lg rounded-xl flex flex-col items-center justify-center w-40 min-h-36 text-center hover:bg-primary-200"
+			href="/products/1?electro=true"
+			hx-get="/products/1?electro=true"
+			hx-target="#products"
+			hx-swap="outerHTML"
+		>
+			<img alt="elektro narzędzia ikona" src="/public/icons/power-supply.svg" width="24px" height="24px"/>
+			<p class="p-2 text-tertiary-900">Elektro narzędzia</p>
+		</a>
+		<a
+			class="p-3 bg-grey-100 shadow-lg rounded-xl flex flex-col items-center justify-center w-40 min-h-36 text-center hover:bg-primary-200"
+			href="/products/1?electroMachines=true"
+			hx-get="/products/1?electroMachines=true"
+			hx-target="#products"
+			hx-swap="outerHTML"
+		>
+			<img alt="części i eksploatacja ikona" src="/public/icons/electric-machines.svg" width="24px" height="24px"/>
+			<p class="p-2 text-tertiary-900">Maszyny i urządzenia zasilające</p>
+		</a>
 	</div>
 }

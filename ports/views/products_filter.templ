@@ -10,7 +10,7 @@ type FilterViewModel struct {
 	Gardening       bool          `form:"gardening" query:"gardening" url:"gardening,omitempty"`
 	Parts           bool          `form:"parts" query:"parts" url:"parts,omitempty"`
 	Electro         bool          `form:"electro" query:"electro" url:"electro,omitempty"`
-	Electromachines bool          `form:"electroMachines" query:"electroMachines" url:"electroMachines,omitempty"`
+	ElectroMachines bool          `form:"electroMachines" query:"electroMachines" url:"electroMachines,omitempty"`
 	Sort            SortSpecifier `form:"sort" query:"sort" url:"sort,omitempty"`
 }
 
@@ -94,7 +94,7 @@ templ filter(filterViewModel FilterViewModel) {
 			@filterItem("gardening", "/public/icons/gardening.svg", "Sprzęt ogrodniczy ikona", "Sprzęt ogrodniczy", filterViewModel.Gardening)
 			@filterItem("parts", "/public/icons/parts.svg", "Części i eksploatacja ikona", "Części i eksploatacja", filterViewModel.Parts)
 			@filterItem("electro", "/public/icons/power-supply.svg", "Elektro narzędzia ikona", "Elektro narzędzia", filterViewModel.Electro)
-			@filterItem("electromachines", "/public/icons/electric-machines.svg", "Maszyny i urządzenia zasilające ikona", "Maszyny i urządzenia zasilające", filterViewModel.Electromachines)
+			@filterItem("electroMachines", "/public/icons/electric-machines.svg", "Maszyny i urządzenia zasilające ikona", "Maszyny i urządzenia zasilające", filterViewModel.ElectroMachines)
 		</div>
 		<p class="text-center text-tertiary-900 mt-8 mb-3 lg:mb-4">Cena</p>
 		<div

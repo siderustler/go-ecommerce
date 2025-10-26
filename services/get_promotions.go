@@ -6,9 +6,9 @@ import (
 
 func (s *Services) GetPromotions(ctx context.Context) ([]Product, error) {
 	return []Product{
-		NewProduct("1", "essa", "/public/products/essa/1.webp", 1.99),
-		NewProduct("2", "dwa", "/public/products/essa/1.webp", 2.99),
-		NewProduct("3", "trzy", "/public/products/essa/1.webp", 3.99),
-		NewProduct("4", "cztery", "/public/products/essa/1.webp", 4.99),
+		NewPromoProduct("1", "Podkaszarka elektryczna DAEWOO DATR 800E 550W", "/public/products/essa/1.webp", 199.99, 112.22),
+		NewPromoProduct("2", "Podkaszarka elektryczna DAEWOO DATR 800E 550W", "/public/products/essa/1.webp", 233.99, 199.00),
+		NewPromoProduct("3", "Podkaszarka elektryczna DAEWOO DATR 800E 550W", "/public/products/essa/1.webp", 342.32, 300.20),
+		NewPromoProduct("4", "Podkaszarka elektryczna DAEWOO DATR 800E 550W", "/public/products/essa/1.webp", 499.99, 99.00),
 	}, nil
 }
