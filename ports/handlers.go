@@ -70,7 +70,7 @@ func (h handlers) getProductDetails(c *fiber.Ctx) error {
 		return additionalInfoQueryParam == "true"
 	}
 
-	backUrl := c.Query("back")
+	backUrl := c.Query("back","/products/1")
 	productDetails, err := h.services.GetProductDetails(c.Context(), "essa")
 	if err != nil {
 		return c.Redirect("/products/1")
@@ -108,7 +108,7 @@ func (h handlers) postProductDetailsDecrement(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Redirect("/products/1")
 	}
-	backUrl := c.Query("back")
+	backUrl := c.Query("back","/products/1")
 	productViewModel := views.NewProductDetailViewModel(
 		productDetails,
 		1,
@@ -136,7 +136,7 @@ func (h handlers) postProductDetailsIncrement(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Redirect("/products/1")
 	}
-	backUrl := c.Query("back")
+	backUrl := c.Query("back","/products/1")
 	productViewModel := views.NewProductDetailViewModel(
 		productDetails,
 		1,
@@ -164,7 +164,7 @@ func (h handlers) postProductDetailsBasketAdd(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Redirect("/products/1")
 	}
-	backUrl := c.Query("back")
+	backUrl := c.Query("back","/products/1")
 	productViewModel := views.NewProductDetailViewModel(
 		productDetails,
 		1,

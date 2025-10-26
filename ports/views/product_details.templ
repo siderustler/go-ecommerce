@@ -81,7 +81,7 @@ var BasketAddCounter = basketAddCounter{}
 templ ProductDetails(product productDetailViewModel) {
 	@layout() {
 		{{ basePath := "/products/details/" + product.domain.ID }}
-		<section class="flex flex-col items-center justify-center">
+		<section id="products" class="flex flex-col items-center justify-center">
 			<div class="min-w-sm max-w-md md:max-w-3xl">
 				<div class="md:flex gap-6">
 					@templ.Fragment(ImageSelectorFragment) {
@@ -185,6 +185,9 @@ templ ProductDetails(product productDetailViewModel) {
 						}
 						<a
 							href={ product.backUrl }
+							hx-get={ product.backUrl }
+							hx-target="#products"
+							hx-swap="outerHTML"
 							class="flex items-center justify-center gap-1 md:gap-2 lg:gap-4 px-4 md:px-5 lg:px-6 py-2 md:py-3 mx-2 text-secondary-900 border-2 border-secondary-500 rounded-xl text-center text-sm"
 						>
 							<img src="/public/icons/chevron-left-secondary.svg" alt="back icon" width="24px" height="24px"/>
