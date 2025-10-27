@@ -71,7 +71,7 @@ templ ProductsFilter(filterViewModel FilterViewModel) {
 			filterPath += "?" + filterQuery
 		}
 	}}
-	@layout() {
+	@layout("") {
 		@templ.Fragment(ProductsFilterFragment) {
 			<section id="products" class="px-2 py-8 md:px-6 md:py-8 rounded-3xl bg-grey-200 shadow-md w-full">
 				@filter(filterViewModel)

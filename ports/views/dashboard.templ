@@ -13,8 +13,10 @@ type dashboardViewModel struct {
 }
 
 type promotedProductSelectorFragment struct{}
+type dashboardSelectorFragment struct{}
 
 var PromotedProductSelectorFragment = promotedProductSelectorFragment{}
+var DashboardSelectorFragment = dashboardSelectorFragment{}
 
 func maxPromotionPages(allProducts int, productsPerPage int) int {
 	return int(math.Ceil(float64(allProducts / productsPerPage)))
@@ -43,22 +45,21 @@ func NewDashboardViewModel(products []services.Product, selectedProduct, display
 }
 
 templ Dashboard(dashboardViewModel dashboardViewModel) {
-	@layout() {
-		<section id="products" class="flex flex-col items-center justify-center gap-4 md:gap-8 lg:gap-16">
-			@dashSection("promotions") {
-				@templ.Fragment(PromotedProductSelectorFragment) {
-					@dashHeading("Promocje", "/public/icons/promotion-section.svg", "promocje ikona")
-					@promotedProductsSection(dashboardViewModel)
+	@layout("") {
+		@templ.Fragment(DashboardSelectorFragment) {
+			<div id="products" class="flex flex-col items-center justify-center gap-4 md:gap-8 lg:gap-16 mt-12">
+				@dashSection("promotions") {
+					@templ.Fragment(PromotedProductSelectorFragment) {
+						@dashHeading("Promocje", "/public/icons/promotion-section.svg", "promocje ikona")
+						@promotedProductsSection(dashboardViewModel)
+					}
 				}
-			}
-			@dashSection("categories") {
-				@dashHeading("Kategorie", "/public/icons/category-section.svg", "kategorie ikona")
-				@categoriesSection()
-			}
-			@dashSection("xd") {
-				@dashHeading("Polecane produkty", "/public/icons/additional-info.svg", "polecane produkty ikona")
-			}
-		</section>
+				@dashSection("categories") {
+					@dashHeading("Kategorie", "/public/icons/category-section.svg", "kategorie ikona")
+					@categoriesSection()
+				}
+			</div>
+		}
 	}
 }
 
@@ -214,6 +215,7 @@ templ categoriesSection() {
 			hx-get="/products/1?machines=true"
 			hx-target="#products"
 			hx-swap="outerHTML"
+			hx-push-url="true"
 		>
 			<img alt="maszyny budowlane ikona" src="/public/icons/machines.svg" width="24px" height="24px"/>
 			<p class="p-2 text-tertiary-900">Maszyny budowlane</p>
@@ -224,6 +226,7 @@ templ categoriesSection() {
 			hx-get="/products/1?gardening=true"
 			hx-target="#products"
 			hx-swap="outerHTML"
+			hx-push-url="true"
 		>
 			<img alt="sprzęt ogrodniczy ikona" src="/public/icons/gardening.svg" width="24px" height="24px"/>
 			<p class="p-2 text-tertiary-900">Sprzęt ogrodniczy</p>
@@ -234,6 +237,7 @@ templ categoriesSection() {
 			hx-get="/products/1?parts=true"
 			hx-target="#products"
 			hx-swap="outerHTML"
+			hx-push-url="true"
 		>
 			<img alt="części i eksploatacja ikona" src="/public/icons/parts.svg" width="24px" height="24px"/>
 			<p class="p-2 text-tertiary-900">Części i eksploatacja</p>
@@ -244,6 +248,7 @@ templ categoriesSection() {
 			hx-get="/products/1?electro=true"
 			hx-target="#products"
 			hx-swap="outerHTML"
+			hx-push-url="true"
 		>
 			<img alt="elektro narzędzia ikona" src="/public/icons/power-supply.svg" width="24px" height="24px"/>
 			<p class="p-2 text-tertiary-900">Elektro narzędzia</p>
@@ -254,6 +259,7 @@ templ categoriesSection() {
 			hx-get="/products/1?electroMachines=true"
 			hx-target="#products"
 			hx-swap="outerHTML"
+			hx-push-url="true"
 		>
 			<img alt="części i eksploatacja ikona" src="/public/icons/electric-machines.svg" width="24px" height="24px"/>
 			<p class="p-2 text-tertiary-900">Maszyny i urządzenia zasilające</p>

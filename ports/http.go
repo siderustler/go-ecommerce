@@ -34,6 +34,7 @@ func NewHttpServer(services *services.Services) *httpServer {
 	h.srv.Post("/products/:prod/basket-add", h.handlers.postProductsBasketAdd)
 	h.srv.Post("/filter/products", h.handlers.postFilterProducts)
 	h.srv.Post("/filter/products/validate/price",h.handlers.filterProductsPriceValidate)
+	h.srv.Post("/products/search", h.handlers.postProductsSearch)
 	h.srv.Static("/public", "./ports/views/public")
 	return h
 }

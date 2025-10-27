@@ -79,7 +79,7 @@ type basketAddCounter struct{}
 var BasketAddCounter = basketAddCounter{}
 
 templ ProductDetails(product productDetailViewModel) {
-	@layout() {
+	@layout("") {
 		{{ basePath := "/products/details/" + product.domain.ID }}
 		<section id="products" class="flex flex-col items-center justify-center">
 			<div class="min-w-sm max-w-md md:max-w-3xl">

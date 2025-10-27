@@ -32,12 +32,14 @@ func (h handlers) getProducts(c *fiber.Ctx) error {
 	//FIXME render error
 	_ = c.QueryParser(&filterViewModel)
 	filterViewModel.Validate()
+	searchQuery := c.Query("search")
 
 	productsViewModel := views.NewProductsListViewModel(
 		products,
 		filterViewModel, 
 		page, 
 		10,
+		searchQuery,
 	)
 
 	if isHTMXRequest(c) {
@@ -189,7 +191,6 @@ func (h handlers) postProductsIncrement(c *fiber.Ctx) error {
 	basketCount, _ := strconv.Atoi(c.FormValue("count"))
 	page, _ := strconv.Atoi(c.Params("prod"))
 
-
 	products, err := h.services.GetProducts(c.Context(), page)
 	if err != nil {
 		return c.Redirect("/products/1")
@@ -199,8 +200,9 @@ func (h handlers) postProductsIncrement(c *fiber.Ctx) error {
 	//FIXME render error
 	_ = c.BodyParser(&filterViewModel)
 	filterViewModel.Validate()
+	searchQuery := c.Query("search")
 
-	productsListViewModel := views.NewProductsListViewModel(products,filterViewModel, page, 10)
+	productsListViewModel := views.NewProductsListViewModel(products,filterViewModel, page, 10, searchQuery)
 	productsListViewModel.ChangeProductBasketCount(productID, basketCount+1)
 	if isHTMXRequest(c) {
 		fragments := append([]any{}, fmt.Sprintf("%+v-%s", views.BasketAddCounter, productID))
@@ -216,7 +218,6 @@ func (h handlers) postProductsDecrement(c *fiber.Ctx) error {
 	page, _ := strconv.Atoi(c.Params("prod"))
 	productID := c.Query("id")
 
-
 	products, err := h.services.GetProducts(c.Context(), page)
 	if err != nil {
 		return c.Redirect("/products/1")
@@ -225,7 +226,8 @@ func (h handlers) postProductsDecrement(c *fiber.Ctx) error {
 	//FIXME render error
 	_ = c.BodyParser(&filterViewModel)
 	filterViewModel.Validate()
-	productsListViewModel := views.NewProductsListViewModel(products, filterViewModel,page, 10)
+	searchQuery := c.Query("search")
+	productsListViewModel := views.NewProductsListViewModel(products, filterViewModel,page, 10,searchQuery)
 	productsListViewModel.ChangeProductBasketCount(productID, basketCount-1)
 	if isHTMXRequest(c) {
 		fragments := append([]any{}, fmt.Sprintf("%+v-%s", views.BasketAddCounter, productID))
@@ -248,7 +250,8 @@ func (h handlers) postProductsBasketAdd(c *fiber.Ctx) error {
 	//FIXME render error
 	_ = c.BodyParser(&filterViewModel)
 	filterViewModel.Validate()
-	productsListViewModel := views.NewProductsListViewModel(products,filterViewModel, page, 10)
+	searchQuery := c.Query("search")
+	productsListViewModel := views.NewProductsListViewModel(products,filterViewModel, page, 10, searchQuery)
 	productsListViewModel.ChangeProductBasketCount(productID, basketCount)
 
 	fmt.Printf("Adding to basket count %d of item %s\n", basketCount, productID)
@@ -312,7 +315,6 @@ func (h handlers) postFilterProducts(c *fiber.Ctx) error {
 	filterViewModel.Validate()
 	page,_ := c.ParamsInt("prod")
 
-
 	products,err := h.services.GetProducts(c.Context(), 1)
 	//FIXME -- render empty list
 	if err != nil {
@@ -320,15 +322,16 @@ func (h handlers) postFilterProducts(c *fiber.Ctx) error {
 	}
 
 	queries,_ := query.Values(filterViewModel)
-	var url string
+	url := "/products/1?"
+	searchQuery := c.Query("search")
+	if searchQuery != "" {
+		url += "search="+searchQuery
+	}
 	isAnyQueryIncluded := len(queries) > 0
 	if isAnyQueryIncluded {
-		url = "/products/1?"+queries.Encode()
-	} else {
-		url = "/products/1"
+		url += queries.Encode()
 	}
-
-	productsListViewModel := views.NewProductsListViewModel(products,filterViewModel,page,10)
+	productsListViewModel := views.NewProductsListViewModel(products,filterViewModel,page,10,searchQuery)
 	if isHTMXRequest(c) {
 		//FIXME -- rather than using events, 
 		// use response target extension which allows to filter change target based on resp status
@@ -353,7 +356,28 @@ func (h handlers) getDashboard(c *fiber.Ctx) error {
 	}
 
 	if isHTMXRequest(c) {
-		return render(c,views.Dashboard(views.NewDashboardViewModel(promos,slide,promotionPage)), views.PromotedProductSelectorFragment)
+		isPromotionRequest := c.Query("promotions") != ""
+		if isPromotionRequest {
+			return render(c,views.Dashboard(views.NewDashboardViewModel(promos,slide,promotionPage)), views.PromotedProductSelectorFragment)
+		}
+		return render(c,views.Dashboard(views.NewDashboardViewModel(promos,slide,promotionPage)), views.DashboardSelectorFragment)
 	}
 	return render(c,views.Dashboard(views.NewDashboardViewModel(promos,slide,promotionPage)))
+}
+
+func (h handlers) postProductsSearch(c *fiber.Ctx) error {
+	search := c.FormValue("search")
+	products,err := h.services.GetProducts(c.Context(), 1)
+	//FIXME -- display empty product list
+	if err != nil {
+		return c.Redirect("/")
+	}
+	var filterViewModel views.FilterViewModel
+	_ = c.BodyParser(&filterViewModel)
+	page, _ := c.ParamsInt("prod",1)
+	if isHTMXRequest(c) {
+		c.Append("HX-Push-Url", "/products/1?search="+search)
+		return render(c,views.Products(views.NewProductsListViewModel(products, filterViewModel, page,10,search)), views.ProductListFragment)
+	}
+	return render(c,views.Products(views.NewProductsListViewModel(products, filterViewModel, page,10,search)))
 }

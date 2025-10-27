@@ -47,9 +47,10 @@ type productsListViewModel struct {
 
 	actualPage       int
 	maxPagesBoundary int
+	searchQuery      string
 }
 
-func NewProductsListViewModel(domainProducts []services.Product, filterViewModel FilterViewModel, actualPage, maxPagesBoundary int) productsListViewModel {
+func NewProductsListViewModel(domainProducts []services.Product, filterViewModel FilterViewModel, actualPage, maxPagesBoundary int, searchQuery string) productsListViewModel {
 	if actualPage < 1 {
 		actualPage = 1
 	}
@@ -61,6 +62,7 @@ func NewProductsListViewModel(domainProducts []services.Product, filterViewModel
 		actualPage:       actualPage,
 		maxPagesBoundary: maxPagesBoundary,
 		filter:           filterViewModel,
+		searchQuery:      searchQuery,
 	}
 }
 
@@ -92,7 +94,7 @@ templ Products(productsListViewModel productsListViewModel) {
 			backUrl += "?" + filterQuery
 		}
 	}}
-	@layout() {
+	@layout(productsListViewModel.searchQuery) {
 		@templ.Fragment(ProductListFragment) {
 			<div id="products" class="flex flex-col xl:flex-row items-center justify-center">
 				<section class="flex flex-row gap-4 max-w-4xl items-center justify-center pb-4 xl:hidden">
