@@ -8,18 +8,33 @@ package views
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-import "github.com/google/go-querystring/query"
+import "github.com/siderustler/go-ecommerce/services"
 
 type FilterViewModel struct {
-	PriceFrom       float32 `form:"price-from,omitempty" query:"price-from,omitempty" url:"price-from,omitempty"`
+	PriceFrom       float32 `query:"price-from" url:"price-from,omitempty"`
 	priceFromErr    string
-	PriceTo         float32       `form:"price-to" query:"price-to" url:"price-to,omitempty"`
-	Machines        bool          `form:"machines" query:"machines" url:"machines,omitempty"`
-	Gardening       bool          `form:"gardening" query:"gardening" url:"gardening,omitempty"`
-	Parts           bool          `form:"parts" query:"parts" url:"parts,omitempty"`
-	Electro         bool          `form:"electro" query:"electro" url:"electro,omitempty"`
-	ElectroMachines bool          `form:"electroMachines" query:"electroMachines" url:"electroMachines,omitempty"`
-	Sort            SortSpecifier `form:"sort" query:"sort" url:"sort,omitempty"`
+	PriceTo         float32       `query:"price-to" url:"price-to,omitempty"`
+	Machines        bool          `query:"machines" url:"machines,omitempty"`
+	Gardening       bool          `query:"gardening" url:"gardening,omitempty"`
+	Parts           bool          `query:"parts" url:"parts,omitempty"`
+	Electro         bool          `query:"electro" url:"electro,omitempty"`
+	ElectroMachines bool          `query:"electroMachines" url:"electroMachines,omitempty"`
+	Sort            SortSpecifier `query:"sort" url:"sort,omitempty"`
+	Search          string        `query:"search" url:"search,omitempty"`
+}
+
+func (f FilterViewModel) MapToDomainFilter() services.Filter {
+	return services.NewFilter(
+		f.PriceFrom,
+		f.PriceTo,
+		f.Machines,
+		f.Gardening,
+		f.Parts,
+		f.Electro,
+		f.ElectroMachines,
+		string(f.Sort),
+		f.Search,
+	)
 }
 
 type SortSpecifier string
@@ -57,8 +72,6 @@ func (f *FilterViewModel) Validate() {
 	f.specifySort()
 }
 
-var preserveFocusOnceHandler = templ.NewOnceHandle()
-
 func (f FilterViewModel) HasError() bool {
 	return len(f.priceFromErr) > 0
 }
@@ -90,13 +103,6 @@ func ProductsFilter(filterViewModel FilterViewModel) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		filterPath := "/filter/products"
-		queries, _ := query.Values(filterViewModel)
-		filterQuery := queries.Encode()
-		isAnyQueryIncluded := len(filterQuery) > 0
-		if isAnyQueryIncluded {
-			filterPath += "?" + filterQuery
-		}
 		templ_7745c5c3_Var2 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
@@ -141,7 +147,7 @@ func ProductsFilter(filterViewModel FilterViewModel) templ.Component {
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = layout("").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = layout(filterViewModel.Search).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -174,7 +180,20 @@ func filter(filterViewModel FilterViewModel) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<form method=\"post\" action=\"/filter/products\"><div class=\"flex gap-8 flex-wrap items-center justify-center\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<form method=\"get\" action=\"/products/1\" hx-get=\"/products/1\" hx-swap=\"outerHTML\" hx-target=\"#products\" hx-indicator=\"#spinner, #spinner2, #spinner3\"><div class=\"flex gap-8 flex-wrap items-center justify-center\"><input name=\"search\" type=\"text\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var5 string
+		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(filterViewModel.Search)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 101, Col: 34}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\" hidden>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -198,11 +217,11 @@ func filter(filterViewModel FilterViewModel) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div><p class=\"text-center text-tertiary-900 mt-8 mb-3 lg:mb-4\">Cena</p><div id=\"price-filter\" class=\"flex flex-col gap-3 lg:gap-4\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div><p class=\"text-center text-tertiary-900 mt-8 mb-3 lg:mb-4\">Cena</p><div id=\"price-filter\" class=\"flex flex-col gap-3 lg:gap-4\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Var5 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Var6 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
 			if !templ_7745c5c3_IsBuffer {
@@ -218,7 +237,7 @@ func filter(filterViewModel FilterViewModel) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, " ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, " ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -226,7 +245,7 @@ func filter(filterViewModel FilterViewModel) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, " ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, " ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -234,7 +253,7 @@ func filter(filterViewModel FilterViewModel) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, " <div class=\"py-4 lg:py-4\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, " <div class=\"py-4 lg:py-4\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -242,7 +261,7 @@ func filter(filterViewModel FilterViewModel) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<fieldset id=\"sort\" class=\"flex flex-col gap-2 sm:gap-3 md:gap-4\"><div class=\"flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<fieldset id=\"sort\" class=\"flex flex-col gap-2 sm:gap-3 md:gap-4\"><div class=\"flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -254,7 +273,7 @@ func filter(filterViewModel FilterViewModel) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</div><div class=\"flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</div><div class=\"flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -266,45 +285,23 @@ func filter(filterViewModel FilterViewModel) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</div></fieldset></div><button id=\"submit-btn\" class=\"group flex items-center justify-center gap-1 md:gap-2 lg:gap-4 px-4 md:px-5 lg:px-6 py-2 md:py-3 text-secondary-900 border-2 border-secondary-500 rounded-xl text-center text-sm hover:border-secondary-400 focus:border-secondary-700 disabled:border-grey-500 disabled:text-grey-500\" hx-post=\"/filter/products\" hx-swap=\"outerHTML\" hx-target=\"#products\" hx-indicator=\"#spinner, #spinner2, #spinner3\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</div></fieldset></div><button id=\"submit-btn\" type=\"submit\" class=\"group flex items-center justify-center gap-1 md:gap-2 lg:gap-4 px-4 md:px-5 lg:px-6 py-2 md:py-3 text-secondary-900 border-2 border-secondary-500 rounded-xl text-center text-sm hover:border-secondary-400 focus:border-secondary-700 disabled:border-grey-500 disabled:text-grey-500\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if filterViewModel.HasError() {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, " disabled=\"true\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, " disabled=\"true\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "><img src=\"/public/icons/products-filter.svg\" alt=\"filtruj ikona\" width=\"24px\" height=\"24px\" class=\"group-disabled:opacity-50\"> Filtruj <img id=\"spinner\" src=\"/public/icons/spinner.svg\" width=\"24px\" height=\"24px\" alt=\"Loading...\" class=\"htmx-indicator\"></button>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Var6 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-				templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-				templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-				if !templ_7745c5c3_IsBuffer {
-					defer func() {
-						templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-						if templ_7745c5c3_Err == nil {
-							templ_7745c5c3_Err = templ_7745c5c3_BufErr
-						}
-					}()
-				}
-				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<script>\n\t\t\t\t\t// FIXME -- remove event somehow to prevent memory leaks, actually its adding listeners on every refresh\n\t\t\t\t\t// FIXME -- not focusing element\n\t\t\t\t\tdocument.addEventListener(\"preserveFilterInputFocus\", function(evt) {\n\t\t\t\t\t\tconst element = document.getElementById(evt.detail.triggerElement)\n\t\t\t\t\t\tif (element) {\t\n\t\t\t\t\t\t\telement.focus()\n\t\t\t\t\t\t}\n\t\t\t\t\t})\n\t\t\t\t</script>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				return nil
-			})
-			templ_7745c5c3_Err = preserveFocusOnceHandler.Once().Render(templ.WithChildren(ctx, templ_7745c5c3_Var6), templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "><img src=\"/public/icons/products-filter.svg\" alt=\"filtruj ikona\" width=\"24px\" height=\"24px\" class=\"group-disabled:opacity-50\"> Filtruj <img id=\"spinner\" src=\"/public/icons/spinner.svg\" width=\"24px\" height=\"24px\" alt=\"Loading...\" class=\"htmx-indicator\"></button>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = templ.Fragment(PriceFilterFragment).Render(templ.WithChildren(ctx, templ_7745c5c3_Var5), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = templ.Fragment(PriceFilterFragment).Render(templ.WithChildren(ctx, templ_7745c5c3_Var6), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -366,7 +363,7 @@ func inputError(content string) templ.Component {
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(content)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 155, Col: 11}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 157, Col: 11}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -432,7 +429,7 @@ func textInput(id, icon, iconAlt, name, placeholder string, value float32, isErr
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(icon)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 169, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 171, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
@@ -445,7 +442,7 @@ func textInput(id, icon, iconAlt, name, placeholder string, value float32, isErr
 		var templ_7745c5c3_Var15 string
 		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(iconAlt)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 169, Col: 33}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 171, Col: 33}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 		if templ_7745c5c3_Err != nil {
@@ -458,7 +455,7 @@ func textInput(id, icon, iconAlt, name, placeholder string, value float32, isErr
 		var templ_7745c5c3_Var16 string
 		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(id)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 171, Col: 10}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 173, Col: 10}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
@@ -471,7 +468,7 @@ func textInput(id, icon, iconAlt, name, placeholder string, value float32, isErr
 		var templ_7745c5c3_Var17 string
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 174, Col: 14}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 176, Col: 14}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
@@ -484,7 +481,7 @@ func textInput(id, icon, iconAlt, name, placeholder string, value float32, isErr
 		var templ_7745c5c3_Var18 string
 		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(placeholder)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 175, Col: 28}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 177, Col: 28}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 		if templ_7745c5c3_Err != nil {
@@ -502,7 +499,7 @@ func textInput(id, icon, iconAlt, name, placeholder string, value float32, isErr
 			var templ_7745c5c3_Var19 string
 			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 178, Col: 17}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 180, Col: 17}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 			if templ_7745c5c3_Err != nil {
@@ -549,7 +546,7 @@ func filterItem(name, icon, iconAlt, content string, checked bool) templ.Compone
 		var templ_7745c5c3_Var21 string
 		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 194, Col: 14}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 196, Col: 14}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 		if templ_7745c5c3_Err != nil {
@@ -572,7 +569,7 @@ func filterItem(name, icon, iconAlt, content string, checked bool) templ.Compone
 		var templ_7745c5c3_Var22 string
 		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(icon)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 201, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 203, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 		if templ_7745c5c3_Err != nil {
@@ -585,7 +582,7 @@ func filterItem(name, icon, iconAlt, content string, checked bool) templ.Compone
 		var templ_7745c5c3_Var23 string
 		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(iconAlt)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 201, Col: 33}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 203, Col: 33}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 		if templ_7745c5c3_Err != nil {
@@ -598,7 +595,7 @@ func filterItem(name, icon, iconAlt, content string, checked bool) templ.Compone
 		var templ_7745c5c3_Var24 string
 		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(content)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 202, Col: 79}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 204, Col: 79}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 		if templ_7745c5c3_Err != nil {
@@ -641,7 +638,7 @@ func radioInput(label, value string, sort SortSpecifier) templ.Component {
 		var templ_7745c5c3_Var26 string
 		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 209, Col: 19}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 211, Col: 19}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 		if templ_7745c5c3_Err != nil {
@@ -654,7 +651,7 @@ func radioInput(label, value string, sort SortSpecifier) templ.Component {
 		var templ_7745c5c3_Var27 string
 		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 209, Col: 60}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 211, Col: 60}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 		if templ_7745c5c3_Err != nil {
@@ -667,7 +664,7 @@ func radioInput(label, value string, sort SortSpecifier) templ.Component {
 		var templ_7745c5c3_Var28 string
 		templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(checked)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 209, Col: 103}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 211, Col: 103}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 		if templ_7745c5c3_Err != nil {
@@ -680,7 +677,7 @@ func radioInput(label, value string, sort SortSpecifier) templ.Component {
 		var templ_7745c5c3_Var29 string
 		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 210, Col: 20}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 212, Col: 20}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 		if templ_7745c5c3_Err != nil {
@@ -693,7 +690,7 @@ func radioInput(label, value string, sort SortSpecifier) templ.Component {
 		var templ_7745c5c3_Var30 string
 		templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 210, Col: 56}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products_filter.templ`, Line: 212, Col: 56}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 		if templ_7745c5c3_Err != nil {

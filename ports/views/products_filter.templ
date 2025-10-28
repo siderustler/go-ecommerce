@@ -1,17 +1,32 @@
 package views
 
-import "github.com/google/go-querystring/query"
+import "github.com/siderustler/go-ecommerce/services"
 
 type FilterViewModel struct {
-	PriceFrom       float32 `form:"price-from,omitempty" query:"price-from,omitempty" url:"price-from,omitempty"`
+	PriceFrom       float32 `query:"price-from" url:"price-from,omitempty"`
 	priceFromErr    string
-	PriceTo         float32       `form:"price-to" query:"price-to" url:"price-to,omitempty"`
-	Machines        bool          `form:"machines" query:"machines" url:"machines,omitempty"`
-	Gardening       bool          `form:"gardening" query:"gardening" url:"gardening,omitempty"`
-	Parts           bool          `form:"parts" query:"parts" url:"parts,omitempty"`
-	Electro         bool          `form:"electro" query:"electro" url:"electro,omitempty"`
-	ElectroMachines bool          `form:"electroMachines" query:"electroMachines" url:"electroMachines,omitempty"`
-	Sort            SortSpecifier `form:"sort" query:"sort" url:"sort,omitempty"`
+	PriceTo         float32       `query:"price-to" url:"price-to,omitempty"`
+	Machines        bool          `query:"machines" url:"machines,omitempty"`
+	Gardening       bool          `query:"gardening" url:"gardening,omitempty"`
+	Parts           bool          `query:"parts" url:"parts,omitempty"`
+	Electro         bool          `query:"electro" url:"electro,omitempty"`
+	ElectroMachines bool          `query:"electroMachines" url:"electroMachines,omitempty"`
+	Sort            SortSpecifier `query:"sort" url:"sort,omitempty"`
+	Search          string        `query:"search" url:"search,omitempty"`
+}
+
+func (f FilterViewModel) MapToDomainFilter() services.Filter {
+	return services.NewFilter(
+		f.PriceFrom,
+		f.PriceTo,
+		f.Machines,
+		f.Gardening,
+		f.Parts,
+		f.Electro,
+		f.ElectroMachines,
+		string(f.Sort),
+		f.Search,
+	)
 }
 
 type SortSpecifier string
@@ -49,8 +64,6 @@ func (f *FilterViewModel) Validate() {
 	f.specifySort()
 }
 
-var preserveFocusOnceHandler = templ.NewOnceHandle()
-
 func (f FilterViewModel) HasError() bool {
 	return len(f.priceFromErr) > 0
 }
@@ -62,16 +75,7 @@ var PriceFilterFragment = priceFilterFragment{}
 var ProductsFilterFragment = productsFilterFragment{}
 
 templ ProductsFilter(filterViewModel FilterViewModel) {
-	{{
-		filterPath := "/filter/products"
-		queries, _ := query.Values(filterViewModel)
-		filterQuery := queries.Encode()
-		isAnyQueryIncluded := len(filterQuery) > 0
-		if isAnyQueryIncluded {
-			filterPath += "?" + filterQuery
-		}
-	}}
-	@layout("") {
+	@layout(filterViewModel.Search) {
 		@templ.Fragment(ProductsFilterFragment) {
 			<section id="products" class="px-2 py-8 md:px-6 md:py-8 rounded-3xl bg-grey-200 shadow-md w-full">
 				@filter(filterViewModel)
@@ -82,8 +86,21 @@ templ ProductsFilter(filterViewModel FilterViewModel) {
 
 templ filter(filterViewModel FilterViewModel) {
 	@sectionHeader("/public/icons/products-filter.svg", "filtr produktów ikona", "Filtruj")
-	<form method="post" action="/filter/products">
+	<form
+		method="get"
+		action="/products/1"
+		hx-get="/products/1"
+		hx-swap="outerHTML"
+		hx-target="#products"
+		hx-indicator="#spinner, #spinner2, #spinner3"
+	>
 		<div class="flex gap-8 flex-wrap items-center justify-center">
+			<input
+				name="search"
+				type="text"
+				value={ filterViewModel.Search }
+				hidden
+			/>
 			@filterItem("machines", "/public/icons/machines.svg", "Maszyny budowlane ikona", "Maszyny budowlane", filterViewModel.Machines)
 			@filterItem("gardening", "/public/icons/gardening.svg", "Sprzęt ogrodniczy ikona", "Sprzęt ogrodniczy", filterViewModel.Gardening)
 			@filterItem("parts", "/public/icons/parts.svg", "Części i eksploatacja ikona", "Części i eksploatacja", filterViewModel.Parts)
@@ -114,11 +131,8 @@ templ filter(filterViewModel FilterViewModel) {
 				</div>
 				<button
 					id="submit-btn"
+					type="submit"
 					class="group flex items-center justify-center gap-1 md:gap-2 lg:gap-4 px-4 md:px-5 lg:px-6 py-2 md:py-3 text-secondary-900 border-2 border-secondary-500 rounded-xl text-center text-sm hover:border-secondary-400 focus:border-secondary-700 disabled:border-grey-500 disabled:text-grey-500"
-					hx-post="/filter/products"
-					hx-swap="outerHTML"
-					hx-target="#products"
-					hx-indicator="#spinner, #spinner2, #spinner3"
 					if filterViewModel.HasError() {
 						disabled="true"
 					}
@@ -127,18 +141,6 @@ templ filter(filterViewModel FilterViewModel) {
 					Filtruj
 					<img id="spinner" src="/public/icons/spinner.svg" width="24px" height="24px" alt="Loading..." class="htmx-indicator"/>
 				</button>
-				@preserveFocusOnceHandler.Once() {
-					<script>
-					// FIXME -- remove event somehow to prevent memory leaks, actually its adding listeners on every refresh
-					// FIXME -- not focusing element
-					document.addEventListener("preserveFilterInputFocus", function(evt) {
-						const element = document.getElementById(evt.detail.triggerElement)
-						if (element) {	
-							element.focus()
-						}
-					})
-				</script>
-				}
 			}
 		</div>
 	</form>

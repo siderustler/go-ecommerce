@@ -172,20 +172,57 @@ func headerSection(searchInputValue string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</div><form action=\"/products/search\" method=\"POST\" class=\"flex gap-3 md:gap-4 w-full items-center justify-center\"><div class=\"flex gap-2 md:gap-4 bg-grey-100 border-2 border-grey-500 rounded-xl hover:border-tertiary-300 has-focus:border-tertiary-500 px-4 md:px-6 py-3 w-full md:w-2/3 xl:w-2/5 shadow-lg\"><img src=\"/public/icons/search.svg\" alt=\"szukanie ikona\" height=\"24px\" width=\"24px\"> <input id=\"search\" type=\"text\" name=\"search\" placeholder=\"Wyszukaj produkt...\" class=\"placeholder:text-grey-700 text-grey-900 outline-none w-full\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var10 string
-		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(searchInputValue)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/layout.templ`, Line: 55, Col: 29}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
+		templ_7745c5c3_Err = searchInput(searchInputValue).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" hx-trigger=\"input changed delay:0.2s\" hx-post=\"/products/search\" hx-swap=\"outerHTML\" hx-target=\"#products\"></div><button type=\"submit\" class=\"text-primary-900 rounded-full p-3 md:px-5 lg:px-6 lg:py-4 bg-primary-300 md:rounded-xl md:flex md:gap-2 lg:gap-4 md:items-center md:justify-center shadow-lg\" hx-post=\"/products/search\" hx-swap=\"outerHTML\" hx-target=\"#products\"><img src=\"/public/icons/search.svg\" alt=\"wyszukaj ikona\" width=\"24px\" height=\"24px\"> <span class=\"hidden md:block text-primary-900\">Szukaj</span></button></form></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func searchInput(searchInputValue string) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var10 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var10 == nil {
+			templ_7745c5c3_Var10 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<form action=\"/products/1\" method=\"GET\" class=\"flex gap-3 md:gap-4 w-full items-center justify-center\"><div class=\"flex gap-2 md:gap-4 bg-grey-100 border-2 border-grey-500 rounded-xl hover:border-tertiary-300 has-focus:border-tertiary-500 px-4 md:px-6 py-3 w-full md:w-2/3 xl:w-2/5 shadow-lg\"><img src=\"/public/icons/search.svg\" alt=\"szukanie ikona\" height=\"24px\" width=\"24px\"> <input id=\"search\" type=\"text\" name=\"search\" placeholder=\"Wyszukaj produkt...\" class=\"placeholder:text-grey-700 text-grey-900 outline-none w-full\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var11 string
+		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(searchInputValue)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/layout.templ`, Line: 60, Col: 28}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" hx-trigger=\"input changed delay:0.2s\" hx-get=\"/products/search\" hx-swap=\"outerHTML\" hx-target=\"#products\"></div><button type=\"submit\" class=\"text-primary-900 rounded-full p-3 md:px-5 lg:px-6 lg:py-4 bg-primary-300 md:rounded-xl md:flex md:gap-2 lg:gap-4 md:items-center md:justify-center shadow-lg\" hx-get=\"/products/search\" hx-swap=\"outerHTML\" hx-target=\"#products\"><img src=\"/public/icons/search.svg\" alt=\"wyszukaj ikona\" width=\"24px\" height=\"24px\"> <span class=\"hidden md:block text-primary-900\">Szukaj</span></button></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

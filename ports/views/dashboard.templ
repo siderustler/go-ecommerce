@@ -108,9 +108,6 @@ templ promotedProductsSection(dashboardViewModel dashboardViewModel) {
 				{{ path := "/?slide=" + strconv.Itoa(slider[i]) }}
 				<a
 					href={ path }
-					hx-get={ path }
-					hx-target="#promotions"
-					hx-swap="innerHTML"
 					if slider[i] == actual {
 						class="bg-primary-700 w-2 h-2 rounded-full shadow-xl"
 					} else {

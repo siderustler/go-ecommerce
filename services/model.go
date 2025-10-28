@@ -8,6 +8,37 @@ type Product struct {
 	Price float32
 }
 
+
+type Filter struct {
+	PriceFrom float32
+	PriceTo float32
+	IncludeMachines bool
+	IncludeGardening bool
+	IncludeParts bool
+	IncludeElectro bool
+	IncludeElectroMachines bool
+	Sort string
+	Search string
+}
+
+func NewFilter(
+	priceFrom, priceTo float32, 
+	includeMachines,includeGardening, includeParts, includeElectro, includeElectroMachines bool,
+	sort, search string,
+) Filter {
+	return Filter{
+		PriceFrom: priceFrom,
+		PriceTo: priceTo,
+		IncludeMachines: includeMachines,
+		IncludeGardening: includeGardening,
+		IncludeParts: includeParts,
+		IncludeElectro: includeElectro,
+		IncludeElectroMachines: includeElectroMachines,
+		Sort: sort,
+		Search: search,
+	}
+}
+
 type ProductDetail struct {
 	ID                  string
 	Name                string

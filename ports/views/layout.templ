@@ -43,32 +43,36 @@ templ headerSection(searchInputValue string) {
 				</a>
 			}
 		</div>
-		<form action="/products/search" method="POST" class="flex gap-3 md:gap-4 w-full items-center justify-center">
-			<div class="flex gap-2 md:gap-4 bg-grey-100 border-2 border-grey-500 rounded-xl hover:border-tertiary-300 has-focus:border-tertiary-500 px-4 md:px-6 py-3 w-full md:w-2/3 xl:w-2/5 shadow-lg">
-				<img src="/public/icons/search.svg" alt="szukanie ikona" height="24px" width="24px"/>
-				<input
-					id="search"
-					type="text"
-					name="search"
-					placeholder="Wyszukaj produkt..."
-					class="placeholder:text-grey-700 text-grey-900 outline-none w-full"
-					value={ searchInputValue }
-					hx-trigger="input changed delay:0.2s"
-					hx-post="/products/search"
-					hx-swap="outerHTML"
-					hx-target="#products"
-				/>
-			</div>
-			<button
-				type="submit"
-				class="text-primary-900 rounded-full p-3 md:px-5 lg:px-6 lg:py-4 bg-primary-300 md:rounded-xl md:flex md:gap-2 lg:gap-4 md:items-center md:justify-center shadow-lg"
-				hx-post="/products/search"
+		@searchInput(searchInputValue)
+	</div>
+}
+
+templ searchInput(searchInputValue string) {
+	<form action="/products/1" method="GET" class="flex gap-3 md:gap-4 w-full items-center justify-center">
+		<div class="flex gap-2 md:gap-4 bg-grey-100 border-2 border-grey-500 rounded-xl hover:border-tertiary-300 has-focus:border-tertiary-500 px-4 md:px-6 py-3 w-full md:w-2/3 xl:w-2/5 shadow-lg">
+			<img src="/public/icons/search.svg" alt="szukanie ikona" height="24px" width="24px"/>
+			<input
+				id="search"
+				type="text"
+				name="search"
+				placeholder="Wyszukaj produkt..."
+				class="placeholder:text-grey-700 text-grey-900 outline-none w-full"
+				value={ searchInputValue }
+				hx-trigger="input changed delay:0.2s"
+				hx-get="/products/search"
 				hx-swap="outerHTML"
 				hx-target="#products"
-			>
-				<img src="/public/icons/search.svg" alt="wyszukaj ikona" width="24px" height="24px"/>
-				<span class="hidden md:block text-primary-900">Szukaj</span>
-			</button>
-		</form>
-	</div>
+			/>
+		</div>
+		<button
+			type="submit"
+			class="text-primary-900 rounded-full p-3 md:px-5 lg:px-6 lg:py-4 bg-primary-300 md:rounded-xl md:flex md:gap-2 lg:gap-4 md:items-center md:justify-center shadow-lg"
+			hx-get="/products/search"
+			hx-swap="outerHTML"
+			hx-target="#products"
+		>
+			<img src="/public/icons/search.svg" alt="wyszukaj ikona" width="24px" height="24px"/>
+			<span class="hidden md:block text-primary-900">Szukaj</span>
+		</button>
+	</form>
 }

@@ -32,9 +32,7 @@ func NewHttpServer(services *services.Services) *httpServer {
 	h.srv.Post("/products/:prod/increment", h.handlers.postProductsIncrement)
 	h.srv.Post("/products/:prod/decrement", h.handlers.postProductsDecrement)
 	h.srv.Post("/products/:prod/basket-add", h.handlers.postProductsBasketAdd)
-	h.srv.Post("/filter/products", h.handlers.postFilterProducts)
-	h.srv.Post("/filter/products/validate/price",h.handlers.filterProductsPriceValidate)
-	h.srv.Post("/products/search", h.handlers.postProductsSearch)
+	h.srv.Post("/filter/products/validate/price", h.handlers.filterProductsPriceValidate)
 	h.srv.Static("/public", "./ports/views/public")
 	return h
 }

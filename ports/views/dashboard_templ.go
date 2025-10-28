@@ -383,53 +383,40 @@ func promotedProductsSection(dashboardViewModel dashboardViewModel) templ.Compon
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\" hx-get=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if slider[i] == actual {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, " class=\"bg-primary-700 w-2 h-2 rounded-full shadow-xl\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			} else {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, " class=\"bg-primary-500 w-1.5 h-1.5 rounded-full shadow-xl\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, " hx-get=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(path)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 111, Col: 18}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 116, Col: 18}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\" hx-target=\"#promotions\" hx-swap=\"innerHTML\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			if slider[i] == actual {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, " class=\"bg-primary-700 w-2 h-2 rounded-full shadow-xl\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, " class=\"bg-primary-500 w-1.5 h-1.5 rounded-full shadow-xl\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, " hx-get=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var16 string
-			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(path)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 119, Col: 18}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\" hx-target=\"#promotions\" hx-swap=\"innerHTML swap:0.01s settle:0.01s\" hx-push-url=\"true\"></a>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\" hx-target=\"#promotions\" hx-swap=\"innerHTML swap:0.01s settle:0.01s\" hx-push-url=\"true\"></a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</div></div><div class=\"hidden lg:flex items-center justify-center gap-4 lg:gap-6 xl:gap-12\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</div></div><div class=\"hidden lg:flex items-center justify-center gap-4 lg:gap-6 xl:gap-12\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -457,7 +444,7 @@ func promotedProductsSection(dashboardViewModel dashboardViewModel) templ.Compon
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -481,65 +468,65 @@ func promoProduct(product services.Product) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var17 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var17 == nil {
-			templ_7745c5c3_Var17 = templ.NopComponent
+		templ_7745c5c3_Var16 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var16 == nil {
+			templ_7745c5c3_Var16 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		productPath := "/products/details/" + product.ID
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<div class=\"flex flex-col gap-6 lg:gap-8 p-6 md:p-8 items-center justify-center rounded-xl border-primary-400 border-2 shadow-lg bg-grey-100 max-w-sm relative\"><img src=\"/public/icons/product-sale.svg\" alt=\"produkt w promocji ikona\" height=\"48px\" width=\"48px\" class=\"absolute -top-3 -left-2\"> <a href=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<div class=\"flex flex-col gap-6 lg:gap-8 p-6 md:p-8 items-center justify-center rounded-xl border-primary-400 border-2 shadow-lg bg-grey-100 max-w-sm relative\"><img src=\"/public/icons/product-sale.svg\" alt=\"produkt w promocji ikona\" height=\"48px\" width=\"48px\" class=\"absolute -top-3 -left-2\"> <a href=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var18 templ.SafeURL
-		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinURLErrs(productPath)
+		var templ_7745c5c3_Var17 templ.SafeURL
+		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinURLErrs(productPath)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 155, Col: 21}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 152, Col: 21}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\" class=\"flex flex-col gap-4 items-center justify-center\"><img alt=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var18 string
+		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(product.Name + " image")
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 156, Col: 33}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\" class=\"flex flex-col gap-4 items-center justify-center\"><img alt=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\" src=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var19 string
-		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(product.Name + " image")
+		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(product.Image)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 159, Col: 33}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 157, Col: 23}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\" src=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\" class=\"rounded-2xl shadow-xl htmx-swapping:opacity-0 transition-opacity duration-200 htmx-settling:opacity-100 w-full h-full\"><div class=\"flex flex-col gap-2\"><img alt=\"product name\" src=\"/public/icons/product-name.svg\" width=\"24px\" height=\"24px\"><p class=\"pl-4 pr-2 text-primary-800 text-lg\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var20 string
-		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(product.Image)
+		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(product.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 160, Col: 23}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 167, Col: 64}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\" class=\"rounded-2xl shadow-xl htmx-swapping:opacity-0 transition-opacity duration-200 htmx-settling:opacity-100 w-full h-full\"><div class=\"flex flex-col gap-2\"><img alt=\"product name\" src=\"/public/icons/product-name.svg\" width=\"24px\" height=\"24px\"><p class=\"pl-4 pr-2 text-primary-800 text-lg\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var21 string
-		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(product.Name)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 170, Col: 64}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</p></div></a>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</p></div></a>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -547,7 +534,7 @@ func promoProduct(product services.Product) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<button class=\"flex justify-center items-center gap-1 md:gap-2 lg:gap-4 bg-primary-300 p-3 md:px-5 lg:px-6 md:py-3 lg:py-4 rounded-xl w-full\" hx-post=\"/basket/add\" hx-target=\"#basket\" hx-swap=\"innerHTML\"><img src=\"/public/icons/shop-cart.svg\" alt=\"dodaj do koszyka ikona\" width=\"24px\" height=\"24px\"> <span class=\"text-primary-900 text-sm\">Dodaj do koszyka</span></button></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<button class=\"flex justify-center items-center gap-1 md:gap-2 lg:gap-4 bg-primary-300 p-3 md:px-5 lg:px-6 md:py-3 lg:py-4 rounded-xl w-full\" hx-post=\"/basket/add\" hx-target=\"#basket\" hx-swap=\"innerHTML\"><img src=\"/public/icons/shop-cart.svg\" alt=\"dodaj do koszyka ikona\" width=\"24px\" height=\"24px\"> <span class=\"text-primary-900 text-sm\">Dodaj do koszyka</span></button></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -571,38 +558,38 @@ func promotionPrice(priceBefore, actualPrice float32) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var22 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var22 == nil {
-			templ_7745c5c3_Var22 = templ.NopComponent
+		templ_7745c5c3_Var21 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var21 == nil {
+			templ_7745c5c3_Var21 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<div class=\"flex flex-col xl:flex-row gap-4 md:justify-around px-4 w-full\"><div class=\"flex gap-2 flex-col\"><p class=\"text-error-700 text-sm\">Cena przed:</p><p class=\"flex gap-2 md:gap-3\"><img alt=\"price before promotion\" src=\"/public/icons/promo-price-before.svg\" width=\"24px\" height=\"24px\"> <span class=\"text-error-800 line-through text-lg\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<div class=\"flex flex-col xl:flex-row gap-4 md:justify-around px-4 w-full\"><div class=\"flex gap-2 flex-col\"><p class=\"text-error-700 text-sm\">Cena przed:</p><p class=\"flex gap-2 md:gap-3\"><img alt=\"price before promotion\" src=\"/public/icons/promo-price-before.svg\" width=\"24px\" height=\"24px\"> <span class=\"text-error-800 line-through text-lg\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var22 string
+		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(priceBefore)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 194, Col: 67}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</span></p></div><div class=\"flex gap-2 flex-col\"><p class=\"text-primary-700 text-sm\">Aktualna cena:</p><p class=\"flex gap-2 md:gap-3\"><img alt=\"price with promotion\" src=\"/public/icons/promo-price-after.svg\" width=\"24px\" height=\"24px\"> <span class=\"text-primary-800 text-lg\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var23 string
-		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(priceBefore)
+		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(actualPrice)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 197, Col: 67}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 201, Col: 56}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</span></p></div><div class=\"flex gap-2 flex-col\"><p class=\"text-primary-700 text-sm\">Aktualna cena:</p><p class=\"flex gap-2 md:gap-3\"><img alt=\"price with promotion\" src=\"/public/icons/promo-price-after.svg\" width=\"24px\" height=\"24px\"> <span class=\"text-primary-800 text-lg\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var24 string
-		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(actualPrice)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 204, Col: 56}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "</span></p></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</span></p></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -626,12 +613,12 @@ func categoriesSection() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var25 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var25 == nil {
-			templ_7745c5c3_Var25 = templ.NopComponent
+		templ_7745c5c3_Var24 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var24 == nil {
+			templ_7745c5c3_Var24 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<div class=\"flex items-center gap-4 md:gap-8 lg:gap-12 flex-wrap justify-center\"><a class=\"p-3 bg-grey-100 shadow-lg rounded-xl flex flex-col items-center justify-center w-40 min-h-36 text-center hover:bg-primary-200\" href=\"/products/1?machines=true\" hx-get=\"/products/1?machines=true\" hx-target=\"#products\" hx-swap=\"outerHTML\" hx-push-url=\"true\"><img alt=\"maszyny budowlane ikona\" src=\"/public/icons/machines.svg\" width=\"24px\" height=\"24px\"><p class=\"p-2 text-tertiary-900\">Maszyny budowlane</p></a> <a class=\"p-3 bg-grey-100 shadow-lg rounded-xl flex flex-col items-center justify-center w-40 min-h-36 text-center hover:bg-primary-200\" href=\"/products/1?gardening=true\" hx-get=\"/products/1?gardening=true\" hx-target=\"#products\" hx-swap=\"outerHTML\" hx-push-url=\"true\"><img alt=\"sprzęt ogrodniczy ikona\" src=\"/public/icons/gardening.svg\" width=\"24px\" height=\"24px\"><p class=\"p-2 text-tertiary-900\">Sprzęt ogrodniczy</p></a> <a class=\"p-3 bg-grey-100 shadow-lg rounded-xl flex flex-col items-center justify-center w-40 min-h-36 text-center hover:bg-primary-200\" href=\"/products/1?parts=true\" hx-get=\"/products/1?parts=true\" hx-target=\"#products\" hx-swap=\"outerHTML\" hx-push-url=\"true\"><img alt=\"części i eksploatacja ikona\" src=\"/public/icons/parts.svg\" width=\"24px\" height=\"24px\"><p class=\"p-2 text-tertiary-900\">Części i eksploatacja</p></a> <a class=\"p-3 bg-grey-100 shadow-lg rounded-xl flex flex-col items-center justify-center w-40 min-h-36 text-center hover:bg-primary-200\" href=\"/products/1?electro=true\" hx-get=\"/products/1?electro=true\" hx-target=\"#products\" hx-swap=\"outerHTML\" hx-push-url=\"true\"><img alt=\"elektro narzędzia ikona\" src=\"/public/icons/power-supply.svg\" width=\"24px\" height=\"24px\"><p class=\"p-2 text-tertiary-900\">Elektro narzędzia</p></a> <a class=\"p-3 bg-grey-100 shadow-lg rounded-xl flex flex-col items-center justify-center w-40 min-h-36 text-center hover:bg-primary-200\" href=\"/products/1?electroMachines=true\" hx-get=\"/products/1?electroMachines=true\" hx-target=\"#products\" hx-swap=\"outerHTML\" hx-push-url=\"true\"><img alt=\"części i eksploatacja ikona\" src=\"/public/icons/electric-machines.svg\" width=\"24px\" height=\"24px\"><p class=\"p-2 text-tertiary-900\">Maszyny i urządzenia zasilające</p></a></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<div class=\"flex items-center gap-4 md:gap-8 lg:gap-12 flex-wrap justify-center\"><a class=\"p-3 bg-grey-100 shadow-lg rounded-xl flex flex-col items-center justify-center w-40 min-h-36 text-center hover:bg-primary-200\" href=\"/products/1?machines=true\" hx-get=\"/products/1?machines=true\" hx-target=\"#products\" hx-swap=\"outerHTML\" hx-push-url=\"true\"><img alt=\"maszyny budowlane ikona\" src=\"/public/icons/machines.svg\" width=\"24px\" height=\"24px\"><p class=\"p-2 text-tertiary-900\">Maszyny budowlane</p></a> <a class=\"p-3 bg-grey-100 shadow-lg rounded-xl flex flex-col items-center justify-center w-40 min-h-36 text-center hover:bg-primary-200\" href=\"/products/1?gardening=true\" hx-get=\"/products/1?gardening=true\" hx-target=\"#products\" hx-swap=\"outerHTML\" hx-push-url=\"true\"><img alt=\"sprzęt ogrodniczy ikona\" src=\"/public/icons/gardening.svg\" width=\"24px\" height=\"24px\"><p class=\"p-2 text-tertiary-900\">Sprzęt ogrodniczy</p></a> <a class=\"p-3 bg-grey-100 shadow-lg rounded-xl flex flex-col items-center justify-center w-40 min-h-36 text-center hover:bg-primary-200\" href=\"/products/1?parts=true\" hx-get=\"/products/1?parts=true\" hx-target=\"#products\" hx-swap=\"outerHTML\" hx-push-url=\"true\"><img alt=\"części i eksploatacja ikona\" src=\"/public/icons/parts.svg\" width=\"24px\" height=\"24px\"><p class=\"p-2 text-tertiary-900\">Części i eksploatacja</p></a> <a class=\"p-3 bg-grey-100 shadow-lg rounded-xl flex flex-col items-center justify-center w-40 min-h-36 text-center hover:bg-primary-200\" href=\"/products/1?electro=true\" hx-get=\"/products/1?electro=true\" hx-target=\"#products\" hx-swap=\"outerHTML\" hx-push-url=\"true\"><img alt=\"elektro narzędzia ikona\" src=\"/public/icons/power-supply.svg\" width=\"24px\" height=\"24px\"><p class=\"p-2 text-tertiary-900\">Elektro narzędzia</p></a> <a class=\"p-3 bg-grey-100 shadow-lg rounded-xl flex flex-col items-center justify-center w-40 min-h-36 text-center hover:bg-primary-200\" href=\"/products/1?electroMachines=true\" hx-get=\"/products/1?electroMachines=true\" hx-target=\"#products\" hx-swap=\"outerHTML\" hx-push-url=\"true\"><img alt=\"części i eksploatacja ikona\" src=\"/public/icons/electric-machines.svg\" width=\"24px\" height=\"24px\"><p class=\"p-2 text-tertiary-900\">Maszyny i urządzenia zasilające</p></a></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -55,10 +55,9 @@ type productsListViewModel struct {
 
 	actualPage       int
 	maxPagesBoundary int
-	searchQuery      string
 }
 
-func NewProductsListViewModel(domainProducts []services.Product, filterViewModel FilterViewModel, actualPage, maxPagesBoundary int, searchQuery string) productsListViewModel {
+func NewProductsListViewModel(domainProducts []services.Product, filterViewModel FilterViewModel, actualPage, maxPagesBoundary int) productsListViewModel {
 	if actualPage < 1 {
 		actualPage = 1
 	}
@@ -70,7 +69,6 @@ func NewProductsListViewModel(domainProducts []services.Product, filterViewModel
 		actualPage:       actualPage,
 		maxPagesBoundary: maxPagesBoundary,
 		filter:           filterViewModel,
-		searchQuery:      searchQuery,
 	}
 }
 
@@ -198,7 +196,7 @@ func Products(productsListViewModel productsListViewModel) templ.Component {
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = layout(productsListViewModel.searchQuery).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = layout(productsListViewModel.filter.Search).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -234,7 +232,7 @@ func sectionHeader(icon, iconAlt, content string) templ.Component {
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(icon)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 126, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 124, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -247,7 +245,7 @@ func sectionHeader(icon, iconAlt, content string) templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(iconAlt)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 126, Col: 33}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 124, Col: 33}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -260,7 +258,7 @@ func sectionHeader(icon, iconAlt, content string) templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(content)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 127, Col: 36}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 125, Col: 36}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -302,7 +300,7 @@ func sortFilter(endpoint, content string) templ.Component {
 		var templ_7745c5c3_Var9 templ.SafeURL
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinURLErrs(endpoint)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 133, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 131, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -315,7 +313,7 @@ func sortFilter(endpoint, content string) templ.Component {
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(endpoint)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 135, Col: 19}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 133, Col: 19}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -328,7 +326,7 @@ func sortFilter(endpoint, content string) templ.Component {
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(content)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 139, Col: 11}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 137, Col: 11}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
@@ -370,7 +368,7 @@ func productItem(viewModel productViewModel, page int, backUrl string) templ.Com
 		var templ_7745c5c3_Var13 templ.SafeURL
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinURLErrs("/products/details/" + viewModel.domain.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 152, Col: 52}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 150, Col: 52}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
@@ -383,7 +381,7 @@ func productItem(viewModel productViewModel, page int, backUrl string) templ.Com
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs("/products/details/" + viewModel.domain.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 154, Col: 54}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 152, Col: 54}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
@@ -396,7 +394,7 @@ func productItem(viewModel productViewModel, page int, backUrl string) templ.Com
 		var templ_7745c5c3_Var15 string
 		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(viewModel.domain.Image)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 159, Col: 36}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 157, Col: 36}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 		if templ_7745c5c3_Err != nil {
@@ -409,7 +407,7 @@ func productItem(viewModel productViewModel, page int, backUrl string) templ.Com
 		var templ_7745c5c3_Var16 string
 		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(viewModel.domain.Name + " image")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 159, Col: 77}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 157, Col: 77}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
@@ -422,7 +420,7 @@ func productItem(viewModel productViewModel, page int, backUrl string) templ.Com
 		var templ_7745c5c3_Var17 templ.SafeURL
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/products/details/%s?back=%s", viewModel.domain.ID, backUrl))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 163, Col: 87}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 161, Col: 87}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
@@ -455,7 +453,7 @@ func productItem(viewModel productViewModel, page int, backUrl string) templ.Com
 			var templ_7745c5c3_Var19 string
 			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(viewModel.domain.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 166, Col: 49}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 164, Col: 49}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 			if templ_7745c5c3_Err != nil {
@@ -494,7 +492,7 @@ func productItem(viewModel productViewModel, page int, backUrl string) templ.Com
 			var templ_7745c5c3_Var21 string
 			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.FormatFloat(float64(viewModel.domain.Price), 'f', 2, 32) + " zł")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 170, Col: 118}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 168, Col: 118}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 			if templ_7745c5c3_Err != nil {
@@ -555,7 +553,7 @@ func productItem(viewModel productViewModel, page int, backUrl string) templ.Com
 				var templ_7745c5c3_Var24 string
 				templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(targetID)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 181, Col: 23}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 179, Col: 23}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 				if templ_7745c5c3_Err != nil {
@@ -580,7 +578,7 @@ func productItem(viewModel productViewModel, page int, backUrl string) templ.Com
 				var templ_7745c5c3_Var25 templ.SafeURL
 				templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinURLErrs(addBasketPath)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 189, Col: 48}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 187, Col: 48}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 				if templ_7745c5c3_Err != nil {
@@ -705,7 +703,7 @@ func paginator(actualPage int, maxPagesBoundary int, filterQuery string) templ.C
 				var templ_7745c5c3_Var27 templ.SafeURL
 				templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinURLErrs(path)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 252, Col: 16}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 250, Col: 16}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 				if templ_7745c5c3_Err != nil {
@@ -733,7 +731,7 @@ func paginator(actualPage int, maxPagesBoundary int, filterQuery string) templ.C
 				var templ_7745c5c3_Var28 string
 				templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(path)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 258, Col: 18}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 256, Col: 18}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 				if templ_7745c5c3_Err != nil {
@@ -746,7 +744,7 @@ func paginator(actualPage int, maxPagesBoundary int, filterQuery string) templ.C
 				var templ_7745c5c3_Var29 string
 				templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(navigator)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 262, Col: 16}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 260, Col: 16}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 				if templ_7745c5c3_Err != nil {
@@ -819,7 +817,7 @@ func paginatorItem(page string, paginateDirection paginateDirection, hxTarget, h
 		var templ_7745c5c3_Var32 templ.SafeURL
 		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinURLErrs(page)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 289, Col: 13}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 287, Col: 13}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 		if templ_7745c5c3_Err != nil {
@@ -832,7 +830,7 @@ func paginatorItem(page string, paginateDirection paginateDirection, hxTarget, h
 		var templ_7745c5c3_Var33 string
 		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(page)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 290, Col: 15}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 288, Col: 15}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 		if templ_7745c5c3_Err != nil {
@@ -845,7 +843,7 @@ func paginatorItem(page string, paginateDirection paginateDirection, hxTarget, h
 		var templ_7745c5c3_Var34 string
 		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(hxTarget)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 291, Col: 22}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 289, Col: 22}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 		if templ_7745c5c3_Err != nil {
@@ -858,7 +856,7 @@ func paginatorItem(page string, paginateDirection paginateDirection, hxTarget, h
 		var templ_7745c5c3_Var35 string
 		templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(hxSwap)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 292, Col: 18}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 290, Col: 18}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 		if templ_7745c5c3_Err != nil {
@@ -905,7 +903,7 @@ func paginatorItem(page string, paginateDirection paginateDirection, hxTarget, h
 		var templ_7745c5c3_Var37 string
 		templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(imgPath)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 302, Col: 20}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 300, Col: 20}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 		if templ_7745c5c3_Err != nil {
@@ -918,7 +916,7 @@ func paginatorItem(page string, paginateDirection paginateDirection, hxTarget, h
 		var templ_7745c5c3_Var38 string
 		templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(imgAlt)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 302, Col: 35}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/products.templ`, Line: 300, Col: 35}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 		if templ_7745c5c3_Err != nil {

@@ -4,7 +4,7 @@ import (
 	"context"
 )
 
-func (s *Services) GetProducts(ctx context.Context, page int) ([]Product, error) {
+func (s *Services) GetProducts(ctx context.Context, page int, filter Filter) ([]Product, error) {
 	return []Product{
 		NewProduct("1", "essa", "/public/products/essa/1.webp", 1.99),
 		NewProduct("2", "dwa", "/public/products/essa/1.webp", 2.99),
