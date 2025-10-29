@@ -78,6 +78,8 @@ func (h handlers) getProductDetails(c *fiber.Ctx) error {
 	toggleTechParams := c.Query("tech-params") != ""
 	toggleShippingInfo := c.Query("shipping") != ""
 	swapImg := c.Query("img") != ""
+	decrementBasket := c.Query("dec") == "true"
+	incrementBasket := c.Query("inc") == "true"
 
 	if toggleLocalInfo {
 		fragments = append(fragments, views.ExpandLocalInfoFragment)
@@ -93,6 +95,9 @@ func (h handlers) getProductDetails(c *fiber.Ctx) error {
 	}
 	if swapImg {
 		fragments = append(fragments, views.ImageSelectorFragment)
+	}
+	if decrementBasket || incrementBasket {
+		fragments = append(fragments, views.BasketAddCounter)
 	}
 
 	isOnProductDetails := strings.Contains(c.Get("Hx-Current-Url"), "/products/details/")

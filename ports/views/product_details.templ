@@ -7,13 +7,16 @@ import "github.com/siderustler/go-ecommerce/services"
 type ProductDetailViewModel struct {
 	domain services.ProductDetail
 
-	SelectedImage         int    `query:"img,omitempty" url:"img,omitempty"`
-	AddBasketCount        int    `form:"count"`
-	ExpandProductInfo     bool   `query:"info,omitempty" url:"info,omitempty"`
-	ExpandTechnicalParams bool   `query:"tech-params,omitempty" url:"tech-params,omitempty"`
-	ExpandShippingInfo    bool   `query:"shipping,omitempty" url:"shipping,omitempty"`
-	ExpandLocalInfo       bool   `query:"local,omitempty" url:"local,omitempty"`
-	BackUrl               string `query:"back,omitempty" url:"back,omitempty"`
+	SelectedImage         int    `query:"img"`
+	ExpandProductInfo     bool   `query:"info"`
+	ExpandTechnicalParams bool   `query:"tech-params"`
+	ExpandShippingInfo    bool   `query:"shipping"`
+	ExpandLocalInfo       bool   `query:"local"`
+	BackUrl               string `query:"back"`
+
+	AddBasketCount       int  `query:"count"`
+	DecrementBasketCount bool `query:"dec"`
+	IncrementBasketCount bool `query:"inc"`
 }
 
 func (p *ProductDetailViewModel) Align(productDetail services.ProductDetail) {
@@ -21,19 +24,19 @@ func (p *ProductDetailViewModel) Align(productDetail services.ProductDetail) {
 	if p.BackUrl == "" {
 		p.BackUrl = "/products/1"
 	}
+
 	if p.AddBasketCount < 1 {
 		p.AddBasketCount = 1
 	}
-}
 
-func (p *ProductDetailViewModel) DecrementBasketCount() {
-	if p.AddBasketCount > 1 {
+	isBasketDecrementable := p.DecrementBasketCount && p.AddBasketCount > 1
+	if isBasketDecrementable {
 		p.AddBasketCount -= 1
 	}
-}
 
-func (p *ProductDetailViewModel) IncrementBasketCount() {
-	p.AddBasketCount += 1
+	if p.IncrementBasketCount {
+		p.AddBasketCount += 1
+	}
 }
 
 type imageSelector struct{}
@@ -118,8 +121,8 @@ templ basketAdder(product ProductDetailViewModel, basePath string) {
 			@templ.Fragment(BasketAddCounter) {
 				<div id="basket-adder" class="flex justify-center gap-6 md:gap-4 min-h-14 md:flex-col">
 					{{
-						decrementPath := basePath + "?dec"
-						incrementPath := basePath + "?inc"
+						decrementPath := basePath + "?dec=true"
+						incrementPath := basePath + "?inc=true"
 					}}
 					@counter2(product.AddBasketCount, decrementPath, incrementPath, "#basket-adder")
 					<form method="post" action={ "TODO" } hx-post={ "TODO" } class="flex items-center justify-center">
