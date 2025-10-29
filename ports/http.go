@@ -26,10 +26,8 @@ func NewHttpServer(services *services.Services) *httpServer {
 	h.srv.Get("/filter/products", h.handlers.getFilterProducts)
 	h.srv.Get("/", h.handlers.getDashboard)
 
-	h.srv.Post("/products/:prod/increment", h.handlers.postProductsIncrement)
-	h.srv.Post("/products/:prod/decrement", h.handlers.postProductsDecrement)
-	h.srv.Post("/products/:prod/basket-add", h.handlers.postProductsBasketAdd)
 	h.srv.Post("/filter/products/validate/price", h.handlers.filterProductsPriceValidate)
+
 	h.srv.Static("/public", "./ports/views/public")
 	return h
 }

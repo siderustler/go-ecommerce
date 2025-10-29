@@ -2,7 +2,6 @@ package ports
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -22,40 +21,42 @@ func (h handlers) getProductsRedirect(c *fiber.Ctx) error {
 func (h handlers) getProducts(c *fiber.Ctx) error {
 	page, _ := c.ParamsInt("page")
 	var filterViewModel views.FilterViewModel
+	_ = c.QueryParser(&filterViewModel)
 	filterViewModel.Validate()
 
-	_ = c.QueryParser(&filterViewModel)
+	var productsListViewModel views.ProductsListViewModel
+	_ = c.QueryParser(productsListViewModel)
+
 	products, err := h.services.GetProducts(c.Context(), page, filterViewModel.MapToDomainFilter())
 	//FIXME -- display empty product list
 	if err != nil {
 		return c.Redirect("/products/1")
 	}
+	//FIXME -- get max products count to display (paginated)
+	maxPagesBoundary := 10
 
-	productsViewModel := views.NewProductsListViewModel(
-		products,
-		filterViewModel,
-		page,
-		10,
-	)
+	values, _ := query.Values(filterViewModel)
+	encodedFilter := values.Encode()
+
+	productsListViewModel.Align(products, filterViewModel, page, maxPagesBoundary, encodedFilter)
 
 	if !isHTMXRequest(c) {
-		return render(c, views.Products(productsViewModel))
+		return render(c, views.Products(productsListViewModel))
 	}
 
 	if filterViewModel.HasError() {
 		c.Append("HX-Trigger", "validatePrice")
-		return render(c, views.Products(productsViewModel), views.ProductListFragment)
+		return render(c, views.Products(productsListViewModel), views.ProductListFragment)
 	}
 
-	values, _ := query.Values(filterViewModel)
-	encodedUrl := "/products/1?" + values.Encode()
-	isAlreadyOnRequestedUrl := strings.Contains(c.Get("HX-Current-Url"), encodedUrl)
+	productListUrl := fmt.Sprintf("/products/%d?%s", page, encodedFilter)
+	isAlreadyOnProductList := strings.HasSuffix(c.Get("HX-Current-Url"), productListUrl)
 
-	if !isAlreadyOnRequestedUrl {
-		c.Append("HX-Push-Url", encodedUrl)
+	if !isAlreadyOnProductList {
+		c.Append("HX-Push-Url", productListUrl)
 	}
 
-	return render(c, views.Products(productsViewModel), views.ProductListFragment)
+	return render(c, views.Products(productsListViewModel), views.ProductListFragment)
 }
 
 func (h handlers) getProductDetails(c *fiber.Ctx) error {
@@ -66,7 +67,6 @@ func (h handlers) getProductDetails(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Redirect("/products/1")
 	}
-
 	productDetailViewModel.Align(productDetails)
 	if !isHTMXRequest(c) {
 		return render(c, views.ProductDetails(productDetailViewModel))
@@ -106,83 +106,6 @@ func (h handlers) getProductDetails(c *fiber.Ctx) error {
 		return render(c, views.ProductDetails(productDetailViewModel), views.ProductDetailFragment)
 	}
 	return render(c, views.ProductDetails(productDetailViewModel), fragments...)
-}
-
-func (h handlers) postProductsIncrement(c *fiber.Ctx) error {
-	productID := c.Query("id")
-	basketCount, _ := strconv.Atoi(c.FormValue("count"))
-	page, _ := strconv.Atoi(c.Params("prod"))
-
-	var filterViewModel views.FilterViewModel
-	//FIXME render error
-	_ = c.BodyParser(&filterViewModel)
-	filterViewModel.Validate()
-
-	products, err := h.services.GetProducts(c.Context(), page, filterViewModel.MapToDomainFilter())
-	if err != nil {
-		return c.Redirect("/products/1")
-	}
-
-	productsListViewModel := views.NewProductsListViewModel(products, filterViewModel, page, 10)
-	productsListViewModel.ChangeProductBasketCount(productID, basketCount+1)
-	if isHTMXRequest(c) {
-		fragments := append([]any{}, fmt.Sprintf("%+v-%s", views.BasketAddCounter, productID))
-
-		return render(c, views.Products(productsListViewModel), fragments...)
-	}
-
-	return render(c, views.Products(productsListViewModel))
-}
-
-func (h handlers) postProductsDecrement(c *fiber.Ctx) error {
-	basketCount, _ := strconv.Atoi(c.FormValue("count"))
-	page, _ := strconv.Atoi(c.Params("prod"))
-	productID := c.Query("id")
-	var filterViewModel views.FilterViewModel
-	//FIXME render error
-	_ = c.BodyParser(&filterViewModel)
-	filterViewModel.Validate()
-
-	products, err := h.services.GetProducts(c.Context(), page, filterViewModel.MapToDomainFilter())
-	if err != nil {
-		return c.Redirect("/products/1")
-	}
-	productsListViewModel := views.NewProductsListViewModel(products, filterViewModel, page, 10)
-	productsListViewModel.ChangeProductBasketCount(productID, basketCount-1)
-	if isHTMXRequest(c) {
-		fragments := append([]any{}, fmt.Sprintf("%+v-%s", views.BasketAddCounter, productID))
-
-		return render(c, views.Products(productsListViewModel), fragments...)
-	}
-
-	return render(c, views.Products(productsListViewModel))
-}
-
-func (h handlers) postProductsBasketAdd(c *fiber.Ctx) error {
-	basketCount, _ := strconv.Atoi(c.FormValue("count"))
-	page, _ := strconv.Atoi(c.Params("prod"))
-	var filterViewModel views.FilterViewModel
-	_ = c.BodyParser(&filterViewModel)
-	filterViewModel.Validate()
-
-	productID := c.Query("id")
-	products, err := h.services.GetProducts(c.Context(), page, filterViewModel.MapToDomainFilter())
-	if err != nil {
-		return c.Redirect("/products/1")
-	}
-	//FIXME render error
-	productsListViewModel := views.NewProductsListViewModel(products, filterViewModel, page, 10)
-	productsListViewModel.ChangeProductBasketCount(productID, basketCount)
-
-	fmt.Printf("Adding to basket count %d of item %s\n", basketCount, productID)
-
-	if isHTMXRequest(c) {
-		fragments := append([]any{}, fmt.Sprintf("%+v-%s", views.BasketAddCounter, productID))
-
-		return render(c, views.Products(productsListViewModel), fragments...)
-	}
-
-	return render(c, views.Products(productsListViewModel))
 }
 
 func (h handlers) getFilterProducts(c *fiber.Ctx) error {

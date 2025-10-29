@@ -3,93 +3,80 @@ package views
 import "strconv"
 import "fmt"
 import "github.com/siderustler/go-ecommerce/services"
-import "github.com/google/go-querystring/query"
 
 type productViewModel struct {
 	domain services.Product
 
 	addBasketCount int
+	backUrl        string
 }
 
-type productID string
-
-func (p *productViewModel) Increment() {
-	p.addBasketCount += 1
-}
-
-func (p *productViewModel) Decrement() {
-	if p.addBasketCount > 1 {
-		p.addBasketCount -= 1
-	}
-}
-
-func NewProductViewModel(product services.Product, addBasketCount int) productViewModel {
-	if addBasketCount < 1 {
-		addBasketCount = 1
-	}
-	return productViewModel{
-		domain:         product,
-		addBasketCount: addBasketCount,
-	}
-}
-
-func mapDomainProductsToProductsViewModel(products []services.Product) []productViewModel {
-	productViewModels := make([]productViewModel, 0, len(products))
-	for _, product := range products {
-		productViewModels = append(productViewModels, productViewModel{domain: product, addBasketCount: 1})
-	}
-	return productViewModels
-}
-
-type productsListViewModel struct {
-	products []productViewModel
-	filter   FilterViewModel
-
+type paginatorViewModel struct {
 	actualPage       int
 	maxPagesBoundary int
+	encodedFilter    string
 }
 
-func NewProductsListViewModel(domainProducts []services.Product, filterViewModel FilterViewModel, actualPage, maxPagesBoundary int) productsListViewModel {
+func newPaginatorViewModel(actualPage, maxPagesBoundary int, encodedFilter string) paginatorViewModel {
+	return paginatorViewModel{actualPage: actualPage, maxPagesBoundary: maxPagesBoundary, encodedFilter: encodedFilter}
+}
+
+type ProductsListViewModel struct {
+	products  []productViewModel
+	filter    FilterViewModel
+	paginator paginatorViewModel
+
+	IncrementBasketCount bool   `query:"inc"`
+	DecrementBasketCount bool   `query:"dec"`
+	ChangeCountID        string `query:"id"`
+	AddBasketCount       int    `query:"count"`
+}
+
+func (p *ProductsListViewModel) Align(domainProducts []services.Product, filterViewModel FilterViewModel, actualPage, maxPagesBoundary int, encodedFilter string) {
 	if actualPage < 1 {
 		actualPage = 1
 	}
 	if maxPagesBoundary < 1 {
 		maxPagesBoundary = 1
 	}
-	return productsListViewModel{
-		products:         mapDomainProductsToProductsViewModel(domainProducts),
-		actualPage:       actualPage,
-		maxPagesBoundary: maxPagesBoundary,
-		filter:           filterViewModel,
-	}
-}
+	p.paginator = newPaginatorViewModel(actualPage, maxPagesBoundary, encodedFilter)
+	p.filter = filterViewModel
+	productsViewModel := make([]productViewModel, 0, len(domainProducts))
+	backUrl := fmt.Sprintf("/products/%d?%s", actualPage, encodedFilter)
 
-func (p *productsListViewModel) ChangeProductBasketCount(id string, basketCount int) {
-	if basketCount < 1 {
-		basketCount = 1
-	}
-	for i := 0; i < len(p.products); i++ {
-		if p.products[i].domain.ID == id {
-			p.products[i].addBasketCount = basketCount
+	for _, product := range domainProducts {
+		productViewModel := productViewModel{domain: product, addBasketCount: 1, backUrl: backUrl}
+		if product.ID != p.ChangeCountID {
+			productsViewModel = append(productsViewModel, productViewModel)
+			continue
 		}
+		if p.AddBasketCount > 1 {
+			productViewModel.addBasketCount = p.AddBasketCount
+		}
+		if p.IncrementBasketCount {
+			productViewModel.addBasketCount += 1
+		}
+		isDecrementable := p.DecrementBasketCount && p.AddBasketCount > 1
+		if isDecrementable {
+			productViewModel.addBasketCount -= 1
+		}
+
+		productsViewModel = append(productsViewModel, productViewModel)
 	}
+	p.products = productsViewModel
 }
 
 type productListFragment struct{}
 
 var ProductListFragment = productListFragment{}
 
-templ Products(productsListViewModel productsListViewModel) {
+templ Products(productsListViewModel ProductsListViewModel) {
 	{{
 		filterPath := "/filter/products"
-		backUrl := "/products/" + strconv.Itoa(productsListViewModel.actualPage)
-		queries, _ := query.Values(productsListViewModel.filter)
-		filterQuery := queries.Encode()
 
-		isAnyFilterIncluded := len(queries) > 0
+		isAnyFilterIncluded := len(productsListViewModel.paginator.encodedFilter) > 0
 		if isAnyFilterIncluded {
-			filterPath += "?" + filterQuery
-			backUrl += "?" + filterQuery
+			filterPath += "?" + productsListViewModel.paginator.encodedFilter
 		}
 	}}
 	@layout(productsListViewModel.filter.Search) {
@@ -108,9 +95,9 @@ templ Products(productsListViewModel productsListViewModel) {
 						<img id="spinner3" src="/public/icons/spinner.svg" class="htmx-indicator absolute top-1/2 left-1/2 z-2"/>
 						<div id="spinner2" class="flex flex-col pb-8 items-center justify-center gap-4 sm:gap-6 lg:gap-12 htmx-request:opacity-50">
 							for _, product := range productsListViewModel.products {
-								@productItem(product, productsListViewModel.actualPage, backUrl)
+								@productItem(product)
 							}
-							@paginator(productsListViewModel.actualPage, productsListViewModel.maxPagesBoundary, filterQuery)
+							@paginator(productsListViewModel.paginator)
 						</div>
 					</section>
 				</section>
@@ -144,21 +131,34 @@ templ sortFilter(endpoint, content string) {
 	</a>
 }
 
-templ productItem(viewModel productViewModel, page int, backUrl string) {
+templ productItem(viewModel productViewModel) {
 	<div class="flex flex-col md:flex-row py-8 px-2 md:p-8 gap-3 md:gap-6 lg:gap-8 w-full shadow-sm rounded-2xl bg-grey-100">
-		<a
-			href={ "/products/details/" + viewModel.domain.ID }
-			class="self-center"
-			hx-get={ "/products/details/" + viewModel.domain.ID }
+		{{ productDetailsHref := fmt.Sprintf("/products/details/%s?back=%s", viewModel.domain.ID, viewModel.backUrl) }}
+		<form
+			method="GET"
+			action={ productDetailsHref }
+			class="self-center relative"
+			hx-get={ productDetailsHref }
 			hx-target="#products"
-			hx-swap="innerHTML"
-			hx-push-url="true"
+			hx-swap="outerHTML"
+			hx-push-url={ "/products/details/" + viewModel.domain.ID }
 		>
+			<input name="back" value={ viewModel.backUrl } hidden/>
 			<img src={ viewModel.domain.Image } alt={ viewModel.domain.Name + " image" } class="rounded-2xl lg:rounded-3xl shadow-lg max-w-72 max-h-72 mx-auto"/>
-		</a>
+			<button type="submit" class="absolute top-0 left-0 w-full h-full z-10"></button>
+		</form>
 		<div class="flex flex-col gap-2 md:gap-4">
 			<div class="flex flex-col gap-3 md:gap-6">
-				<a href={ fmt.Sprintf("/products/details/%s?back=%s", viewModel.domain.ID, backUrl) }>
+				<form
+					method="GET"
+					action={ productDetailsHref }
+					hx-get={ productDetailsHref }
+					hx-target="#products"
+					hx-swap="outerHTML"
+					hx-push-url={ "/products/details/" + viewModel.domain.ID }
+					class="relative"
+				>
+					<input name="back" value={ viewModel.backUrl } hidden/>
 					@infoWrapper() {
 						@descriptor("Nazwa produktu", "")
 						<h1 class="text-xl">{ viewModel.domain.Name }</h1>
@@ -167,7 +167,8 @@ templ productItem(viewModel productViewModel, page int, backUrl string) {
 						@descriptor("Cena", "")
 						<h2 class="text-primary-700 text-xl">{ strconv.FormatFloat(float64(viewModel.domain.Price), 'f', 2, 32) + " zł" }</h2>
 					}
-				</a>
+					<button type="submit" class="absolute top-0 left-0 w-full h-full z-10"></button>
+				</form>
 			</div>
 			@infoWrapper() {
 				@descriptor("Dostosuj ilość", "")
@@ -178,10 +179,9 @@ templ productItem(viewModel productViewModel, page int, backUrl string) {
 					}}
 					<div id={ targetID } class="flex justify-center gap-6 md:gap-4 min-h-14 md:flex-col">
 						{{
-							basePath := "/products/" + strconv.Itoa(page)
-							decrementPath := basePath + "/decrement?id=" + viewModel.domain.ID
-							incrementPath := basePath + "/increment?id=" + viewModel.domain.ID
-							addBasketPath := basePath + "/basket-add?id=" + viewModel.domain.ID
+							decrementPath := "basePath" + "/decrement?id=" + viewModel.domain.ID
+							incrementPath := "basePath" + "/increment?id=" + viewModel.domain.ID
+							addBasketPath := "basePath" + "/basket-add?id=" + viewModel.domain.ID
 						}}
 						@counter(viewModel.addBasketCount, decrementPath, incrementPath, hxTarget)
 						<form method="post" action={ addBasketPath } class="flex items-center justify-center">
@@ -195,56 +195,60 @@ templ productItem(viewModel productViewModel, page int, backUrl string) {
 	</div>
 }
 
-templ paginator(actualPage int, maxPagesBoundary int, filterQuery string) {
+templ paginator(paginator paginatorViewModel) {
 	{{
-		prevPage, nextPage := actualPage-1, actualPage+1
+		prevPage, nextPage := paginator.actualPage-1, paginator.actualPage+1
 		if prevPage < 1 {
-			prevPage = maxPagesBoundary
+			prevPage = paginator.maxPagesBoundary
 		}
-		if nextPage > maxPagesBoundary {
+		if nextPage > paginator.maxPagesBoundary {
 			nextPage = 1
 		}
 		navigators := make([]string, 0, 6)
-		isSmallPageCount := maxPagesBoundary < cap(navigators)
+		isSmallPageCount := paginator.maxPagesBoundary < cap(navigators)
 		if isSmallPageCount {
-			for next := 1; next <= maxPagesBoundary; next++ {
+			for next := 1; next <= paginator.maxPagesBoundary; next++ {
 				navigators = append(navigators, strconv.Itoa(next))
 			}
 		}
 		if !isSmallPageCount {
 			boundary := 2
-			isNearBeginning := actualPage <= boundary
+			isNearBeginning := paginator.actualPage <= boundary
 			if isNearBeginning {
 				for next := 1; next <= boundary+1; next++ {
 					navigators = append(navigators, strconv.Itoa(next))
 				}
-				navigators = append(navigators, "...", strconv.Itoa(maxPagesBoundary))
+				navigators = append(navigators, "...", strconv.Itoa(paginator.maxPagesBoundary))
 			}
-			isNearEnd := actualPage+boundary > maxPagesBoundary
+			isNearEnd := paginator.actualPage+boundary > paginator.maxPagesBoundary
 			if isNearEnd {
 				navigators = append(navigators, "1", "...")
-				for next := maxPagesBoundary - boundary; next <= maxPagesBoundary; next++ {
+				for next := paginator.maxPagesBoundary - boundary; next <= paginator.maxPagesBoundary; next++ {
 					navigators = append(navigators, strconv.Itoa(next))
 				}
 			}
 			if !isNearBeginning && !isNearEnd {
 				navigators = append(navigators, "1", "...")
-				for next := actualPage - 1; next < actualPage+boundary && next < maxPagesBoundary; next++ {
+				for next := paginator.actualPage - 1; next < paginator.actualPage+boundary && next < paginator.maxPagesBoundary; next++ {
 					navigators = append(navigators, strconv.Itoa(next))
 				}
-				navigators = append(navigators, "...", strconv.Itoa(maxPagesBoundary))
+				navigators = append(navigators, "...", strconv.Itoa(paginator.maxPagesBoundary))
 			}
 		}
 	}}
 	<div class="flex flex-row p-4 gap-4 items-center">
-		@paginatorItem("/products/"+strconv.Itoa(prevPage), back, "#products", "outerHTML", true, "")
+		{{
+			prevPageHref := fmt.Sprintf("/products/%d?%s", prevPage, paginator.encodedFilter)
+			nextPageHref := fmt.Sprintf("/products/%d?%s", nextPage, paginator.encodedFilter)
+		}}
+		@paginatorItem(prevPageHref, back, "#products", "outerHTML", true, "")
 		for _, navigator := range navigators {
 			if navigator == "..." {
 				<p class="text-tertiary-900 m-0">...</p>
 			} else {
 				{{
-					onActualPage := strconv.Itoa(actualPage) == navigator
-					path := fmt.Sprintf("/products/%s?%s", navigator, filterQuery)
+					onActualPage := strconv.Itoa(paginator.actualPage) == navigator
+					path := fmt.Sprintf("/products/%s?%s", navigator, paginator.encodedFilter)
 				}}
 				<a
 					href={ path }
@@ -260,7 +264,7 @@ templ paginator(actualPage int, maxPagesBoundary int, filterQuery string) {
 				>{ navigator }</a>
 			}
 		}
-		@paginatorItem("/products/"+strconv.Itoa(nextPage), forward, "#products", "outerHTML", true, "")
+		@paginatorItem(nextPageHref, forward, "#products", "outerHTML", true, "")
 	</div>
 }
 
