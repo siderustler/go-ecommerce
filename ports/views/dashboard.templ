@@ -150,6 +150,9 @@ templ promoProduct(product services.Product) {
 		<img src="/public/icons/product-sale.svg" alt="produkt w promocji ikona" height="48px" width="48px" class="absolute -top-3 -left-2"/>
 		<a
 			href={ productPath }
+			hx-get={ productPath }
+			hx-target="#products"
+			hx-swap="outerHTML"
 			class="flex flex-col gap-4 items-center justify-center"
 		>
 			<img
