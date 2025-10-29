@@ -4,54 +4,36 @@ import "strconv"
 import "strings"
 import "github.com/siderustler/go-ecommerce/services"
 
-type productDetailViewModel struct {
+type ProductDetailViewModel struct {
 	domain services.ProductDetail
 
-	selectedImage                     int
-	addBasketCount                    int
-	isProductInfoExpanded             bool
-	isTechnicalParametersInfoExpanded bool
-	isShippingInfoExpanded            bool
-	isLocalInfoExpanded               bool
-	backUrl                           string
+	SelectedImage         int    `query:"img,omitempty" url:"img,omitempty"`
+	AddBasketCount        int    `form:"count"`
+	ExpandProductInfo     bool   `query:"info,omitempty" url:"info,omitempty"`
+	ExpandTechnicalParams bool   `query:"tech-params,omitempty" url:"tech-params,omitempty"`
+	ExpandShippingInfo    bool   `query:"shipping,omitempty" url:"shipping,omitempty"`
+	ExpandLocalInfo       bool   `query:"local,omitempty" url:"local,omitempty"`
+	BackUrl               string `query:"back,omitempty" url:"back,omitempty"`
 }
 
-func NewProductDetailViewModel(
-	domain services.ProductDetail,
-	selectedImage int,
-	isProductInfoExpanded bool,
-	isTechnicalParametersInfoExpanded bool,
-	isShippingInfoExpanded bool,
-	isLocalInfoExpanded bool,
-	addBasketCount int,
-	backUrl string,
-) productDetailViewModel {
-	if selectedImage < 0 || selectedImage > len(domain.Images)-1 {
-		selectedImage = 0
+func (p *ProductDetailViewModel) Align(productDetail services.ProductDetail) {
+	p.domain = productDetail
+	if p.BackUrl == "" {
+		p.BackUrl = "/products/1"
 	}
-	if addBasketCount < 1 {
-		addBasketCount = 1
-	}
-	return productDetailViewModel{
-		domain:                            domain,
-		selectedImage:                     selectedImage,
-		isProductInfoExpanded:             isProductInfoExpanded,
-		isLocalInfoExpanded:               isLocalInfoExpanded,
-		isShippingInfoExpanded:            isShippingInfoExpanded,
-		isTechnicalParametersInfoExpanded: isTechnicalParametersInfoExpanded,
-		addBasketCount:                    addBasketCount,
-		backUrl:                           backUrl,
+	if p.AddBasketCount < 1 {
+		p.AddBasketCount = 1
 	}
 }
 
-func (p *productDetailViewModel) DecrementBasketCount() {
-	if p.addBasketCount > 1 {
-		p.addBasketCount -= 1
+func (p *ProductDetailViewModel) DecrementBasketCount() {
+	if p.AddBasketCount > 1 {
+		p.AddBasketCount -= 1
 	}
 }
 
-func (p *productDetailViewModel) IncrementBasketCount() {
-	p.addBasketCount += 1
+func (p *ProductDetailViewModel) IncrementBasketCount() {
+	p.AddBasketCount += 1
 }
 
 type imageSelector struct{}
@@ -78,137 +60,168 @@ type basketAddCounter struct{}
 
 var BasketAddCounter = basketAddCounter{}
 
-templ ProductDetails(product productDetailViewModel) {
+type productDetail struct{}
+
+var ProductDetailFragment = productDetail{}
+
+templ ProductDetails(product ProductDetailViewModel) {
 	@layout("") {
-		{{ basePath := "/products/details/" + product.domain.ID }}
-		<section id="products" class="flex flex-col items-center justify-center">
-			<div class="min-w-sm max-w-md md:max-w-3xl">
-				<div class="md:flex gap-6">
-					@templ.Fragment(ImageSelectorFragment) {
-						@imageSlider(product)
-					}
-					<div class="md:max-w-md">
-						@infoWrapper() {
-							@descriptor("Nazwa produktu", "")
-							<h1 class="text-xl">{ product.domain.Name }</h1>
-						}
-						@infoWrapper() {
-							@descriptor("Cena", "")
-							<h2 class="text-primary-700 text-xl">{ strconv.FormatFloat(float64(product.domain.Price), 'f', 2, 32) + " zł" }</h2>
-						}
-						@infoWrapper() {
-							@descriptor("Opis produktu", "")
-							<h3>
-								{{
-									productInfo := "Świetny produkt"
-									if len(product.domain.ProductInfo) > 0 {
-										productInfo = product.domain.ProductInfo[0]
-									}
-								}}
-								{ productInfo }
-							</h3>
-						}
+		@templ.Fragment(ProductDetailFragment) {
+			{{ basePath := "/products/details/" + product.domain.ID }}
+			<section id="products" class="flex flex-col items-center justify-center">
+				<div class="min-w-sm max-w-md md:max-w-3xl">
+					@baseProductInfoSection(product)
+					<div class="md:flex md:gap-6">
+						@additionalProductInfoSection(product, basePath)
+						@basketAdder(product, basePath)
 					</div>
 				</div>
-				<div class="md:flex md:gap-6">
-					<div class="md:min-w-3/5">
-						@infoWrapper() {
-							@descriptor("Dodatkowe informacje", "xl:text-center")
-							{{
-								additionalProductInfo := "Świetny produkt"
-								if len(product.domain.ProductInfo) > 1 {
-									additionalProductInfo = strings.Join(product.domain.ProductInfo[1:], "\n")
-								}
-							}}
-							@slideMenu() {
-								@templ.Fragment(ExpandProductInfoFragment) {
-									@slideMenuItem("prod-info",
-										"/public/icons/additional-info.svg",
-										"Informacje o produkcie",
-										additionalProductInfo,
-										product.isProductInfoExpanded,
-										basePath+"?info=",
-									)
-								}
-								@templ.Fragment(ExpandTechnicalParametersFragment) {
-									@slideMenuItem("tech-params",
-										"/public/icons/tech-params-info.svg",
-										"Parametry techniczne",
-										strings.Join(product.domain.TechnicalParameters, "\n"),
-										product.isTechnicalParametersInfoExpanded,
-										basePath+"?tech-params=",
-									)
-								}
-							}
-						}
-						@infoWrapper() {
-							@descriptor("Możliwości zakupu", "xl:text-center")
-							@slideMenu() {
-								@templ.Fragment(ExpandShippingInfoFragment) {
-									@slideMenuItem("shipping-info",
-										"/public/icons/shipping-info.svg",
-										"Dostawa",
-										"Placeholder",
-										product.isShippingInfoExpanded,
-										basePath+"?shipping=",
-									)
-								}
-								@templ.Fragment(ExpandLocalInfoFragment) {
-									@slideMenuItem("local-info",
-										"/public/icons/local-info.svg",
-										"Stacjonarnie",
-										"Placeholder",
-										product.isLocalInfoExpanded,
-										basePath+"?local=",
-									)
-								}
-							}
-						}
-					</div>
-					<div class="flex flex-col gap-4 md:gap-6 px-2 md:min-w-2/5">
-						@infoWrapper() {
-							@descriptor("Dostosuj ilość", "")
-							@templ.Fragment(BasketAddCounter) {
-								<div id="basket-adder" class="flex justify-center gap-6 md:gap-4 min-h-14 md:flex-col">
-									{{
-										decrementPath := basePath + "/decrement"
-										incrementPath := basePath + "/increment"
-										addBasketPath := basePath + "/basket-add"
-									}}
-									@counter(product.addBasketCount, decrementPath, incrementPath, "#basket-adder")
-									<form method="post" action={ addBasketPath } class="flex items-center justify-center">
-										@counterInput(product.addBasketCount, hidden)
-										@iconButton(primary, shop, addBasketPath, "#basket-adder")
-									</form>
-								</div>
-							}
-						}
-						<a
-							href={ product.backUrl }
-							hx-get={ product.backUrl }
-							hx-target="#products"
-							hx-swap="outerHTML"
-							hx-push-url="true"
-							class="flex items-center justify-center gap-1 md:gap-2 lg:gap-4 px-4 md:px-5 lg:px-6 py-2 md:py-3 mx-2 text-secondary-900 border-2 border-secondary-500 rounded-xl text-center text-sm"
-						>
-							<img src="/public/icons/chevron-left-secondary.svg" alt="back icon" width="24px" height="24px"/>
-							Pozostałe produkty
-						</a>
-					</div>
-				</div>
-			</div>
-		</section>
+			</section>
+		}
 	}
+}
+
+templ baseProductInfoSection(product ProductDetailViewModel) {
+	<div class="md:flex gap-6">
+		@templ.Fragment(ImageSelectorFragment) {
+			@imageSlider(product)
+		}
+		<div class="md:max-w-md">
+			@infoWrapper() {
+				@descriptor("Nazwa produktu", "")
+				<h1 class="text-xl">{ product.domain.Name }</h1>
+			}
+			@infoWrapper() {
+				@descriptor("Cena", "")
+				<h2 class="text-primary-700 text-xl">{ strconv.FormatFloat(float64(product.domain.Price), 'f', 2, 32) + " zł" }</h2>
+			}
+			@infoWrapper() {
+				@descriptor("Opis produktu", "")
+				<h3>
+					{{
+						productInfo := "Świetny produkt"
+						if len(product.domain.ProductInfo) > 0 {
+							productInfo = product.domain.ProductInfo[0]
+						}
+					}}
+					{ productInfo }
+				</h3>
+			}
+		</div>
+	</div>
+}
+
+templ basketAdder(product ProductDetailViewModel, basePath string) {
+	<div class="flex flex-col gap-4 md:gap-6 px-2 md:min-w-2/5">
+		@infoWrapper() {
+			@descriptor("Dostosuj ilość", "")
+			@templ.Fragment(BasketAddCounter) {
+				<div id="basket-adder" class="flex justify-center gap-6 md:gap-4 min-h-14 md:flex-col">
+					{{
+						decrementPath := basePath + "?dec"
+						incrementPath := basePath + "?inc"
+					}}
+					@counter2(product.AddBasketCount, decrementPath, incrementPath, "#basket-adder")
+					<form method="post" action={ "TODO" } hx-post={ "TODO" } class="flex items-center justify-center">
+						@counterInput(product.AddBasketCount, hidden)
+						@iconButton2(primary, shop)
+					</form>
+				</div>
+			}
+		}
+		<a
+			href={ product.BackUrl }
+			hx-get={ product.BackUrl }
+			hx-target="#products"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+			class="flex items-center justify-center gap-1 md:gap-2 lg:gap-4 px-4 md:px-5 lg:px-6 py-2 md:py-3 mx-2 text-secondary-900 border-2 border-secondary-500 rounded-xl text-center text-sm"
+		>
+			<img src="/public/icons/chevron-left-secondary.svg" alt="back icon" width="24px" height="24px"/>
+			Pozostałe produkty
+		</a>
+	</div>
+}
+
+templ additionalProductInfoSection(product ProductDetailViewModel, basePath string) {
+	<div class="md:min-w-3/5">
+		@infoWrapper() {
+			@descriptor("Dodatkowe informacje", "xl:text-center")
+			{{
+				additionalProductInfo := "Świetny produkt"
+				if len(product.domain.ProductInfo) > 1 {
+					additionalProductInfo = strings.Join(product.domain.ProductInfo[1:], "\n")
+				}
+			}}
+			@slideMenu() {
+				@templ.Fragment(ExpandProductInfoFragment) {
+					@slideMenuItem("prod-info",
+						"/public/icons/additional-info.svg",
+						"Informacje o produkcie",
+						additionalProductInfo,
+						product.ExpandProductInfo,
+						basePath+"?info=",
+					)
+				}
+				@templ.Fragment(ExpandTechnicalParametersFragment) {
+					@slideMenuItem("tech-params",
+						"/public/icons/tech-params-info.svg",
+						"Parametry techniczne",
+						strings.Join(product.domain.TechnicalParameters, "\n"),
+						product.ExpandTechnicalParams,
+						basePath+"?tech-params=",
+					)
+				}
+			}
+		}
+		@infoWrapper() {
+			@descriptor("Możliwości zakupu", "xl:text-center")
+			@slideMenu() {
+				@templ.Fragment(ExpandShippingInfoFragment) {
+					@slideMenuItem("shipping-info",
+						"/public/icons/shipping-info.svg",
+						"Dostawa",
+						"Placeholder",
+						product.ExpandShippingInfo,
+						basePath+"?shipping=",
+					)
+				}
+				@templ.Fragment(ExpandLocalInfoFragment) {
+					@slideMenuItem("local-info",
+						"/public/icons/local-info.svg",
+						"Stacjonarnie",
+						"Placeholder",
+						product.ExpandLocalInfo,
+						basePath+"?local=",
+					)
+				}
+			}
+		}
+	</div>
+}
+
+templ counter2(value int, decrementPath, incrementPath, hxTarget string) {
+	<div class="flex gap-6 justify-center px-3 py-2 rounded-lg border-2 border-secondary-300">
+		<form method="get" action={ decrementPath } hx-get={ decrementPath } hx-target="#basket-adder" hx-swap="outerHTML">
+			@iconButton2(secondary, minus)
+			@counterInput(value, hidden)
+		</form>
+		@counterInput(value, shown)
+		<form method="get" action={ incrementPath } hx-get={ incrementPath } hx-target="#basket-adder" hx-swap="outerHTML">
+			@iconButton2(secondary, plus)
+			@counterInput(value, hidden)
+		</form>
+	</div>
 }
 
 templ counter(value int, decrementPath, incrementPath, hxTarget string) {
 	<div class="flex gap-6 justify-center px-3 py-2 rounded-lg border-2 border-secondary-300">
-		<form method="post" action={ decrementPath }>
+		<form method="get" action={ decrementPath } hx-get={ decrementPath } hx-target="#basket-adder" hx-swap="outerHTML">
 			@iconButton(secondary, minus, decrementPath, hxTarget)
 			@counterInput(value, hidden)
 		</form>
 		@counterInput(value, shown)
-		<form method="post" action={ incrementPath }>
+		<form method="get" action={ incrementPath } hx-get={ incrementPath } hx-target="#basket-adder" hx-swap="outerHTML">
 			@iconButton(secondary, plus, incrementPath, hxTarget)
 			@counterInput(value, hidden)
 		</form>
@@ -229,6 +242,47 @@ const (
 	minus
 	shop
 )
+
+templ iconButton2(buttonType buttonType, icon icon) {
+	{{
+		var iconPath string
+		var iconAlt string
+		var style string
+
+		switch icon {
+		case plus:
+			iconPath = "/public/icons/plus-sign.svg"
+			iconAlt = "plus icon"
+		case minus:
+			iconPath = "/public/icons/minus-sign.svg"
+			iconAlt = "minus icon"
+		case shop:
+			iconPath = "/public/icons/shop-cart.svg"
+			iconAlt = "shop cart icon"
+		}
+
+		switch buttonType {
+		case primary:
+			style = "flex justify-center items-center gap-1 md:gap-2 lg:gap-4 bg-primary-300 rounded-full p-3 md:px-5 lg:px-6 md:py-3 md:rounded-xl md:w-full min-w-[48px] min-h-[48px]"
+		case secondary:
+			style = "bg-secondary-200 rounded-xl p-3 min-w-[48px] min-h-[48px]"
+		}
+	}}
+	<button
+		class={ style }
+		type="submit"
+	>
+		<img
+			src={ iconPath }
+			alt={ iconAlt }
+			width="24px"
+			height="24px"
+		/>
+		if iconAlt == "shop cart icon" {
+			<span class="hidden md:inline text-primary-900 text-sm">Dodaj do koszyka</span>
+		}
+	</button>
+}
 
 templ iconButton(buttonType buttonType, icon icon, submitPath, hxTarget string) {
 	{{
@@ -313,10 +367,10 @@ templ infoWrapper() {
 templ slideMenuItem(id, icon, content, expandedContent string, isExpanded bool, requestPath string) {
 	<div id={ id }>
 		{{
-			if isExpanded {
-				requestPath += "false"
-			} else {
+			if !isExpanded {
 				requestPath += "true"
+			} else {
+				requestPath += "false"
 			}
 		}}
 		<a
@@ -351,12 +405,12 @@ templ slideMenu() {
 	</div>
 }
 
-templ imageSlider(productViewModel productDetailViewModel) {
+templ imageSlider(productViewModel ProductDetailViewModel) {
 	{{ imageBasePath := "/products/details/" + productViewModel.domain.ID + "?img=" }}
 	<div id="image-wrapper" class="flex flex-col items-center">
 		<img
 			alt={ productViewModel.domain.Name + " image" }
-			src={ productViewModel.domain.Images[productViewModel.selectedImage] }
+			src={ productViewModel.domain.Images[productViewModel.SelectedImage] }
 			class="rounded-2xl shadow-xl htmx-swapping:opacity-0 transition-opacity duration-200 htmx-settling:opacity-100 min-w-80 min-h-80"
 		/>
 		<div class="flex gap-6 p-6 justify-center items-center">
@@ -364,7 +418,7 @@ templ imageSlider(productViewModel productDetailViewModel) {
 				{{ path := imageBasePath + strconv.Itoa(i) }}
 				<a
 					href={ path }
-					if productViewModel.selectedImage == i {
+					if productViewModel.SelectedImage == i {
 						class="bg-primary-700 w-2 h-2 rounded-full shadow-xl"
 					} else {
 						class="bg-primary-500 w-1.5 h-1.5 rounded-full shadow-xl"

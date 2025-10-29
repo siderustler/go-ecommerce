@@ -20,7 +20,7 @@ func (h handlers) getProductsRedirect(c *fiber.Ctx) error {
 }
 
 func (h handlers) getProducts(c *fiber.Ctx) error {
-	page, _ := strconv.Atoi(c.Params("prod"))
+	page, _ := c.ParamsInt("page")
 	var filterViewModel views.FilterViewModel
 	filterViewModel.Validate()
 
@@ -44,147 +44,63 @@ func (h handlers) getProducts(c *fiber.Ctx) error {
 
 	if filterViewModel.HasError() {
 		c.Append("HX-Trigger", "validatePrice")
-	} else {
-		values, _ := query.Values(filterViewModel)
-		c.Append("HX-Push-Url", "/products/1?"+values.Encode())
+		return render(c, views.Products(productsViewModel), views.ProductListFragment)
+	}
+
+	values, _ := query.Values(filterViewModel)
+	encodedUrl := "/products/1?" + values.Encode()
+	isAlreadyOnRequestedUrl := strings.Contains(c.Get("HX-Current-Url"), encodedUrl)
+
+	if !isAlreadyOnRequestedUrl {
+		c.Append("HX-Push-Url", encodedUrl)
 	}
 
 	return render(c, views.Products(productsViewModel), views.ProductListFragment)
-
 }
 
 func (h handlers) getProductDetails(c *fiber.Ctx) error {
-	var fragments []any
-	//go:inline
-	var selectedImage = func() int {
-		imgQueryParam := strings.Trim(c.Query("img"), " ")
-		if imgNum, err := strconv.Atoi(imgQueryParam); err == nil {
-			fragments = append(fragments, views.ImageSelectorFragment)
-			return imgNum
-		}
-		return 0
-	}
-
-	var expandAdditionalInfo = func(param string, cb func()) bool {
-		additionalInfoQueryParam := strings.Trim(c.Query(param), " ")
-		if additionalInfoQueryParam == "true" || additionalInfoQueryParam == "false" {
-			cb()
-		}
-		return additionalInfoQueryParam == "true"
-	}
-
-	backUrl := c.Query("back", "/products/1")
-	productDetails, err := h.services.GetProductDetails(c.Context(), "essa")
+	var productDetailViewModel views.ProductDetailViewModel
+	_ = c.QueryParser(&productDetailViewModel)
+	productID := c.Params("productID", "")
+	productDetails, err := h.services.GetProductDetails(c.Context(), productID)
 	if err != nil {
 		return c.Redirect("/products/1")
 	}
-	productViewModel := views.NewProductDetailViewModel(
-		productDetails,
-		selectedImage(),
-		expandAdditionalInfo("info", func() {
-			fragments = append(fragments, views.ExpandProductInfoFragment)
-		}),
-		expandAdditionalInfo("tech-params", func() {
-			fragments = append(fragments, views.ExpandTechnicalParametersFragment)
-		}),
-		expandAdditionalInfo("shipping", func() {
-			fragments = append(fragments, views.ExpandShippingInfoFragment)
-		}),
-		expandAdditionalInfo("local", func() {
-			fragments = append(fragments, views.ExpandLocalInfoFragment)
-		}),
-		1,
-		backUrl,
-	)
 
+	productDetailViewModel.Align(productDetails)
 	if !isHTMXRequest(c) {
-		return render(c, views.ProductDetails(productViewModel))
+		return render(c, views.ProductDetails(productDetailViewModel))
 	}
 
-	return render(c, views.ProductDetails(productViewModel), fragments...)
-}
-
-func (h handlers) postProductDetailsDecrement(c *fiber.Ctx) error {
-	basketCount, _ := strconv.Atoi(c.FormValue("count"))
-
-	productDetails, err := h.services.GetProductDetails(c.Context(), "essa")
-	if err != nil {
-		return c.Redirect("/products/1")
-	}
-	backUrl := c.Query("back", "/products/1")
-	productViewModel := views.NewProductDetailViewModel(
-		productDetails,
-		1,
-		false,
-		false,
-		false,
-		false,
-		basketCount,
-		backUrl,
-	)
-
-	productViewModel.DecrementBasketCount()
-	if !isHTMXRequest(c) {
-		return render(c, views.ProductDetails(productViewModel))
-	}
 	var fragments []any
-	fragments = append(fragments, views.BasketAddCounter)
-	return render(c, views.ProductDetails(productViewModel), fragments...)
-}
+	toggleLocalInfo := c.Query("local") != ""
+	toggleProductInfo := c.Query("info") != ""
+	toggleTechParams := c.Query("tech-params") != ""
+	toggleShippingInfo := c.Query("shipping") != ""
+	swapImg := c.Query("img") != ""
 
-func (h handlers) postProductDetailsIncrement(c *fiber.Ctx) error {
-	basketCount, _ := strconv.Atoi(c.FormValue("count"))
-
-	productDetails, err := h.services.GetProductDetails(c.Context(), "essa")
-	if err != nil {
-		return c.Redirect("/products/1")
+	if toggleLocalInfo {
+		fragments = append(fragments, views.ExpandLocalInfoFragment)
 	}
-	backUrl := c.Query("back", "/products/1")
-	productViewModel := views.NewProductDetailViewModel(
-		productDetails,
-		1,
-		false,
-		false,
-		false,
-		false,
-		basketCount,
-		backUrl,
-	)
-
-	productViewModel.IncrementBasketCount()
-	if !isHTMXRequest(c) {
-		return render(c, views.ProductDetails(productViewModel))
+	if toggleProductInfo {
+		fragments = append(fragments, views.ExpandProductInfoFragment)
 	}
-	var fragments []any
-	fragments = append(fragments, views.BasketAddCounter)
-	return render(c, views.ProductDetails(productViewModel), fragments...)
-}
-
-func (h handlers) postProductDetailsBasketAdd(c *fiber.Ctx) error {
-	basketCount, _ := strconv.Atoi(c.FormValue("count"))
-
-	productDetails, err := h.services.GetProductDetails(c.Context(), "essa")
-	if err != nil {
-		return c.Redirect("/products/1")
+	if toggleTechParams {
+		fragments = append(fragments, views.ExpandTechnicalParametersFragment)
 	}
-	backUrl := c.Query("back", "/products/1")
-	productViewModel := views.NewProductDetailViewModel(
-		productDetails,
-		1,
-		false,
-		false,
-		false,
-		false,
-		basketCount,
-		backUrl,
-	)
-
-	if !isHTMXRequest(c) {
-		return render(c, views.ProductDetails(productViewModel))
+	if toggleShippingInfo {
+		fragments = append(fragments, views.ExpandShippingInfoFragment)
 	}
-	var fragments []any
-	fragments = append(fragments, views.BasketAddCounter)
-	return render(c, views.ProductDetails(productViewModel), fragments...)
+	if swapImg {
+		fragments = append(fragments, views.ImageSelectorFragment)
+	}
+
+	isOnProductDetails := strings.Contains(c.Get("Hx-Current-Url"), "/products/details/")
+
+	if !isOnProductDetails {
+		return render(c, views.ProductDetails(productDetailViewModel), views.ProductDetailFragment)
+	}
+	return render(c, views.ProductDetails(productDetailViewModel), fragments...)
 }
 
 func (h handlers) postProductsIncrement(c *fiber.Ctx) error {

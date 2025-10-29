@@ -3,7 +3,7 @@ package services
 import "context"
 
 func (s *Services) GetProductDetails(ctx context.Context, id string) (ProductDetail, error) {
-	return NewProductDetail("essa",
+	return NewProductDetail(id,
 		"essa",
 		[]string{"/public/products/essa/1.webp", "/public/products/essa/2.webp", "/public/products/essa/3.webp"},
 		[]string{

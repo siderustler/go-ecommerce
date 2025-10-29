@@ -21,14 +21,11 @@ func NewHttpServer(services *services.Services) *httpServer {
 	h.srv.Use("/public", ignoreCacheStaticFilesInDev)
 
 	h.srv.Get("/products", h.handlers.getProductsRedirect)
-	h.srv.Get("/products/:prod", h.handlers.getProducts)
-	h.srv.Get("/products/details/:product", h.handlers.getProductDetails)
+	h.srv.Get("/products/:page", h.handlers.getProducts)
+	h.srv.Get("/products/details/:productID", h.handlers.getProductDetails)
 	h.srv.Get("/filter/products", h.handlers.getFilterProducts)
 	h.srv.Get("/", h.handlers.getDashboard)
 
-	h.srv.Post("/products/details/:product/decrement", h.handlers.postProductDetailsDecrement)
-	h.srv.Post("/products/details/:product/increment", h.handlers.postProductDetailsIncrement)
-	h.srv.Post("/products/details/:product/basket-add", h.handlers.postProductDetailsBasketAdd)
 	h.srv.Post("/products/:prod/increment", h.handlers.postProductsIncrement)
 	h.srv.Post("/products/:prod/decrement", h.handlers.postProductsDecrement)
 	h.srv.Post("/products/:prod/basket-add", h.handlers.postProductsBasketAdd)
