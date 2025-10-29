@@ -37,7 +37,7 @@ templ headerSection(searchInputValue string) {
 				}
 			}}
 			for _, item := range items {
-				<a href={ item.href } hx-get={ item.href } hx-target="#products" hx-swap="innerHTML" hx-push-url="true" class={ "flex items-center justify-center gap-2 md:gap-3 lg:gap-4 text-sm md:text-lg " + item.color }>
+				<a href={ item.href } hx-get={ item.href } hx-target="#products" hx-swap="outerHTML" hx-push-url="true" class={ "flex items-center justify-center gap-2 md:gap-3 lg:gap-4 text-sm md:text-lg " + item.color }>
 					<img src={ item.icon } alt={ item.name + " ikona" } width="24px" height="24px"/>
 					{ item.name }
 				</a>
