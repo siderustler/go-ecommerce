@@ -154,6 +154,7 @@ templ promoProduct(product services.Product) {
 			hx-target="#products"
 			hx-swap="outerHTML"
 			class="flex flex-col gap-4 items-center justify-center"
+			hx-push-url="true"
 		>
 			<img
 				alt={ product.Name + " image" }
