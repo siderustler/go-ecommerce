@@ -68,7 +68,7 @@ type productDetail struct{}
 var ProductDetailFragment = productDetail{}
 
 templ ProductDetails(product ProductDetailViewModel) {
-	@layout("") {
+	@layout() {
 		@templ.Fragment(ProductDetailFragment) {
 			{{ basePath := "/products/details/" + product.domain.ID }}
 			<section id="products" class="flex flex-col items-center justify-center">

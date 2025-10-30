@@ -75,7 +75,7 @@ var PriceFilterFragment = priceFilterFragment{}
 var ProductsFilterFragment = productsFilterFragment{}
 
 templ ProductsFilter(filterViewModel FilterViewModel) {
-	@layout(filterViewModel.Search) {
+	@layout() {
 		@templ.Fragment(ProductsFilterFragment) {
 			<section id="products" class="px-2 py-8 md:px-6 md:py-8 rounded-3xl bg-grey-200 shadow-md w-full">
 				@filter(filterViewModel)
