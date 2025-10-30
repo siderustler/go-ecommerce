@@ -25,7 +25,7 @@ func (h handlers) getProducts(c *fiber.Ctx) error {
 	filterViewModel.Validate()
 
 	var productsListViewModel views.ProductsListViewModel
-	_ = c.QueryParser(productsListViewModel)
+	_ = c.QueryParser(&productsListViewModel)
 
 	products, err := h.services.GetProducts(c.Context(), page, filterViewModel.MapToDomainFilter())
 	//FIXME -- display empty product list
@@ -44,16 +44,19 @@ func (h handlers) getProducts(c *fiber.Ctx) error {
 		return render(c, views.Products(productsListViewModel))
 	}
 
-	if filterViewModel.HasError() {
-		c.Append("HX-Trigger", "validatePrice")
-		return render(c, views.Products(productsListViewModel), views.ProductListFragment)
-	}
-
 	productListUrl := fmt.Sprintf("/products/%d?%s", page, encodedFilter)
 	isAlreadyOnProductList := strings.HasSuffix(c.Get("HX-Current-Url"), productListUrl)
 
 	if !isAlreadyOnProductList {
 		c.Append("HX-Push-Url", productListUrl)
+	}
+
+	if filterViewModel.HasError() {
+		c.Append("HX-Trigger", "validatePrice")
+	}
+
+	if productsListViewModel.DecrementBasketCount || productsListViewModel.IncrementBasketCount {
+		return render(c, views.Products(productsListViewModel), "basket-adder-"+productsListViewModel.ChangeCountID)
 	}
 
 	return render(c, views.Products(productsListViewModel), views.ProductListFragment)
@@ -78,8 +81,6 @@ func (h handlers) getProductDetails(c *fiber.Ctx) error {
 	toggleTechParams := c.Query("tech-params") != ""
 	toggleShippingInfo := c.Query("shipping") != ""
 	swapImg := c.Query("img") != ""
-	decrementBasket := c.Query("dec") == "true"
-	incrementBasket := c.Query("inc") == "true"
 
 	if toggleLocalInfo {
 		fragments = append(fragments, views.ExpandLocalInfoFragment)
@@ -96,8 +97,8 @@ func (h handlers) getProductDetails(c *fiber.Ctx) error {
 	if swapImg {
 		fragments = append(fragments, views.ImageSelectorFragment)
 	}
-	if decrementBasket || incrementBasket {
-		fragments = append(fragments, views.BasketAddCounter)
+	if productDetailViewModel.DecrementBasketCount || productDetailViewModel.IncrementBasketCount {
+		fragments = append(fragments, "basket-adder")
 	}
 
 	isOnProductDetails := strings.Contains(c.Get("Hx-Current-Url"), "/products/details/")

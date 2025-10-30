@@ -171,9 +171,8 @@ templ productItem(viewModel productViewModel) {
 				</form>
 			</div>
 			@components.Info("Dostosuj ilość") {
-				@templ.Fragment(fmt.Sprintf("%+v-%s", BasketAddCounter, viewModel.domain.ID)) {
-					{{ basketAdderID := "basket-adder-" + viewModel.domain.ID }}
-					@components.BasketAdder(basketAdderID, viewModel.currentUrl, viewModel.addBasketCount)
+				@templ.Fragment("basket-adder-" + viewModel.domain.ID) {
+					@components.ProductsBasketAdder("basket-adder", viewModel.domain.ID, viewModel.currentUrl, viewModel.addBasketCount)
 				}
 			}
 		</div>

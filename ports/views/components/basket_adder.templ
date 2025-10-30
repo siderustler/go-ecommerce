@@ -1,11 +1,25 @@
 package components
 
-templ BasketAdder(id string, incDecRequestPath string, count int) {
+templ ProductDetailBasketAdder(id, incDecRequestPath string, count int) {
+	@basketAdder(id, "", incDecRequestPath, count)
+}
+
+templ ProductsBasketAdder(id string, productID string, incDecRequestPath string, count int) {
+	@basketAdder(id, productID, incDecRequestPath, count)
+}
+
+templ basketAdder(id string, productID string, incDecRequestPath string, count int) {
+	{{
+		if productID != "" {
+			id = id + "-" + productID
+		}
+	}}
 	<div id={ id } class="flex justify-center gap-6 md:gap-4 min-h-14 md:flex-col">
 		<div class="flex gap-6 justify-center px-3 py-2 rounded-lg border-2 border-secondary-300">
 			{{ hxTarget := "#" + id }}
 			<form method="get" action={ incDecRequestPath } hx-get={ incDecRequestPath } hx-target={ hxTarget } hx-swap="outerHTML">
-				<input name="inc" type="checkbox" checked hidden/>
+				<input name="dec" type="checkbox" checked hidden/>
+				<input name="id" value={ productID } hidden/>
 				@IconButton(SecondaryIconButton, IconButtonMinus)
 				<input
 					name="count"
@@ -20,7 +34,8 @@ templ BasketAdder(id string, incDecRequestPath string, count int) {
 				readonly
 			/>
 			<form method="get" action={ incDecRequestPath } hx-get={ incDecRequestPath } hx-target={ hxTarget } hx-swap="outerHTML">
-				<input name="dec" type="checkbox" checked hidden/>
+				<input name="inc" type="checkbox" checked hidden/>
+				<input name="id" value={ productID } hidden/>
 				@IconButton(SecondaryIconButton, IconButtonPlus)
 				<input
 					name="count"
