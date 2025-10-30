@@ -80,8 +80,8 @@ templ Products(productsListViewModel ProductsListViewModel) {
 		}
 	}}
 	@layout() {
-		@navBar(productsListViewModel.filter.Search)
 		@templ.Fragment(ProductListFragment) {
+			@navBar(productsListViewModel.filter.Search)
 			<div id="products" class="flex flex-col xl:flex-row items-center justify-center">
 				<section class="flex flex-row gap-4 max-w-4xl items-center justify-center pb-4 xl:hidden">
 					@sortFilter(filterPath, "Sortuj")

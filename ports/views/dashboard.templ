@@ -46,8 +46,8 @@ func NewDashboardViewModel(products []services.Product, selectedProduct, display
 
 templ Dashboard(dashboardViewModel dashboardViewModel) {
 	@layout() {
-		@navBar("")
 		@templ.Fragment(DashboardSelectorFragment) {
+			@navBar("")
 			<div id="products" class="flex flex-col items-center justify-center gap-4 md:gap-8 lg:gap-16 mt-12">
 				@dashSection("promotions") {
 					@templ.Fragment(PromotedProductSelectorFragment) {
