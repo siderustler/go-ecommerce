@@ -1,0 +1,57 @@
+package components
+
+type buttonType int
+
+const (
+	PrimaryIconButton buttonType = iota
+	SecondaryIconButton
+)
+
+type icon int
+
+const (
+	IconButtonPlus icon = iota
+	IconButtonMinus
+	IconButtonShop
+)
+
+templ IconButton(buttonType buttonType, icon icon) {
+	{{
+		var iconPath string
+		var iconAlt string
+		var style string
+
+		switch icon {
+		case IconButtonPlus:
+			iconPath = "/public/icons/plus-sign.svg"
+			iconAlt = "plus icon"
+		case IconButtonMinus:
+			iconPath = "/public/icons/minus-sign.svg"
+			iconAlt = "minus icon"
+		case IconButtonShop:
+			iconPath = "/public/icons/shop-cart.svg"
+			iconAlt = "shop cart icon"
+		}
+
+		switch buttonType {
+		case PrimaryIconButton:
+			style = "flex justify-center items-center gap-1 md:gap-2 lg:gap-4 bg-primary-300 rounded-full p-3 md:px-5 lg:px-6 md:py-3 md:rounded-xl md:w-full min-w-[48px] min-h-[48px]"
+		case SecondaryIconButton:
+			style = "bg-secondary-200 rounded-xl p-3 min-w-[48px] min-h-[48px]"
+		}
+	}}
+	<button
+		class={ style }
+		type="submit"
+	>
+		<img
+			src={ iconPath }
+			alt={ iconAlt }
+			width="24px"
+			height="24px"
+		/>
+		if icon == IconButtonShop {
+			<span class="hidden md:inline text-primary-900 text-sm">Dodaj do koszyka</span>
+		}
+	</button>
+}

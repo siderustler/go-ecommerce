@@ -3,6 +3,7 @@ package views
 import "github.com/siderustler/go-ecommerce/services"
 import "strconv"
 import "math"
+import "github.com/siderustler/go-ecommerce/ports/views/components"
 
 type dashboardViewModel struct {
 	products            []services.Product
@@ -47,7 +48,7 @@ func NewDashboardViewModel(products []services.Product, selectedProduct, display
 templ Dashboard(dashboardViewModel dashboardViewModel) {
 	@layout() {
 		@templ.Fragment(DashboardSelectorFragment) {
-			@navBar("")
+			@components.EmptyNavBar()
 			<div id="products" class="flex flex-col items-center justify-center gap-4 md:gap-8 lg:gap-16 mt-12">
 				@dashSection("promotions") {
 					@templ.Fragment(PromotedProductSelectorFragment) {

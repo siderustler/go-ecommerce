@@ -3,6 +3,7 @@ package views
 import "strconv"
 import "strings"
 import "github.com/siderustler/go-ecommerce/services"
+import "github.com/siderustler/go-ecommerce/ports/views/components"
 
 type ProductDetailViewModel struct {
 	domain services.ProductDetail
@@ -70,7 +71,7 @@ var ProductDetailFragment = productDetail{}
 templ ProductDetails(product ProductDetailViewModel) {
 	@layout() {
 		@templ.Fragment(ProductDetailFragment) {
-			@navBar("")
+			@components.EmptyNavBar()
 			{{ basePath := "/products/details/" + product.domain.ID }}
 			<section id="products" class="flex flex-col items-center justify-center">
 				<div class="min-w-sm max-w-md md:max-w-4xl px-4 py-8 md:px-8 md:py-12 lg:px-12 lg:py-16 rounded-3xl bg-grey-200 shadow-md">
@@ -91,16 +92,13 @@ templ baseProductInfoSection(product ProductDetailViewModel) {
 			@imageSlider(product)
 		}
 		<div class="md:max-w-md">
-			@infoWrapper() {
-				@descriptor("Nazwa produktu", "")
+			@components.Info("Nazwa produktu") {
 				<h1 class="text-xl">{ product.domain.Name }</h1>
 			}
-			@infoWrapper() {
-				@descriptor("Cena", "")
+			@components.Info("Cena") {
 				<h2 class="text-primary-700 text-xl">{ strconv.FormatFloat(float64(product.domain.Price), 'f', 2, 32) + " zł" }</h2>
 			}
-			@infoWrapper() {
-				@descriptor("Opis produktu", "")
+			@components.Info("Opis produktu") {
 				<h3>
 					{{
 						productInfo := "Świetny produkt"
@@ -117,20 +115,9 @@ templ baseProductInfoSection(product ProductDetailViewModel) {
 
 templ basketAdder(product ProductDetailViewModel, basePath string) {
 	<div class="flex flex-col gap-4 md:gap-6 px-2 md:min-w-2/5">
-		@infoWrapper() {
-			@descriptor("Dostosuj ilość", "")
+		@components.Info("Dostosuj ilość") {
 			@templ.Fragment(BasketAddCounter) {
-				<div id="basket-adder" class="flex justify-center gap-6 md:gap-4 min-h-14 md:flex-col">
-					{{
-						decrementPath := basePath + "?dec=true"
-						incrementPath := basePath + "?inc=true"
-					}}
-					@counter2(product.AddBasketCount, decrementPath, incrementPath, "#basket-adder")
-					<form method="post" action={ "TODO" } hx-post={ "TODO" } class="flex items-center justify-center">
-						@counterInput(product.AddBasketCount, hidden)
-						@iconButton2(primary, shop)
-					</form>
-				</div>
+				@components.BasketAdder("basket-adder", "/products/details"+product.domain.ID, product.AddBasketCount)
 			}
 		}
 		<a
@@ -149,8 +136,7 @@ templ basketAdder(product ProductDetailViewModel, basePath string) {
 
 templ additionalProductInfoSection(product ProductDetailViewModel, basePath string) {
 	<div class="md:min-w-3/5">
-		@infoWrapper() {
-			@descriptor("Dodatkowe informacje", "xl:text-center")
+		@components.InfoStyled("Dodatkowe informacje", "xl:text-center") {
 			{{
 				additionalProductInfo := "Świetny produkt"
 				if len(product.domain.ProductInfo) > 1 {
@@ -178,8 +164,7 @@ templ additionalProductInfoSection(product ProductDetailViewModel, basePath stri
 				}
 			}
 		}
-		@infoWrapper() {
-			@descriptor("Możliwości zakupu", "xl:text-center")
+		@components.InfoStyled("Możliwosci zakupu", "xl:text-center") {
 			@slideMenu() {
 				@templ.Fragment(ExpandShippingInfoFragment) {
 					@slideMenuItem("shipping-info",
@@ -201,170 +186,6 @@ templ additionalProductInfoSection(product ProductDetailViewModel, basePath stri
 				}
 			}
 		}
-	</div>
-}
-
-templ counter2(value int, decrementPath, incrementPath, hxTarget string) {
-	<div class="flex gap-6 justify-center px-3 py-2 rounded-lg border-2 border-secondary-300">
-		<form method="get" action={ decrementPath } hx-get={ decrementPath } hx-target="#basket-adder" hx-swap="outerHTML">
-			@iconButton2(secondary, minus)
-			@counterInput(value, hidden)
-		</form>
-		@counterInput(value, shown)
-		<form method="get" action={ incrementPath } hx-get={ incrementPath } hx-target="#basket-adder" hx-swap="outerHTML">
-			@iconButton2(secondary, plus)
-			@counterInput(value, hidden)
-		</form>
-	</div>
-}
-
-templ counter(value int, decrementPath, incrementPath, hxTarget string) {
-	<div class="flex gap-6 justify-center px-3 py-2 rounded-lg border-2 border-secondary-300">
-		<form method="get" action={ decrementPath } hx-get={ decrementPath } hx-target="#basket-adder" hx-swap="outerHTML">
-			@iconButton(secondary, minus, decrementPath, hxTarget)
-			@counterInput(value, hidden)
-		</form>
-		@counterInput(value, shown)
-		<form method="get" action={ incrementPath } hx-get={ incrementPath } hx-target="#basket-adder" hx-swap="outerHTML">
-			@iconButton(secondary, plus, incrementPath, hxTarget)
-			@counterInput(value, hidden)
-		</form>
-	</div>
-}
-
-type buttonType int
-
-const (
-	primary buttonType = iota
-	secondary
-)
-
-type icon int
-
-const (
-	plus icon = iota
-	minus
-	shop
-)
-
-templ iconButton2(buttonType buttonType, icon icon) {
-	{{
-		var iconPath string
-		var iconAlt string
-		var style string
-
-		switch icon {
-		case plus:
-			iconPath = "/public/icons/plus-sign.svg"
-			iconAlt = "plus icon"
-		case minus:
-			iconPath = "/public/icons/minus-sign.svg"
-			iconAlt = "minus icon"
-		case shop:
-			iconPath = "/public/icons/shop-cart.svg"
-			iconAlt = "shop cart icon"
-		}
-
-		switch buttonType {
-		case primary:
-			style = "flex justify-center items-center gap-1 md:gap-2 lg:gap-4 bg-primary-300 rounded-full p-3 md:px-5 lg:px-6 md:py-3 md:rounded-xl md:w-full min-w-[48px] min-h-[48px]"
-		case secondary:
-			style = "bg-secondary-200 rounded-xl p-3 min-w-[48px] min-h-[48px]"
-		}
-	}}
-	<button
-		class={ style }
-		type="submit"
-	>
-		<img
-			src={ iconPath }
-			alt={ iconAlt }
-			width="24px"
-			height="24px"
-		/>
-		if iconAlt == "shop cart icon" {
-			<span class="hidden md:inline text-primary-900 text-sm">Dodaj do koszyka</span>
-		}
-	</button>
-}
-
-templ iconButton(buttonType buttonType, icon icon, submitPath, hxTarget string) {
-	{{
-		var iconPath string
-		var iconAlt string
-		var style string
-
-		switch icon {
-		case plus:
-			iconPath = "/public/icons/plus-sign.svg"
-			iconAlt = "plus icon"
-		case minus:
-			iconPath = "/public/icons/minus-sign.svg"
-			iconAlt = "minus icon"
-		case shop:
-			iconPath = "/public/icons/shop-cart.svg"
-			iconAlt = "shop cart icon"
-		}
-
-		switch buttonType {
-		case primary:
-			style = "flex justify-center items-center gap-1 md:gap-2 lg:gap-4 bg-primary-300 rounded-full p-3 md:px-5 lg:px-6 md:py-3 md:rounded-xl md:w-full min-w-[48px] min-h-[48px]"
-		case secondary:
-			style = "bg-secondary-200 rounded-xl p-3 min-w-[48px] min-h-[48px]"
-		}
-	}}
-	<button
-		class={ style }
-		hx-post={ submitPath }
-		hx-target={ hxTarget }
-		hx-swap="outerHTML"
-	>
-		<img
-			src={ iconPath }
-			alt={ iconAlt }
-			width="24px"
-			height="24px"
-		/>
-		if iconAlt == "shop cart icon" {
-			<span class="hidden md:inline text-primary-900 text-sm">Dodaj do koszyka</span>
-		}
-	</button>
-}
-
-type isHidden int
-
-const (
-	hidden isHidden = iota
-	shown
-)
-
-templ counterInput(value int, isHidden isHidden) {
-	<input
-		name="count"
-		class="border-2 border-secondary-500 text-secondary-900 text-center min-w-12 rounded-lg max-w-12"
-		value={ value }
-		readonly
-		if isHidden == hidden {
-			type="hidden"
-		}
-	/>
-}
-
-type align int
-
-const (
-	alignLeft align = iota
-	alignCenter
-	alignRight
-)
-
-templ descriptor(content string, class string) {
-	<p class={ class + " text-grey-700 text-xs font-medium" }>{ content }</p>
-}
-
-templ infoWrapper() {
-	<div class="flex flex-col gap-2 pt-4 px-2 md:gap-3">
-		{ children... }
 	</div>
 }
 
