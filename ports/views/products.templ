@@ -91,7 +91,7 @@ templ Products(productsListViewModel ProductsListViewModel) {
 					<section class="px-2 py-8 md:px-6 md:py-8 rounded-3xl bg-grey-200 shadow-md max-w-1/3 hidden xl:block">
 						@filter(productsListViewModel.filter)
 					</section>
-					<section class="flex flex-col px-4 py-2 sm:px-6 sm:py-4 lg:px-12 lg:py-8 shadow-md rounded-3xl bg-grey-200 min-w-1/2 relative">
+					<section class="flex flex-col px-4 py-2 sm:px-6 sm:py-4 lg:px-12 lg:py-8 shadow-md rounded-3xl bg-grey-200 min-w-1/2 relative md:w-full xl:w-fit">
 						@descriptor("Products", "p-4")
 						<img id="spinner3" src="/public/icons/spinner.svg" class="htmx-indicator absolute top-1/2 left-1/2 z-2"/>
 						<div id="spinner2" class="flex flex-col pb-8 items-center justify-center gap-4 sm:gap-6 lg:gap-12 htmx-request:opacity-50">

@@ -153,7 +153,7 @@ func Products(productsListViewModel ProductsListViewModel) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</section><section class=\"flex flex-col px-4 py-2 sm:px-6 sm:py-4 lg:px-12 lg:py-8 shadow-md rounded-3xl bg-grey-200 min-w-1/2 relative\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</section><section class=\"flex flex-col px-4 py-2 sm:px-6 sm:py-4 lg:px-12 lg:py-8 shadow-md rounded-3xl bg-grey-200 min-w-1/2 relative md:w-full xl:w-fit\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
