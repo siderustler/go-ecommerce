@@ -8,7 +8,28 @@ package components
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-func EmptyNavBar() templ.Component {
+import "github.com/siderustler/go-ecommerce/services"
+
+type NavBarViewModel struct {
+	Search      string `query:"search" url:"search,omitempty"`
+	basketCount int
+}
+
+func NewNavBarViewModel(search string, basketCount int) NavBarViewModel {
+	if basketCount < 0 {
+		basketCount = 0
+	}
+	return NavBarViewModel{
+		Search:      search,
+		basketCount: basketCount,
+	}
+}
+
+func (n *NavBarViewModel) Align(basketProducts []services.Product) {
+	n.basketCount = len(basketProducts)
+}
+
+func NavBar(viewModel NavBarViewModel) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -29,35 +50,6 @@ func EmptyNavBar() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = FilledNavBar("").Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		return nil
-	})
-}
-
-func FilledNavBar(searchInputValue string) templ.Component {
-	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
-			return templ_7745c5c3_CtxErr
-		}
-		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-		if !templ_7745c5c3_IsBuffer {
-			defer func() {
-				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-				if templ_7745c5c3_Err == nil {
-					templ_7745c5c3_Err = templ_7745c5c3_BufErr
-				}
-			}()
-		}
-		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var2 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var2 == nil {
-			templ_7745c5c3_Var2 = templ.NopComponent
-		}
-		ctx = templ.ClearChildren(ctx)
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"searcher\" class=\"flex flex-col justify-center items-center gap-4 md:gap-6 lg:gap-8 px-2 pt-3 pb-5 md:px-4 md:pt-6 md:pb-8 lg:px-6 lg:pt-8 lg:pb-12 bg-grey-200 shadow-lg border-2 border-grey-200 rounded-lg\" hx-swap-oob=\"true\"><div class=\"flex items-center md:justify-center gap-3 md:gap-8 bg-grey-100 rounded-md shadow-md py-4 px-6 md:py-6 md:px-8 lg:px-12 w-full lg:min-w-fit lg:max-w-1/3 md:rounded-2xl\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -70,10 +62,11 @@ func FilledNavBar(searchInputValue string) templ.Component {
 		}{
 			{icon: "/public/icons/logo.svg", name: "Logo", href: "/", color: "text-grey-900"},
 			{icon: "/public/icons/products.svg", name: "Produkty", href: "/products/1", color: "text-primary-900"},
+			{icon: "/public/icons/shop-cart.svg", name: "Koszyk", href: "/basket", color: "text-primary-900"},
 		}
 		for _, item := range items {
-			var templ_7745c5c3_Var3 = []any{"flex items-center justify-center gap-2 md:gap-3 lg:gap-4 text-sm md:text-lg " + item.color}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var3...)
+			var templ_7745c5c3_Var2 = []any{"relative flex items-center justify-center gap-2 md:gap-3 lg:gap-4 text-sm md:text-lg " + item.color}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var2...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -81,12 +74,12 @@ func FilledNavBar(searchInputValue string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var4 templ.SafeURL
-			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinURLErrs(item.href)
+			var templ_7745c5c3_Var3 templ.SafeURL
+			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinURLErrs(item.href)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/nav_bar.templ`, Line: 22, Col: 23}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/nav_bar.templ`, Line: 40, Col: 23}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -94,12 +87,12 @@ func FilledNavBar(searchInputValue string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var5 string
-			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(item.href)
+			var templ_7745c5c3_Var4 string
+			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(item.href)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/nav_bar.templ`, Line: 22, Col: 44}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/nav_bar.templ`, Line: 40, Col: 44}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -107,12 +100,12 @@ func FilledNavBar(searchInputValue string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var6 string
-			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var3).String())
+			var templ_7745c5c3_Var5 string
+			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var2).String())
 			if templ_7745c5c3_Err != nil {
 				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/nav_bar.templ`, Line: 1, Col: 0}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -120,12 +113,12 @@ func FilledNavBar(searchInputValue string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var7 string
-			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(item.icon)
+			var templ_7745c5c3_Var6 string
+			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(item.icon)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/nav_bar.templ`, Line: 23, Col: 25}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/nav_bar.templ`, Line: 42, Col: 21}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -133,42 +126,75 @@ func FilledNavBar(searchInputValue string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var8 string
-			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(item.name + " ikona")
+			var templ_7745c5c3_Var7 string
+			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(item.name + " ikona")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/nav_bar.templ`, Line: 23, Col: 54}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/nav_bar.templ`, Line: 43, Col: 32}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" width=\"32px\" height=\"32px\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if item.name == "Koszyk" {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, " class=\"outline-2 rounded-full outline-secondary-300\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "> ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var8 string
+			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(item.name)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/nav_bar.templ`, Line: 50, Col: 16}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" width=\"24px\" height=\"24px\"> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, " ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var9 string
-			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(item.name)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/nav_bar.templ`, Line: 24, Col: 16}
+			if item.name == "Koszyk" {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<p class=\"absolute left-5 -top-3 px-1.5 py-px text-xs rounded-full border-2 border-secondary-200 text-secondary-900 bg-secondary-100\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var9 string
+				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(viewModel.basketCount)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/nav_bar.templ`, Line: 53, Col: 30}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</p>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</a>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = searchInput(searchInputValue).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = searchInput(viewModel.Search).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -197,20 +223,20 @@ func searchInput(searchInputValue string) templ.Component {
 			templ_7745c5c3_Var10 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<form action=\"/products/1\" method=\"GET\" class=\"flex gap-3 md:gap-4 w-full items-center justify-center\" hx-get=\"/products/1\" hx-swap=\"outerHTML\" hx-target=\"#products\"><div class=\"flex gap-2 md:gap-4 bg-grey-100 border-2 border-grey-500 rounded-xl hover:border-tertiary-300 has-focus:border-tertiary-500 px-4 md:px-6 py-3 w-full md:w-2/3 xl:w-2/5 shadow-lg\"><img src=\"/public/icons/search.svg\" alt=\"szukanie ikona\" height=\"24px\" width=\"24px\"> <input id=\"search\" type=\"text\" name=\"search\" placeholder=\"Wyszukaj produkt...\" class=\"placeholder:text-grey-700 text-grey-900 outline-none w-full\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<form action=\"/products/1\" method=\"GET\" class=\"flex gap-3 md:gap-4 w-full items-center justify-center\" hx-get=\"/products/1\" hx-swap=\"outerHTML\" hx-target=\"#products\"><div class=\"flex gap-2 md:gap-4 bg-grey-100 border-2 border-grey-500 rounded-xl hover:border-tertiary-300 has-focus:border-tertiary-500 px-4 md:px-6 py-3 w-full md:w-2/3 xl:w-2/5 shadow-lg\"><img src=\"/public/icons/search.svg\" alt=\"szukanie ikona\" height=\"24px\" width=\"24px\"> <input id=\"search\" type=\"text\" name=\"search\" placeholder=\"Wyszukaj produkt...\" class=\"placeholder:text-grey-700 text-grey-900 outline-none w-full\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(searchInputValue)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/nav_bar.templ`, Line: 42, Col: 28}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/nav_bar.templ`, Line: 73, Col: 28}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" hx-trigger=\"input changed delay:0.2s\" hx-get=\"/products/1\" hx-swap=\"outerHTML\" hx-target=\"#products\"></div><button type=\"submit\" class=\"text-primary-900 rounded-full p-3 md:px-5 lg:px-6 lg:py-4 bg-primary-300 md:rounded-xl md:flex md:gap-2 lg:gap-4 md:items-center md:justify-center shadow-lg\"><img src=\"/public/icons/search.svg\" alt=\"wyszukaj ikona\" width=\"24px\" height=\"24px\"> <span class=\"hidden md:block text-primary-900\">Szukaj</span></button></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\" hx-trigger=\"input changed delay:0.2s\" hx-get=\"/products/1\" hx-swap=\"outerHTML\" hx-target=\"#products\"></div><button type=\"submit\" class=\"text-primary-900 rounded-full p-3 md:px-5 lg:px-6 lg:py-4 bg-primary-300 md:rounded-xl md:flex md:gap-2 lg:gap-4 md:items-center md:justify-center shadow-lg\"><img src=\"/public/icons/search.svg\" alt=\"wyszukaj ikona\" width=\"24px\" height=\"24px\"> <span class=\"hidden md:block text-primary-900\">Szukaj</span></button></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

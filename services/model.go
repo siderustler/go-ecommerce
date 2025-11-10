@@ -1,41 +1,47 @@
 package services
 
-type Product struct {
+type BasketProduct struct {
 	ID    string
 	Name  string
 	Image string
-	PriceBefore float32
 	Price float32
 }
 
+type Product struct {
+	ID          string
+	Name        string
+	Image       string
+	PriceBefore float32
+	Price       float32
+}
 
 type Filter struct {
-	PriceFrom float32
-	PriceTo float32
-	IncludeMachines bool
-	IncludeGardening bool
-	IncludeParts bool
-	IncludeElectro bool
+	PriceFrom              float32
+	PriceTo                float32
+	IncludeMachines        bool
+	IncludeGardening       bool
+	IncludeParts           bool
+	IncludeElectro         bool
 	IncludeElectroMachines bool
-	Sort string
-	Search string
+	Sort                   string
+	Search                 string
 }
 
 func NewFilter(
-	priceFrom, priceTo float32, 
-	includeMachines,includeGardening, includeParts, includeElectro, includeElectroMachines bool,
+	priceFrom, priceTo float32,
+	includeMachines, includeGardening, includeParts, includeElectro, includeElectroMachines bool,
 	sort, search string,
 ) Filter {
 	return Filter{
-		PriceFrom: priceFrom,
-		PriceTo: priceTo,
-		IncludeMachines: includeMachines,
-		IncludeGardening: includeGardening,
-		IncludeParts: includeParts,
-		IncludeElectro: includeElectro,
+		PriceFrom:              priceFrom,
+		PriceTo:                priceTo,
+		IncludeMachines:        includeMachines,
+		IncludeGardening:       includeGardening,
+		IncludeParts:           includeParts,
+		IncludeElectro:         includeElectro,
 		IncludeElectroMachines: includeElectroMachines,
-		Sort: sort,
-		Search: search,
+		Sort:                   sort,
+		Search:                 search,
 	}
 }
 
@@ -43,7 +49,7 @@ type ProductDetail struct {
 	ID                  string
 	Name                string
 	Images              []string
-	PriceBefore float32
+	PriceBefore         float32
 	Price               float32
 	ProductInfo         []string
 	TechnicalParameters []string
@@ -68,7 +74,7 @@ func NewPromoProductDetail(id, name string, images, productInfo, technicalParame
 		ProductInfo:         productInfo,
 		TechnicalParameters: technicalParameters,
 		Price:               price,
-		PriceBefore: priceBefore,
+		PriceBefore:         priceBefore,
 	}
 }
 
@@ -83,10 +89,19 @@ func NewProduct(id, name, image string, price float32) Product {
 
 func NewPromoProduct(id, name, image string, priceBefore float32, price float32) Product {
 	return Product{
+		ID:          id,
+		Name:        name,
+		Price:       price,
+		Image:       image,
+		PriceBefore: priceBefore,
+	}
+}
+
+func NewBasketProduct(id, name, image string, price float32) BasketProduct {
+	return BasketProduct{
 		ID:    id,
 		Name:  name,
 		Price: price,
 		Image: image,
-		PriceBefore: priceBefore,
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/go-querystring/query"
 	"github.com/siderustler/go-ecommerce/ports/views"
+	"github.com/siderustler/go-ecommerce/ports/views/components"
 	"github.com/siderustler/go-ecommerce/services"
 )
 
@@ -20,6 +21,7 @@ func (h handlers) getProductsRedirect(c *fiber.Ctx) error {
 
 func (h handlers) getProducts(c *fiber.Ctx) error {
 	page, _ := c.ParamsInt("page")
+
 	var filterViewModel views.FilterViewModel
 	_ = c.QueryParser(&filterViewModel)
 	filterViewModel.Validate()
@@ -27,18 +29,30 @@ func (h handlers) getProducts(c *fiber.Ctx) error {
 	var productsListViewModel views.ProductsListViewModel
 	_ = c.QueryParser(&productsListViewModel)
 
+	var navBarViewModel components.NavBarViewModel
+	_ = c.QueryParser(&navBarViewModel)
+
 	products, err := h.services.GetProducts(c.Context(), page, filterViewModel.MapToDomainFilter())
 	//FIXME -- display empty product list
 	if err != nil {
 		return c.Redirect("/products/1")
 	}
+
+	basketProducts, err := h.services.GetBasket(c.Context(), "")
+	//FIXME
+	if err != nil {
+		return c.Redirect("/products/1")
+	}
+
+	navBarViewModel.Align(basketProducts)
+
 	//FIXME -- get max products count to display (paginated)
 	maxPagesBoundary := 10
 
 	values, _ := query.Values(filterViewModel)
 	encodedFilter := values.Encode()
 
-	productsListViewModel.Align(products, filterViewModel, page, maxPagesBoundary, encodedFilter)
+	productsListViewModel.Align(products, filterViewModel, navBarViewModel, page, maxPagesBoundary, encodedFilter)
 
 	if !isHTMXRequest(c) {
 		return render(c, views.Products(productsListViewModel))
@@ -64,13 +78,27 @@ func (h handlers) getProducts(c *fiber.Ctx) error {
 
 func (h handlers) getProductDetails(c *fiber.Ctx) error {
 	var productDetailViewModel views.ProductDetailViewModel
+	var navBarViewModel components.NavBarViewModel
+
 	_ = c.QueryParser(&productDetailViewModel)
+	_ = c.QueryParser(&navBarViewModel)
+
 	productID := c.Params("productID", "")
 	productDetails, err := h.services.GetProductDetails(c.Context(), productID)
+	//FIXME?
 	if err != nil {
 		return c.Redirect("/products/1")
 	}
-	productDetailViewModel.Align(productDetails)
+
+	basketProducts, err := h.services.GetBasket(c.Context(), "")
+	//FIXME
+	if err != nil {
+		return c.Redirect("/products/1")
+	}
+
+	navBarViewModel.Align(basketProducts)
+	productDetailViewModel.Align(productDetails, navBarViewModel)
+
 	if !isHTMXRequest(c) {
 		return render(c, views.ProductDetails(productDetailViewModel))
 	}
@@ -159,14 +187,20 @@ func (h handlers) getDashboard(c *fiber.Ctx) error {
 		return c.Redirect("/")
 	}
 
+	basketProducts, err := h.services.GetBasket(c.Context(), "")
+	//FIXME
+	if err != nil {
+		return c.Redirect("/")
+	}
+	navBarViewModel := components.NewNavBarViewModel("", len(basketProducts))
 	if !isHTMXRequest(c) {
-		return render(c, views.Dashboard(views.NewDashboardViewModel(promos, slide, promotionPage)))
+		return render(c, views.Dashboard(views.NewDashboardViewModel(promos, slide, promotionPage, navBarViewModel)))
 	}
 
 	isPromotionRequest := c.Query("promotions") != ""
 	if isPromotionRequest {
-		return render(c, views.Dashboard(views.NewDashboardViewModel(promos, slide, promotionPage)), views.PromotedProductSelectorFragment)
+		return render(c, views.Dashboard(views.NewDashboardViewModel(promos, slide, promotionPage, navBarViewModel)), views.PromotedProductSelectorFragment)
 	}
 
-	return render(c, views.Dashboard(views.NewDashboardViewModel(promos, slide, promotionPage)), views.DashboardSelectorFragment)
+	return render(c, views.Dashboard(views.NewDashboardViewModel(promos, slide, promotionPage, navBarViewModel)), views.DashboardSelectorFragment)
 }

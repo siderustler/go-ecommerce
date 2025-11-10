@@ -6,7 +6,8 @@ import "github.com/siderustler/go-ecommerce/services"
 import "github.com/siderustler/go-ecommerce/ports/views/components"
 
 type ProductDetailViewModel struct {
-	domain services.ProductDetail
+	domain          services.ProductDetail
+	navBarViewModel components.NavBarViewModel
 
 	SelectedImage         int    `query:"img"`
 	ExpandProductInfo     bool   `query:"info"`
@@ -20,8 +21,9 @@ type ProductDetailViewModel struct {
 	IncrementBasketCount bool `query:"inc"`
 }
 
-func (p *ProductDetailViewModel) Align(productDetail services.ProductDetail) {
+func (p *ProductDetailViewModel) Align(productDetail services.ProductDetail, navBarViewModel components.NavBarViewModel) {
 	p.domain = productDetail
+	p.navBarViewModel = navBarViewModel
 	if p.BackUrl == "" {
 		p.BackUrl = "/products/1"
 	}
@@ -66,8 +68,8 @@ var ProductDetailFragment = productDetail{}
 
 templ ProductDetails(product ProductDetailViewModel) {
 	@layout() {
+		@components.NavBar(product.navBarViewModel)
 		@templ.Fragment(ProductDetailFragment) {
-			@components.EmptyNavBar()
 			{{ basePath := "/products/details/" + product.domain.ID }}
 			<section id="products" class="flex flex-col items-center justify-center">
 				<div class="min-w-sm max-w-md md:max-w-4xl px-4 py-8 md:px-8 md:py-12 lg:px-12 lg:py-16 rounded-3xl bg-grey-200 shadow-md">

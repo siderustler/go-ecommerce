@@ -1,5 +1,9 @@
 package views
 
+/*
+	koszyk na dashboardzie powinien byc wqyciagany na podsstawie sesji
+	dodanie / usuniecie itemu do koszyka usuwa item i aktualizuje liczbe rzeczy w koszyku na widoku
+*/
 import "github.com/siderustler/go-ecommerce/services"
 import "strconv"
 import "math"
@@ -11,6 +15,7 @@ type dashboardViewModel struct {
 	displayedPromotions int
 	maxPromotions       int
 	maxProductsPerPage  int
+	navBarViewModel     components.NavBarViewModel
 }
 
 type promotedProductSelectorFragment struct{}
@@ -23,7 +28,7 @@ func maxPromotionPages(allProducts int, productsPerPage int) int {
 	return int(math.Ceil(float64(allProducts / productsPerPage)))
 }
 
-func NewDashboardViewModel(products []services.Product, selectedProduct, displayedPromotions int) dashboardViewModel {
+func NewDashboardViewModel(products []services.Product, selectedProduct, displayedPromotions int, navBarViewModel components.NavBarViewModel) dashboardViewModel {
 	isSelectedProductOutOfBounds := selectedProduct < 0 || selectedProduct > len(products)-1
 	if isSelectedProductOutOfBounds {
 		selectedProduct = 0
@@ -42,13 +47,14 @@ func NewDashboardViewModel(products []services.Product, selectedProduct, display
 		displayedPromotions: displayedPromotions,
 		maxPromotions:       maxPromotions,
 		maxProductsPerPage:  maxProductsPerPage,
+		navBarViewModel:     navBarViewModel,
 	}
 }
 
 templ Dashboard(dashboardViewModel dashboardViewModel) {
 	@layout() {
 		@templ.Fragment(DashboardSelectorFragment) {
-			@components.EmptyNavBar()
+			@components.NavBar(dashboardViewModel.navBarViewModel)
 			<div id="products" class="flex flex-col items-center justify-center gap-4 md:gap-8 lg:gap-16 mt-12">
 				@dashSection("promotions") {
 					@templ.Fragment(PromotedProductSelectorFragment) {
