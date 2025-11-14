@@ -2,8 +2,8 @@ package components
 
 templ BasketAdder(id string, productID string, incDecRequestPath string, count int) {
 	<div id={ id } class="flex justify-center gap-6 md:gap-4 min-h-14 md:flex-col">
-		@BasketCounter(id, productID, incDecRequestPath, count)
-		<form method="post" action="/basket/add" hx-post={ "/basket/add" } hx-target="#basket" class="flex items-center justify-center">
+		@BasketCounter(id, GET, productID, incDecRequestPath, count)
+		<form method="post" action="/basket" hx-post="/basket" hx-target="#basket" class="flex items-center justify-center">
 			<input
 				name="count"
 				value={ count }
@@ -14,10 +14,27 @@ templ BasketAdder(id string, productID string, incDecRequestPath string, count i
 	</div>
 }
 
-templ BasketCounter(id string, productID string, counterPath string, count int) {
+type method string
+
+var (
+	POST method = "post"
+	GET  method = "get"
+)
+
+templ BasketCounter(id string, method method, productID string, counterPath string, count int) {
 	<div class="flex gap-6 justify-center px-3 py-2 rounded-lg border-2 border-secondary-300">
 		{{ hxTarget := "#" + id }}
-		<form method="get" action={ counterPath } hx-get={ counterPath } hx-target={ hxTarget } hx-swap="outerHTML">
+		<form
+			method={ method }
+			action={ counterPath }
+			if method == GET {
+				hx-get={ counterPath }
+			} else {
+				hx-post={ counterPath }
+			}
+			hx-target={ hxTarget }
+			hx-swap="outerHTML"
+		>
 			<input name="dec" type="checkbox" checked hidden/>
 			<input name="id" value={ productID } hidden/>
 			@IconButton(SecondaryIconButton, IconButtonMinus)
@@ -33,7 +50,17 @@ templ BasketCounter(id string, productID string, counterPath string, count int) 
 			value={ count }
 			readonly
 		/>
-		<form method="get" action={ counterPath } hx-get={ counterPath } hx-target={ hxTarget } hx-swap="outerHTML">
+		<form
+			method={ method }
+			action={ counterPath }
+			if method == GET {
+				hx-get={ counterPath }
+			} else {
+				hx-post={ counterPath }
+			}
+			hx-target={ hxTarget }
+			hx-swap="outerHTML"
+		>
 			<input name="inc" type="checkbox" checked hidden/>
 			<input name="id" value={ productID } hidden/>
 			@IconButton(SecondaryIconButton, IconButtonPlus)

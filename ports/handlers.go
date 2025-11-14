@@ -204,3 +204,53 @@ func (h handlers) getDashboard(c *fiber.Ctx) error {
 
 	return render(c, views.Dashboard(views.NewDashboardViewModel(promos, slide, promotionPage, navBarViewModel)), views.DashboardSelectorFragment)
 }
+
+func (h handlers) getBasket(c *fiber.Ctx) error {
+	var navBarViewModel components.NavBarViewModel
+	_ = c.QueryParser(&navBarViewModel)
+
+	session := c.Cookies("session")
+	basketProducts, err := h.services.GetBasket(c.Context(), session)
+	//FIXME?
+	if err != nil {
+		return c.Redirect("/")
+	}
+	navBarViewModel.Align(basketProducts)
+	basketViewModel := views.NewBasketViewModel(basketProducts, navBarViewModel)
+
+	if !isHTMXRequest(c) {
+		return render(c, views.Basket(basketViewModel))
+	}
+
+	return render(c, views.Basket(basketViewModel), views.BasketFragment)
+}
+
+func (h handlers) updateBasket(c *fiber.Ctx) error {
+	var basketViewModel views.BasketViewModel
+	_ = c.BodyParser(&basketViewModel)
+
+	session := c.Cookies("session")
+	var err error
+	if basketViewModel.DecBasket {
+		err = h.services.DecrementBasketItem(c.Context(), session, basketViewModel.ChangeCountID)
+	}
+	if basketViewModel.IncBasket {
+		err = h.services.IncrementBasketItem(c.Context(), session, basketViewModel.ChangeCountID)
+	}
+	//FIXME?
+	if err != nil {
+		return c.Redirect("/basket")
+	}
+	if !isHTMXRequest(c) {
+		return c.Redirect("/basket")
+	}
+
+	basketProducts, err := h.services.GetBasket(c.Context(), session)
+	if err != nil {
+		//FIXME?
+		return c.Redirect("/basket")
+	}
+	fmt.Printf("%+v %+v\n\n", "changeCount ", basketViewModel.ChangeCountID)
+	basketViewModel.Align(basketProducts, components.NavBarViewModel{})
+	return render(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
+}

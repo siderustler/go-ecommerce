@@ -48,23 +48,26 @@ func (p *ProductsListViewModel) Align(domainProducts []services.Product, filterV
 	productsViewModel := make([]productViewModel, 0, len(domainProducts))
 	currentUrl := fmt.Sprintf("/products/%d?%s", actualPage, encodedFilter)
 
+	if p.AddBasketCount < 1 {
+		p.AddBasketCount = 1
+	}
+
+	if p.IncrementBasketCount {
+		p.AddBasketCount += 1
+	}
+
+	isDecrementable := p.DecrementBasketCount && p.AddBasketCount > 1
+	if isDecrementable {
+		p.AddBasketCount -= 1
+	}
+
 	for _, product := range domainProducts {
 		productViewModel := productViewModel{domain: product, addBasketCount: 1, currentUrl: currentUrl}
 		if product.ID != p.ChangeCountID {
 			productsViewModel = append(productsViewModel, productViewModel)
 			continue
 		}
-		if p.AddBasketCount > 1 {
-			productViewModel.addBasketCount = p.AddBasketCount
-		}
-		if p.IncrementBasketCount {
-			productViewModel.addBasketCount += 1
-		}
-		isDecrementable := p.DecrementBasketCount && p.AddBasketCount > 1
-		if isDecrementable {
-			productViewModel.addBasketCount -= 1
-		}
-
+		productViewModel.addBasketCount = p.AddBasketCount
 		productsViewModel = append(productsViewModel, productViewModel)
 	}
 	p.products = productsViewModel

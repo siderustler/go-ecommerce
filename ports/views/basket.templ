@@ -6,6 +6,11 @@ import "github.com/siderustler/go-ecommerce/ports/views/components"
 type BasketViewModel struct {
 	navBarViewModel components.NavBarViewModel
 	items           []services.BasketProduct
+
+	ChangeCountID string `query:"id"`
+	IncBasket     bool   `query:"inc"`
+	DecBasket     bool   `query:"dec"`
+	Count         int    `query:"count"`
 }
 
 func NewBasketViewModel(items []services.BasketProduct, navBarViewModel components.NavBarViewModel) BasketViewModel {
@@ -15,22 +20,48 @@ func NewBasketViewModel(items []services.BasketProduct, navBarViewModel componen
 	}
 }
 
+func (b *BasketViewModel) Align(items []services.BasketProduct, navBarViewModel components.NavBarViewModel) {
+	b.items = items
+	b.navBarViewModel = navBarViewModel
+
+	if b.Count < 1 {
+		b.Count = 1
+	}
+	isBasketDecrementable := b.DecBasket && b.Count > 1
+	if isBasketDecrementable {
+		b.Count -= 1
+	}
+	if b.IncBasket {
+		b.Count += 1
+	}
+	for i := 0; i < len(b.items); i++ {
+		if b.items[i].Product.ID == b.ChangeCountID {
+			b.items[i].Count = b.Count
+		}
+	}
+}
+
 type basketFragment struct{}
 
 var BasketFragment basketFragment = basketFragment{}
 var BasketItemFragment func(itemID string) string = func(itemID string) string { return "basket-" + itemID }
 
 templ Basket(viewModel BasketViewModel) {
-	<section>
+	@layout() {
 		@components.NavBar(viewModel.navBarViewModel)
 		@templ.Fragment(BasketFragment) {
-			<div id="products" class="flex flex-col lg:flex-row gap-5 md:gap-6 lg:gap-8">
-				<div class="flex gap-3 md:gap-4 lg:gap-6 border-b-2 border-grey-300 p-3">
-					<img src="/public/icons/shop-cart.svg" width="32px" height="32px" alt="koszyk ikona"/>
-					<h1 class="text-grey-700">Koszyk</h1>
+			<div id="products" class="flex flex-col gap-5 md:gap-6 lg:gap-8 shadow-md rounded-3xl bg-grey-200 px-4 py-3 md:px-12 md:py-6 lg:px-16 lg:py-12">
+				<div class="border-b-2 border-grey-300 py-3 px-6 w-fit">
+					<div class="flex gap-3 md:gap-4 items-center justify-center">
+						<img src="/public/icons/shop-cart.svg" width="32px" height="32px" alt="koszyk ikona"/>
+						<h1 class="text-grey-700 text-center">Koszyk</h1>
+					</div>
 				</div>
 				<div class="flex flex-col lg:flex-row gap-8 md:gap-12 lg:gap-8">
-					<div class="flex flex-col lg:flex-row gap-6 md:gap-8">
+					<div class="flex flex-col gap-6 md:gap-8">
+						if len(viewModel.items) == 0 {
+							@emptyBasket()
+						}
 						for _, item := range viewModel.items {
 							{{ id := BasketItemFragment(item.Product.ID) }}
 							@templ.Fragment(id) {
@@ -42,20 +73,33 @@ templ Basket(viewModel BasketViewModel) {
 				</div>
 			</div>
 		}
-	</section>
+	}
+}
+
+templ emptyBasket() {
+	<div class="flex flex-col bg-grey-200 shadow-sm items-center justify-center px-8 md:px-12 lg:px-16 py-8 md:py-10 lg:py-12 gap-6 md:gap-8 lg:gap-10">
+		<p class="text-2xl text-secondary-900">Nie masz żadnych produktów w koszyku</p>
+		@components.IconButton(components.PrimaryIconButton, components.IconButtonShop)
+	</div>
 }
 
 templ basketProductItem(id string, item services.BasketProduct) {
-	<div class="flex flex-col md:flex-row p-4 md:p-6 lg:p-8 gap-4 md:gap-6 lg:gap-8">
-		<img src={ item.Product.Image } alt={ item.Product.Name + " ilustracja" } width="200px" height="200px" class="mx-auto md:mx-0"/>
-		<div class="flex flex-col gap-6">
+	<div id={ id } class="flex flex-col lg:flex-row p-4 md:p-8 lg:p-12 gap-4 md:gap-8 lg:gap-12 bg-grey-100 shadow-sm rounded-xl max-w-fit">
+		<img src={ item.Product.Image } alt={ item.Product.Name + " ilustracja" } width="195px" height="195px" class="mx-auto md:mx-0 rounded-2xl shadow-sm"/>
+		<div class="flex flex-col gap-6 py-4">
 			@components.Info("Nazwa produktu") {
 				<h2 class="text-xl">{ item.Product.Name }</h2>
 			}
-			@components.Info("Cena") {
-				<p class="text-xl">{ item.Product.Price }</p>
+			if item.Product.PriceBefore != 0 {
+				@promotionPrice(item.Product.PriceBefore, item.Product.Price)
+			} else {
+				@components.Info("Cena") {
+					<p class="text-xl">{ item.Product.Price }</p>
+				}
 			}
-			@components.BasketCounter(id, item.Product.ID, "/basket", 0)
+			@components.Info("Dostosuj ilość") {
+				@components.BasketCounter(id, components.POST, item.Product.ID, "/basket", item.Count)
+			}
 		</div>
 	</div>
 }
