@@ -73,6 +73,7 @@ func (p *ProductsListViewModel) Align(domainProducts []services.Product, filterV
 type productListFragment struct{}
 
 var ProductListFragment = productListFragment{}
+var ProductBasketAdderFragment = func(productID string) string { return "basket-adder-" + productID }
 
 templ Products(productsListViewModel ProductsListViewModel) {
 	{{
@@ -174,8 +175,9 @@ templ productItem(viewModel productViewModel) {
 				</form>
 			</div>
 			@components.Info("Dostosuj ilość") {
-				@templ.Fragment("basket-adder-" + viewModel.domain.ID) {
-					@components.ProductsBasketAdder("basket-adder", viewModel.domain.ID, viewModel.currentUrl, viewModel.addBasketCount)
+				{{ id := ProductBasketAdderFragment(viewModel.domain.ID) }}
+				@templ.Fragment(id) {
+					@components.BasketAdder(id, viewModel.domain.ID, viewModel.currentUrl, viewModel.addBasketCount)
 				}
 			}
 		</div>

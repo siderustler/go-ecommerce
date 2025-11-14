@@ -1,10 +1,8 @@
 package services
 
 type BasketProduct struct {
-	ID    string
-	Name  string
-	Image string
-	Price float32
+	Product Product
+	Count   int
 }
 
 type Product struct {
@@ -97,11 +95,15 @@ func NewPromoProduct(id, name, image string, priceBefore float32, price float32)
 	}
 }
 
-func NewBasketProduct(id, name, image string, price float32) BasketProduct {
+func NewBasketProduct(id, name, image string, price float32, priceBefore float32, count int) BasketProduct {
 	return BasketProduct{
-		ID:    id,
-		Name:  name,
-		Price: price,
-		Image: image,
+		Product: Product{
+			ID:          id,
+			Name:        name,
+			Image:       image,
+			PriceBefore: priceBefore,
+			Price:       price,
+		},
+		Count: count,
 	}
 }

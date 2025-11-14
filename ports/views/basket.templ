@@ -1,0 +1,65 @@
+package views
+
+import "github.com/siderustler/go-ecommerce/services"
+import "github.com/siderustler/go-ecommerce/ports/views/components"
+
+type BasketViewModel struct {
+	navBarViewModel components.NavBarViewModel
+	items           []services.BasketProduct
+}
+
+func NewBasketViewModel(items []services.BasketProduct, navBarViewModel components.NavBarViewModel) BasketViewModel {
+	return BasketViewModel{
+		items:           items,
+		navBarViewModel: navBarViewModel,
+	}
+}
+
+type basketFragment struct{}
+
+var BasketFragment basketFragment = basketFragment{}
+var BasketItemFragment func(itemID string) string = func(itemID string) string { return "basket-" + itemID }
+
+templ Basket(viewModel BasketViewModel) {
+	<section>
+		@components.NavBar(viewModel.navBarViewModel)
+		@templ.Fragment(BasketFragment) {
+			<div id="products" class="flex flex-col lg:flex-row gap-5 md:gap-6 lg:gap-8">
+				<div class="flex gap-3 md:gap-4 lg:gap-6 border-b-2 border-grey-300 p-3">
+					<img src="/public/icons/shop-cart.svg" width="32px" height="32px" alt="koszyk ikona"/>
+					<h1 class="text-grey-700">Koszyk</h1>
+				</div>
+				<div class="flex flex-col lg:flex-row gap-8 md:gap-12 lg:gap-8">
+					<div class="flex flex-col lg:flex-row gap-6 md:gap-8">
+						for _, item := range viewModel.items {
+							{{ id := BasketItemFragment(item.Product.ID) }}
+							@templ.Fragment(id) {
+								@basketProductItem(id, item)
+							}
+						}
+					</div>
+					@basketSummary(viewModel.items)
+				</div>
+			</div>
+		}
+	</section>
+}
+
+templ basketProductItem(id string, item services.BasketProduct) {
+	<div class="flex flex-col md:flex-row p-4 md:p-6 lg:p-8 gap-4 md:gap-6 lg:gap-8">
+		<img src={ item.Product.Image } alt={ item.Product.Name + " ilustracja" } width="200px" height="200px" class="mx-auto md:mx-0"/>
+		<div class="flex flex-col gap-6">
+			@components.Info("Nazwa produktu") {
+				<h2 class="text-xl">{ item.Product.Name }</h2>
+			}
+			@components.Info("Cena") {
+				<p class="text-xl">{ item.Product.Price }</p>
+			}
+			@components.BasketCounter(id, item.Product.ID, "/basket", 0)
+		</div>
+	</div>
+}
+
+templ basketSummary(items []services.BasketProduct) {
+	<div></div>
+}

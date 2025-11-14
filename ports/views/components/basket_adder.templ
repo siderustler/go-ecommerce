@@ -1,49 +1,8 @@
 package components
 
-templ ProductDetailBasketAdder(id, incDecRequestPath string, count int) {
-	@basketAdder(id, "", incDecRequestPath, count)
-}
-
-templ ProductsBasketAdder(id string, productID string, incDecRequestPath string, count int) {
-	@basketAdder(id, productID, incDecRequestPath, count)
-}
-
-templ basketAdder(id string, productID string, incDecRequestPath string, count int) {
-	{{
-		if productID != "" {
-			id = id + "-" + productID
-		}
-	}}
+templ BasketAdder(id string, productID string, incDecRequestPath string, count int) {
 	<div id={ id } class="flex justify-center gap-6 md:gap-4 min-h-14 md:flex-col">
-		<div class="flex gap-6 justify-center px-3 py-2 rounded-lg border-2 border-secondary-300">
-			{{ hxTarget := "#" + id }}
-			<form method="get" action={ incDecRequestPath } hx-get={ incDecRequestPath } hx-target={ hxTarget } hx-swap="outerHTML">
-				<input name="dec" type="checkbox" checked hidden/>
-				<input name="id" value={ productID } hidden/>
-				@IconButton(SecondaryIconButton, IconButtonMinus)
-				<input
-					name="count"
-					value={ count }
-					hidden
-				/>
-			</form>
-			<input
-				name="count"
-				class="border-2 border-secondary-500 text-secondary-900 text-center min-w-12 rounded-lg max-w-12"
-				value={ count }
-				readonly
-			/>
-			<form method="get" action={ incDecRequestPath } hx-get={ incDecRequestPath } hx-target={ hxTarget } hx-swap="outerHTML">
-				<input name="inc" type="checkbox" checked hidden/>
-				<input name="id" value={ productID } hidden/>
-				@IconButton(SecondaryIconButton, IconButtonPlus)
-				<input
-					name="count"
-					value={ count }
-					hidden
-				/>
-			</form>
-		</div>
+		@BasketCounter(id, productID, incDecRequestPath, count)
 		<form method="post" action="/basket/add" hx-post={ "/basket/add" } hx-target="#basket" class="flex items-center justify-center">
 			<input
 				name="count"
@@ -51,6 +10,38 @@ templ basketAdder(id string, productID string, incDecRequestPath string, count i
 				hidden
 			/>
 			@IconButton(PrimaryIconButton, IconButtonShop)
+		</form>
+	</div>
+}
+
+templ BasketCounter(id string, productID string, counterPath string, count int) {
+	<div class="flex gap-6 justify-center px-3 py-2 rounded-lg border-2 border-secondary-300">
+		{{ hxTarget := "#" + id }}
+		<form method="get" action={ counterPath } hx-get={ counterPath } hx-target={ hxTarget } hx-swap="outerHTML">
+			<input name="dec" type="checkbox" checked hidden/>
+			<input name="id" value={ productID } hidden/>
+			@IconButton(SecondaryIconButton, IconButtonMinus)
+			<input
+				name="count"
+				value={ count }
+				hidden
+			/>
+		</form>
+		<input
+			name="count"
+			class="border-2 border-secondary-500 text-secondary-900 text-center min-w-12 rounded-lg max-w-12"
+			value={ count }
+			readonly
+		/>
+		<form method="get" action={ counterPath } hx-get={ counterPath } hx-target={ hxTarget } hx-swap="outerHTML">
+			<input name="inc" type="checkbox" checked hidden/>
+			<input name="id" value={ productID } hidden/>
+			@IconButton(SecondaryIconButton, IconButtonPlus)
+			<input
+				name="count"
+				value={ count }
+				hidden
+			/>
 		</form>
 	</div>
 }

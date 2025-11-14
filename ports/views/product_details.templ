@@ -66,6 +66,10 @@ type productDetail struct{}
 
 var ProductDetailFragment = productDetail{}
 
+type basketAdd struct{}
+
+var BasketAdderFragment = basketAdd{}
+
 templ ProductDetails(product ProductDetailViewModel) {
 	@layout() {
 		@components.NavBar(product.navBarViewModel)
@@ -114,8 +118,8 @@ templ baseProductInfoSection(product ProductDetailViewModel) {
 templ basketAdder(product ProductDetailViewModel, basePath string) {
 	<div class="flex flex-col gap-4 md:gap-6 px-2 md:min-w-2/5">
 		@components.Info("Dostosuj ilość") {
-			@templ.Fragment("basket-adder") {
-				@components.ProductDetailBasketAdder("basket-adder", "/products/details/"+product.domain.ID, product.AddBasketCount)
+			@templ.Fragment(BasketAdderFragment) {
+				@components.BasketAdder("basket-adder", product.domain.ID, "/products/details/"+product.domain.ID, product.AddBasketCount)
 			}
 		}
 		<a

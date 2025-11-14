@@ -126,7 +126,7 @@ func (h handlers) getProductDetails(c *fiber.Ctx) error {
 		fragments = append(fragments, views.ImageSelectorFragment)
 	}
 	if productDetailViewModel.DecrementBasketCount || productDetailViewModel.IncrementBasketCount {
-		fragments = append(fragments, "basket-adder")
+		fragments = append(fragments, views.BasketAdderFragment)
 	}
 
 	isOnProductDetails := strings.Contains(c.Get("Hx-Current-Url"), "/products/details/")
