@@ -1,6 +1,9 @@
 package views
 
-import "github.com/siderustler/go-ecommerce/services"
+import (
+	"fmt"
+	"github.com/siderustler/go-ecommerce/services"
+)
 
 type FilterViewModel struct {
 	PriceFrom       float32 `query:"price-from" url:"price-from,omitempty"`
@@ -206,9 +209,21 @@ templ filterItem(name, icon, iconAlt, content string, checked bool) {
 }
 
 templ radioInput(label, value string, sort SortSpecifier) {
-	{{ checked := string(sort) == label }}
+	{{
+		checked := string(sort) == value
+		fmt.Printf("is checked? %v %v\n\n", value, checked)
+	}}
 	<div class="group shadow-lg has-checked:bg-tertiary-300 flex gap-2 md:gap-4 lg:gap-6 px-4 py-3 border-2 border-tertiary-500 rounded-2xl w-full items-center">
-		<input id={ value } type="radio" name="sort" value={ value } class="w-10 h-10 ml-4" checked={ checked }/>
+		<input
+			id={ value }
+			type="radio"
+			name="sort"
+			value={ value }
+			class="w-10 h-10 ml-4"
+			if checked {
+				checked
+			}
+		/>
 		<label for={ value } class="text-tertiary-900">{ label }</label>
 	</div>
 }

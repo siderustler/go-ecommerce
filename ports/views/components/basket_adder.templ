@@ -22,9 +22,12 @@ var (
 )
 
 templ BasketCounter(id string, method method, productID string, counterPath string, count int) {
-	<div class="flex gap-6 justify-center px-3 py-2 rounded-lg border-2 border-secondary-300">
+	{{ indicator := "indicator-" + id }}
+	<div class="flex gap-6 justify-center px-3 py-2 border-2 border-secondary-300 rounded-lg relative" hx-indicator={ "#" + indicator }>
+		<img id={ indicator } src="/public/icons/spinner.svg" width="24px" height="24px" alt="Loading..." class="htmx-indicator absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"/>
 		{{ hxTarget := "#" + id }}
 		<form
+			id={ indicator }
 			method={ method }
 			action={ counterPath }
 			if method == GET {
@@ -34,6 +37,7 @@ templ BasketCounter(id string, method method, productID string, counterPath stri
 			}
 			hx-target={ hxTarget }
 			hx-swap="outerHTML"
+			class="htmx-request:invisible"
 		>
 			<input name="dec" type="checkbox" checked hidden/>
 			<input name="id" value={ productID } hidden/>
@@ -45,12 +49,14 @@ templ BasketCounter(id string, method method, productID string, counterPath stri
 			/>
 		</form>
 		<input
+			id={ indicator }
 			name="count"
-			class="border-2 border-secondary-500 text-secondary-900 text-center min-w-12 rounded-lg max-w-12"
+			class="border-2 border-secondary-500 text-secondary-900 text-center min-w-12 rounded-lg max-w-12 htmx-request:invisible"
 			value={ count }
 			readonly
 		/>
 		<form
+			id={ indicator }
 			method={ method }
 			action={ counterPath }
 			if method == GET {
@@ -60,6 +66,7 @@ templ BasketCounter(id string, method method, productID string, counterPath stri
 			}
 			hx-target={ hxTarget }
 			hx-swap="outerHTML"
+			class="htmx-request:invisible"
 		>
 			<input name="inc" type="checkbox" checked hidden/>
 			<input name="id" value={ productID } hidden/>
