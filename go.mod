@@ -1,16 +1,16 @@
 module github.com/siderustler/go-ecommerce
 
-go 1.25.1
+go 1.25.4
 
 require (
 	github.com/a-h/templ v0.3.943
 	github.com/gofiber/fiber/v2 v2.52.9
+	github.com/google/go-querystring v1.1.0
 	github.com/joho/godotenv v1.5.1
 )
 
 require (
 	github.com/andybalholm/brotli v1.1.0 // indirect
-	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect

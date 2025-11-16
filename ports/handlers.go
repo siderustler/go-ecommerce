@@ -250,7 +250,7 @@ func (h handlers) updateBasket(c *fiber.Ctx) error {
 		//FIXME?
 		return c.Redirect("/basket")
 	}
-	fmt.Printf("%+v %+v\n\n", "changeCount ", basketViewModel.ChangeCountID)
 	basketViewModel.Align(basketProducts, components.NavBarViewModel{})
+
 	return render(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
 }
