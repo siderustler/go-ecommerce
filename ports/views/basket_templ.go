@@ -112,7 +112,7 @@ func Basket(viewModel BasketViewModel) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = infoHeader("/public/icons/shop-cart.svg", "koszyk ikona", "Koszyk").Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = infoHeader("/public/icons/shop-basket.svg", "koszyk ikona", "Koszyk").Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -207,7 +207,7 @@ func infoHeader(icon, alt, content string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\"><h1 class=\"text-grey-700 text-center\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\"><h1 class=\"text-grey-900 text-center\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -497,7 +497,7 @@ func basketSummary(items []services.BasketProduct) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = infoHeader("/public/icons/shop-cart.svg", "podsumowanie ikona", "Podsumowanie").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = infoHeader("/public/icons/shop-summary.svg", "podsumowanie ikona", "Podsumowanie").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
