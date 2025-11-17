@@ -153,7 +153,7 @@ func Products(productsListViewModel ProductsListViewModel) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</section><section class=\"flex flex-row gap-8 w-full justify-center\"><section class=\"px-2 py-8 md:px-6 md:py-8 rounded-3xl bg-grey-200 shadow-md max-w-1/3 hidden xl:block\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</section><section class=\"flex flex-row gap-8 w-full justify-center\"><section class=\"px-2 py-8 md:px-6 md:py-8 rounded-3xl bg-grey-200 shadow-md max-w-1/3 hidden xl:block border border-grey-300\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -161,7 +161,7 @@ func Products(productsListViewModel ProductsListViewModel) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</section><section class=\"flex flex-col px-4 py-2 sm:px-6 sm:py-4 lg:px-12 lg:py-8 shadow-md rounded-3xl bg-grey-200 min-w-1/2 relative md:w-full xl:w-fit\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</section><section class=\"flex flex-col px-4 py-2 sm:px-6 sm:py-4 lg:px-12 lg:py-8 shadow-md rounded-3xl bg-grey-200 min-w-1/2 relative md:w-full xl:w-fit border border-grey-300\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -360,7 +360,7 @@ func productItem(viewModel productViewModel) templ.Component {
 			templ_7745c5c3_Var12 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<div class=\"flex flex-col md:flex-row py-8 px-2 md:p-8 gap-3 md:gap-6 lg:gap-8 w-full shadow-sm rounded-2xl bg-grey-100\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<div class=\"flex flex-col md:flex-row py-8 px-2 md:p-8 gap-3 md:gap-6 lg:gap-8 w-full shadow-sm rounded-2xl bg-grey-100 border border-grey-300\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

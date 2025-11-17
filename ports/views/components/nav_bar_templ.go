@@ -50,7 +50,7 @@ func NavBar(viewModel NavBarViewModel) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"searcher\" class=\"flex flex-col justify-center items-center gap-4 md:gap-6 lg:gap-8 px-2 pt-3 pb-5 md:px-4 md:pt-6 md:pb-8 lg:px-6 lg:pt-8 lg:pb-12 bg-grey-200 shadow-lg border-2 border-grey-200 rounded-lg\" hx-swap-oob=\"true\"><div class=\"flex items-center md:justify-center gap-3 md:gap-8 bg-grey-100 rounded-md shadow-md py-4 px-6 md:py-6 md:px-8 lg:px-12 w-full lg:min-w-fit lg:max-w-1/3 md:rounded-2xl\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"searcher\" class=\"flex flex-col justify-center items-center gap-4 md:gap-6 lg:gap-8 px-2 pt-3 pb-5 md:px-4 md:pt-6 md:pb-8 lg:px-6 lg:pt-8 lg:pb-12 bg-grey-200 shadow-lg border border-grey-300 rounded-lg\" hx-swap-oob=\"true\"><div class=\"flex items-center md:justify-center gap-3 md:gap-8 bg-grey-100 rounded-md shadow-md py-4 px-6 md:py-6 md:px-8 lg:px-12 w-full lg:min-w-fit lg:max-w-1/3 md:rounded-2xl\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

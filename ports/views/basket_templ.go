@@ -108,7 +108,7 @@ func Basket(viewModel BasketViewModel) templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div id=\"products\" class=\"flex flex-col gap-5 md:gap-6 lg:gap-8 shadow-md rounded-3xl bg-grey-200 px-4 py-3 md:px-8 md:py-6 lg:px-16 lg:py-12\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div id=\"products\" class=\"flex flex-col gap-5 md:gap-6 lg:gap-8 shadow-md rounded-3xl bg-grey-200 px-4 py-3 md:px-8 md:py-6 lg:px-16 lg:py-12 border border-grey-300\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
