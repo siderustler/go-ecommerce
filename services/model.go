@@ -1,5 +1,115 @@
 package services
 
+import (
+	"errors"
+	"fmt"
+	"strings"
+)
+
+type address struct {
+	City       string
+	Address    string
+	PostalCode string
+	Local      string
+}
+
+func newAddress(city, addr, postalCode, local string) (address, error) {
+	if strings.Trim(city, " ") == "" {
+		return address{}, errors.New("city is empty")
+	}
+	if strings.Trim(addr, " ") == "" {
+		return address{}, errors.New("address is empty")
+	}
+	if strings.Trim(postalCode, " ") == "" {
+		return address{}, errors.New("postal code is empty")
+	}
+	return address{
+		City:       city,
+		Address:    addr,
+		PostalCode: postalCode,
+		Local:      local,
+	}, nil
+}
+
+type ShippingAddress struct {
+	Address address
+}
+
+func NewShippingAddress(city, address, postalCode, local string) (ShippingAddress, error) {
+	shipping, err := newAddress(city, address, postalCode, local)
+	if err != nil {
+		return ShippingAddress{}, fmt.Errorf("creating address: %w", err)
+	}
+	return ShippingAddress{
+		Address: shipping,
+	}, nil
+}
+
+func (s ShippingAddress) isZero() bool {
+	return s == ShippingAddress{}
+}
+
+type Billing struct {
+	NIPCode string
+	Company string
+	Address address
+}
+
+func NewBilling(nipCode string, company string, city, address, postalCode, local string) (Billing, error) {
+	if strings.Trim(nipCode, " ") == "" {
+		return Billing{}, errors.New("nip code is empty")
+	}
+	if strings.Trim(company, " ") == "" {
+		return Billing{}, errors.New("company is empty")
+	}
+	billingAddress, err := newAddress(city, address, postalCode, local)
+	if err != nil {
+		return Billing{}, fmt.Errorf("creating address: %w", err)
+	}
+
+	return Billing{
+		NIPCode: nipCode,
+		Company: company,
+		Address: billingAddress,
+	}, nil
+}
+
+type Customer struct {
+	Name     string
+	Email    string
+	Phone    string
+	Billing  Billing
+	shipping ShippingAddress
+}
+
+func NewCustomer(name, email, phone string, billing Billing, shipping ShippingAddress) (Customer, error) {
+	if strings.Trim(name, " ") == "" {
+		return Customer{}, errors.New("name is empty")
+	}
+	if strings.Trim(email, " ") == "" {
+		return Customer{}, errors.New("email is empty")
+	}
+	if strings.Trim(phone, " ") == "" {
+		return Customer{}, errors.New("phone is empty")
+	}
+
+	return Customer{
+		Name:     name,
+		Email:    email,
+		Phone:    phone,
+		Billing:  billing,
+		shipping: shipping,
+	}, nil
+}
+
+func (c Customer) Shipping() (ShippingAddress, error) {
+	if !c.shipping.isZero() {
+		return c.shipping, nil
+	}
+
+	return ShippingAddress{}, errors.New("shipping address is not specified")
+}
+
 type BasketProduct struct {
 	Product Product
 	Count   int
