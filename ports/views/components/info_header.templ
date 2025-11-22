@@ -1,0 +1,10 @@
+package components
+
+templ InfoHeader(icon, alt, content string) {
+	<div class="border-b-2 border-grey-300 py-3 px-6 w-fit mb-4 md:mb-6 lg:mb-8">
+		<div class="flex gap-3 md:gap-4 items-center justify-center">
+			<img src={ icon } width="32px" height="32px" alt={ alt }/>
+			<h1 class="text-grey-900 text-center">{ content }</h1>
+		</div>
+	</div>
+}

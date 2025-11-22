@@ -2,8 +2,6 @@ package services
 
 import (
 	"errors"
-	"fmt"
-	"strings"
 )
 
 type address struct {
@@ -13,36 +11,24 @@ type address struct {
 	Local      string
 }
 
-func newAddress(city, addr, postalCode, local string) (address, error) {
-	if strings.Trim(city, " ") == "" {
-		return address{}, errors.New("city is empty")
-	}
-	if strings.Trim(addr, " ") == "" {
-		return address{}, errors.New("address is empty")
-	}
-	if strings.Trim(postalCode, " ") == "" {
-		return address{}, errors.New("postal code is empty")
-	}
+func newAddress(city, addr, postalCode, local string) address {
 	return address{
 		City:       city,
 		Address:    addr,
 		PostalCode: postalCode,
 		Local:      local,
-	}, nil
+	}
 }
 
 type ShippingAddress struct {
 	Address address
 }
 
-func NewShippingAddress(city, address, postalCode, local string) (ShippingAddress, error) {
-	shipping, err := newAddress(city, address, postalCode, local)
-	if err != nil {
-		return ShippingAddress{}, fmt.Errorf("creating address: %w", err)
-	}
+func NewShippingAddress(city, address, postalCode, local string) ShippingAddress {
+	shipping := newAddress(city, address, postalCode, local)
 	return ShippingAddress{
 		Address: shipping,
-	}, nil
+	}
 }
 
 func (s ShippingAddress) isZero() bool {
@@ -55,23 +41,13 @@ type Billing struct {
 	Address address
 }
 
-func NewBilling(nipCode string, company string, city, address, postalCode, local string) (Billing, error) {
-	if strings.Trim(nipCode, " ") == "" {
-		return Billing{}, errors.New("nip code is empty")
-	}
-	if strings.Trim(company, " ") == "" {
-		return Billing{}, errors.New("company is empty")
-	}
-	billingAddress, err := newAddress(city, address, postalCode, local)
-	if err != nil {
-		return Billing{}, fmt.Errorf("creating address: %w", err)
-	}
-
+func NewBilling(nipCode string, company string, city, address, postalCode, local string) Billing {
+	billingAddress := newAddress(city, address, postalCode, local)
 	return Billing{
 		NIPCode: nipCode,
 		Company: company,
 		Address: billingAddress,
-	}, nil
+	}
 }
 
 type Customer struct {
@@ -82,24 +58,14 @@ type Customer struct {
 	shipping ShippingAddress
 }
 
-func NewCustomer(name, email, phone string, billing Billing, shipping ShippingAddress) (Customer, error) {
-	if strings.Trim(name, " ") == "" {
-		return Customer{}, errors.New("name is empty")
-	}
-	if strings.Trim(email, " ") == "" {
-		return Customer{}, errors.New("email is empty")
-	}
-	if strings.Trim(phone, " ") == "" {
-		return Customer{}, errors.New("phone is empty")
-	}
-
+func NewCustomer(name, email, phone string, billing Billing, shipping ShippingAddress) Customer {
 	return Customer{
 		Name:     name,
 		Email:    email,
 		Phone:    phone,
 		Billing:  billing,
 		shipping: shipping,
-	}, nil
+	}
 }
 
 func (c Customer) Shipping() (ShippingAddress, error) {

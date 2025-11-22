@@ -207,7 +207,7 @@ func (h handlers) getDashboard(c *fiber.Ctx) error {
 
 func (h handlers) getBasket(c *fiber.Ctx) error {
 	var navBarViewModel components.NavBarViewModel
-	_ = c.QueryParser(&navBarViewModel)
+	//FIXME retrieving search value in navbar while js is not enabled
 
 	session := c.Cookies("session")
 	basketProducts, err := h.services.GetBasket(c.Context(), session)
@@ -253,4 +253,23 @@ func (h handlers) updateBasket(c *fiber.Ctx) error {
 	basketViewModel.Align(basketProducts, components.NavBarViewModel{})
 
 	return render(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
+}
+
+func (h handlers) getCustomerInfo(c *fiber.Ctx) error {
+	var customerInfoViewModel views.CustomerInfoViewModel
+	var navBarViewModel components.NavBarViewModel
+	//FIXME retrieving search value in navbar while js is not enabled (use form or a tag and messy query?)
+	session := c.Cookies("session")
+
+	basketProducts, err := h.services.GetBasket(c.Context(), session)
+	//FIXME?
+	if err != nil {
+		return c.Redirect("/")
+	}
+	navBarViewModel.Align(basketProducts)
+	customerInfoViewModel.Align(navBarViewModel)
+	if isHTMXRequest(c) {
+		return render(c, views.CustomerInfo(customerInfoViewModel), views.CustomerInfoFragment)
+	}
+	return render(c, views.CustomerInfo(customerInfoViewModel))
 }

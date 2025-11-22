@@ -1,0 +1,43 @@
+package components
+
+type InputConfig struct {
+	Icon           string
+	IconAlt        string
+	Label          string
+	Value          string
+	Placeholder    string
+	InputName      string
+	ErrorElementID string
+	Error          string
+}
+
+templ input(inputConfig InputConfig, additionalClass string) {
+	{{
+		class := "flex gap-2 md:gap-3 lg:gap-4 border border-grey-500 bg-grey-100 shadow-md px-4 py-3 md:px-5 md:py-4 lg:px-6 lg:py-5 has-focus:border-primary-500 has-hover:border-primary-300 rounded-xl"
+		if additionalClass != "" {
+			class += " " + additionalClass
+		}
+	}}
+	<div class={ class }>
+		<img src={ inputConfig.Icon } alt={ inputConfig.IconAlt } width="24px" height="24px"/>
+		<input name={ inputConfig.InputName } placeholder={ inputConfig.Placeholder } value={ inputConfig.Value } class="w-full outline-0"/>
+	</div>
+}
+
+templ errorDescription(errElementID, err string) {
+	<p id={ errElementID } class="text-error-700 text-xs md:text-sm">{ err }</p>
+}
+
+templ PrimaryInput(inputConfig InputConfig) {
+	{{ withLabel := inputConfig.Label != "" }}
+	if withLabel {
+		<div class="flex flex-col gap-1 md:gap-2">
+			<p class="text-grey-800 text-sm">{ inputConfig.Label }</p>
+			@input(inputConfig, "mx-1 lg:mx-2")
+			@errorDescription(inputConfig.ErrorElementID, inputConfig.Error)
+		</div>
+	} else {
+		@input(inputConfig, "")
+		@errorDescription(inputConfig.ErrorElementID, inputConfig.Error)
+	}
+}

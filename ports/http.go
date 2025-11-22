@@ -26,6 +26,7 @@ func NewHttpServer(services *services.Services) *httpServer {
 	h.srv.Get("/filter/products", h.handlers.getFilterProducts)
 	h.srv.Get("/", h.handlers.getDashboard)
 	h.srv.Get("/basket", h.handlers.getBasket)
+	h.srv.Get("/basket/customer", h.handlers.getCustomerInfo)
 
 	h.srv.Post("/filter/products/validate/price", h.handlers.filterProductsPriceValidate)
 	h.srv.Post("/basket", h.handlers.updateBasket)

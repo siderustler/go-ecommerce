@@ -52,7 +52,7 @@ templ Basket(viewModel BasketViewModel) {
 		@components.NavBar(viewModel.navBarViewModel)
 		@templ.Fragment(BasketFragment) {
 			<div id="products" class="flex flex-col gap-5 md:gap-6 lg:gap-8 shadow-md rounded-3xl bg-grey-200 px-4 py-3 md:px-8 md:py-6 lg:px-16 lg:py-12 border border-grey-300">
-				@infoHeader("/public/icons/shop-basket.svg", "koszyk ikona", "Koszyk")
+				@components.InfoHeader("/public/icons/shop-basket.svg", "koszyk ikona", "Koszyk")
 				<div class="flex flex-col 2xl:flex-row gap-8 md:gap-12 lg:gap-8">
 					<div class="flex flex-2 flex-col gap-6 md:gap-8">
 						if len(viewModel.items) == 0 {
@@ -67,15 +67,6 @@ templ Basket(viewModel BasketViewModel) {
 			</div>
 		}
 	}
-}
-
-templ infoHeader(icon, alt, content string) {
-	<div class="border-b-2 border-grey-300 py-3 px-6 w-fit">
-		<div class="flex gap-3 md:gap-4 items-center justify-center">
-			<img src={ icon } width="32px" height="32px" alt={ alt }/>
-			<h1 class="text-grey-900 text-center">{ content }</h1>
-		</div>
-	</div>
 }
 
 templ emptyBasket() {
@@ -120,11 +111,26 @@ templ basketSummary(items []services.BasketProduct) {
 		fullPrice = partPrice
 	}}
 	<div class="flex flex-1 flex-col gap-6 px-4 pb-6 pt-4 md:px-6 md:py-6 lg:px-8 lg:py-8 shadow-md rounded-xl border-2 border-grey-300">
-		@infoHeader("/public/icons/shop-summary.svg", "podsumowanie ikona", "Podsumowanie")
+		@components.InfoHeader("/public/icons/shop-summary.svg", "podsumowanie ikona", "Podsumowanie")
 		@summaryItem("Suma częściowa", fmt.Sprintf("%.2f zł", partPrice))
 		@summaryItem("Koszt wysyłki", "Bezpłatna")
 		@summaryItem("Suma całkowita", fmt.Sprintf("%.2f zł", fullPrice))
-		@components.IconButton(components.PrimaryIconButton, components.IconButtonShop)
+		<a
+			class="flex justify-center items-center gap-1 md:gap-2 lg:gap-4 bg-primary-300 text-primary-900 rounded-xl px-5 lg:px-6 py-3 md:rounded-xl"
+			type="submit"
+			href={ "/basket/customer" }
+			hx-get="/basket/customer"
+			hx-target="#products"
+			hx-swap="outerHTML"
+		>
+			<img
+				src="/public/icons/additional-info.svg"
+				alt="przejdż dalej ikona"
+				width="24px"
+				height="24px"
+			/>
+			Przejdż do kolejnego etapu
+		</a>
 	</div>
 }
 
