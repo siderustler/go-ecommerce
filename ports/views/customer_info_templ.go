@@ -8,9 +8,18 @@ package views
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-import "github.com/siderustler/go-ecommerce/ports/views/components"
+import (
+	"github.com/siderustler/go-ecommerce/ports/views/components"
+	"github.com/siderustler/go-ecommerce/services"
+)
 
-type CustomerInfoViewModel struct {
+type billingInfoFragment struct{}
+type shippingInfoFragment struct{}
+
+var ShippingInfoFragment = shippingInfoFragment{}
+var BillingInfoFragment = billingInfoFragment{}
+
+type BillingInfoViewModel struct {
 	navBarViewModel components.NavBarViewModel
 
 	Name    string `form:"name"`
@@ -43,15 +52,81 @@ type CustomerInfoViewModel struct {
 	UseBillingAddressAsShipping bool `form:"billingAsShipping"`
 }
 
-func (c *CustomerInfoViewModel) Align(navBarViewModel components.NavBarViewModel) {
+func (c *BillingInfoViewModel) Align(navBarViewModel components.NavBarViewModel) {
 	c.navBarViewModel = navBarViewModel
 }
 
-type customerInfoFragment struct{}
+func (c BillingInfoViewModel) HasError() bool {
+	return c.AddressErr != "" ||
+		c.CityErr != "" ||
+		c.CompanyErr != "" ||
+		c.EmailErr != "" ||
+		c.LocalNumberErr != "" ||
+		c.NameErr != "" ||
+		c.NipCodeErr != "" ||
+		c.PhoneErr != "" ||
+		c.PostalCodeErr != ""
+}
 
-var CustomerInfoFragment = customerInfoFragment{}
+func (c BillingInfoViewModel) MapToDomainCustomer() services.Customer {
+	billing := services.NewBilling(
+		c.NipCode,
+		c.Company,
+		c.City,
+		c.Address,
+		c.PostalCode,
+		c.LocalNumber,
+	)
+	var shipping services.ShippingAddress
+	if c.UseBillingAddressAsShipping {
+		shipping = services.NewShippingAddress(c.City, c.Address, c.PostalCode, c.LocalNumber)
+	}
+	return services.NewCustomer(
+		c.Name,
+		c.Email,
+		c.Phone,
+		billing,
+		shipping,
+	)
+}
 
-func CustomerInfo(viewModel CustomerInfoViewModel) templ.Component {
+type ShippingInfoViewModel struct {
+	navBarViewModel components.NavBarViewModel
+
+	City    string `form:"city"`
+	CityErr string
+
+	Address    string `form:"address"`
+	AddressErr string
+
+	PostalCode    string `form:"postal"`
+	PostalCodeErr string
+
+	LocalNumber    string `form:"local"`
+	LocalNumberErr string
+}
+
+func (s *ShippingInfoViewModel) Align(navBarViewModel components.NavBarViewModel) {
+	s.navBarViewModel = navBarViewModel
+}
+
+func (s ShippingInfoViewModel) HasError() bool {
+	return s.AddressErr != "" ||
+		s.CityErr != "" ||
+		s.LocalNumberErr != "" ||
+		s.PostalCodeErr != ""
+}
+
+func (s ShippingInfoViewModel) MapToDomainShippingAddress() services.ShippingAddress {
+	return services.NewShippingAddress(
+		s.City,
+		s.Address,
+		s.PostalCode,
+		s.LocalNumber,
+	)
+}
+
+func BillingInfo(viewModel BillingInfoViewModel) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -104,104 +179,6 @@ func CustomerInfo(viewModel CustomerInfoViewModel) templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<form id=\"products\" action=\"/basket/customer\" method=\"post\" class=\"flex flex-col lg:gap-12 lg:flex-row px-3 py-6 md:px-8 md:py-12 bg-grey-100 lg:bg-grey-200 shadow-sm rounded-xl\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				contactSectionInputs := []components.InputConfig{
-					{
-						Icon:           "/public/icons/additional-info.svg",
-						IconAlt:        "imie i nazwisko ikona",
-						Label:          "Imię i nazwisko",
-						Value:          viewModel.Name,
-						Placeholder:    "Imię i nazwisko...",
-						ErrorElementID: "name-err",
-						Error:          viewModel.NameErr,
-						InputName:      "name",
-					},
-					{
-						Icon:           "/public/icons/additional-info.svg",
-						IconAlt:        "adres email ikona",
-						Label:          "Adres e-mail",
-						Value:          viewModel.Email,
-						Placeholder:    "Adres e-mail...",
-						ErrorElementID: "email-err",
-						Error:          viewModel.EmailErr,
-						InputName:      "email",
-					},
-					{
-						Icon:           "/public/icons/additional-info.svg",
-						IconAlt:        "numer telefonu ikona",
-						Label:          "Numer telefonu",
-						Value:          viewModel.Phone,
-						Placeholder:    "Numer telefonu...",
-						ErrorElementID: "phone-err",
-						Error:          viewModel.PhoneErr,
-						InputName:      "phone",
-					},
-				}
-				paymentSectionInputs := []components.InputConfig{
-					{
-						Icon:           "/public/icons/additional-info.svg",
-						IconAlt:        "nazwa firmy ikona",
-						Label:          "Nazwa firmy",
-						Value:          viewModel.Company,
-						Placeholder:    "Nazwa firmy...",
-						ErrorElementID: "company-err",
-						Error:          viewModel.CompanyErr,
-						InputName:      "company",
-					},
-					{
-						Icon:           "/public/icons/additional-info.svg",
-						IconAlt:        "nip ikona",
-						Label:          "NIP",
-						Value:          viewModel.NipCode,
-						Placeholder:    "Kod NIP...",
-						ErrorElementID: "nip-err",
-						Error:          viewModel.NipCode,
-						InputName:      "nip",
-					},
-					{
-						Icon:           "/public/icons/additional-info.svg",
-						IconAlt:        "miasto ikona",
-						Label:          "Miasto",
-						Value:          viewModel.City,
-						Placeholder:    "Miasto...",
-						ErrorElementID: "city-err",
-						Error:          viewModel.CityErr,
-						InputName:      "city",
-					},
-					{
-						Icon:           "/public/icons/additional-info.svg",
-						IconAlt:        "ulica i numer ikona",
-						Label:          "Ulica i numer",
-						Value:          viewModel.Address,
-						Placeholder:    "Ulica i numer...",
-						ErrorElementID: "address-err",
-						Error:          viewModel.AddressErr,
-						InputName:      "address",
-					},
-					{
-						Icon:           "/public/icons/additional-info.svg",
-						IconAlt:        "kod pocztowy ikona",
-						Label:          "Kod pocztowy",
-						Value:          viewModel.PostalCode,
-						Placeholder:    "Kod pocztowy...",
-						ErrorElementID: "postal-err",
-						Error:          viewModel.PostalCodeErr,
-						InputName:      "postal",
-					},
-					{
-						Icon:           "/public/icons/additional-info.svg",
-						IconAlt:        "numer lokalu ikona",
-						Label:          "Numer lokalu",
-						Value:          viewModel.LocalNumber,
-						Placeholder:    "Numer lokalu...",
-						ErrorElementID: "local-err",
-						Error:          viewModel.LocalNumberErr,
-						InputName:      "local",
-					},
-				}
 				templ_7745c5c3_Var4 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 					templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 					templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
@@ -214,13 +191,228 @@ func CustomerInfo(viewModel CustomerInfoViewModel) templ.Component {
 						}()
 					}
 					ctx = templ.InitializeContext(ctx)
+					contactSectionInputs := []components.InputConfig{
+						{
+							Icon:           "/public/icons/additional-info.svg",
+							IconAlt:        "imie i nazwisko ikona",
+							Label:          "Imię i nazwisko",
+							Value:          viewModel.Name,
+							Placeholder:    "Imię i nazwisko...",
+							ErrorElementID: "name-err",
+							Error:          viewModel.NameErr,
+							InputName:      "name",
+						},
+						{
+							Icon:           "/public/icons/additional-info.svg",
+							IconAlt:        "adres email ikona",
+							Label:          "Adres e-mail",
+							Value:          viewModel.Email,
+							Placeholder:    "Adres e-mail...",
+							ErrorElementID: "email-err",
+							Error:          viewModel.EmailErr,
+							InputName:      "email",
+						},
+						{
+							Icon:           "/public/icons/additional-info.svg",
+							IconAlt:        "numer telefonu ikona",
+							Label:          "Numer telefonu",
+							Value:          viewModel.Phone,
+							Placeholder:    "Numer telefonu...",
+							ErrorElementID: "phone-err",
+							Error:          viewModel.PhoneErr,
+							InputName:      "phone",
+						},
+					}
+					paymentSectionInputs := []components.InputConfig{
+						{
+							Icon:           "/public/icons/additional-info.svg",
+							IconAlt:        "nazwa firmy ikona",
+							Label:          "Nazwa firmy",
+							Value:          viewModel.Company,
+							Placeholder:    "Nazwa firmy...",
+							ErrorElementID: "company-err",
+							Error:          viewModel.CompanyErr,
+							InputName:      "company",
+						},
+						{
+							Icon:           "/public/icons/additional-info.svg",
+							IconAlt:        "nip ikona",
+							Label:          "NIP",
+							Value:          viewModel.NipCode,
+							Placeholder:    "Kod NIP...",
+							ErrorElementID: "nip-err",
+							Error:          viewModel.NipCode,
+							InputName:      "nip",
+						},
+						{
+							Icon:           "/public/icons/additional-info.svg",
+							IconAlt:        "miasto ikona",
+							Label:          "Miasto",
+							Value:          viewModel.City,
+							Placeholder:    "Miasto...",
+							ErrorElementID: "city-err",
+							Error:          viewModel.CityErr,
+							InputName:      "city",
+						},
+						{
+							Icon:           "/public/icons/additional-info.svg",
+							IconAlt:        "ulica i numer ikona",
+							Label:          "Ulica i numer",
+							Value:          viewModel.Address,
+							Placeholder:    "Ulica i numer...",
+							ErrorElementID: "address-err",
+							Error:          viewModel.AddressErr,
+							InputName:      "address",
+						},
+						{
+							Icon:           "/public/icons/additional-info.svg",
+							IconAlt:        "kod pocztowy ikona",
+							Label:          "Kod pocztowy",
+							Value:          viewModel.PostalCode,
+							Placeholder:    "Kod pocztowy...",
+							ErrorElementID: "postal-err",
+							Error:          viewModel.PostalCodeErr,
+							InputName:      "postal",
+						},
+						{
+							Icon:           "/public/icons/additional-info.svg",
+							IconAlt:        "numer lokalu ikona",
+							Label:          "Numer lokalu",
+							Value:          viewModel.LocalNumber,
+							Placeholder:    "Numer lokalu...",
+							ErrorElementID: "local-err",
+							Error:          viewModel.LocalNumberErr,
+							InputName:      "local",
+						},
+					}
+					templ_7745c5c3_Var5 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+						templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+						templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+						if !templ_7745c5c3_IsBuffer {
+							defer func() {
+								templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+								if templ_7745c5c3_Err == nil {
+									templ_7745c5c3_Err = templ_7745c5c3_BufErr
+								}
+							}()
+						}
+						ctx = templ.InitializeContext(ctx)
+						return nil
+					})
+					templ_7745c5c3_Err = formSection("/public/icons/additional-info.svg", "Dane kontaktowe ikona", "Dane kontaktowe", contactSectionInputs).Render(templ.WithChildren(ctx, templ_7745c5c3_Var5), templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " ")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Var6 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+						templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+						templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+						if !templ_7745c5c3_IsBuffer {
+							defer func() {
+								templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+								if templ_7745c5c3_Err == nil {
+									templ_7745c5c3_Err = templ_7745c5c3_BufErr
+								}
+							}()
+						}
+						ctx = templ.InitializeContext(ctx)
+						templ_7745c5c3_Err = billingCheckbox("billingAsShipping", viewModel.UseBillingAddressAsShipping, "Użyj adresu płatności jako adres dostawy").Render(ctx, templ_7745c5c3_Buffer)
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, " ")
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						templ_7745c5c3_Err = submitButton("Przejdż do kolejnego etapu").Render(ctx, templ_7745c5c3_Buffer)
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						return nil
+					})
+					templ_7745c5c3_Err = formSection("/public/icons/additional-info.svg", "Dane do płatności ikona", "Dane do płatności", paymentSectionInputs).Render(templ.WithChildren(ctx, templ_7745c5c3_Var6), templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
 					return nil
 				})
-				templ_7745c5c3_Err = formSection("/public/icons/additional-info.svg", "Dane kontaktowe ikona", "Dane kontaktowe", contactSectionInputs).Render(templ.WithChildren(ctx, templ_7745c5c3_Var4), templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = form("/basket/customer/billing", "post").Render(templ.WithChildren(ctx, templ_7745c5c3_Var4), templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Var5 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+				return nil
+			})
+			templ_7745c5c3_Err = templ.Fragment(BillingInfoFragment).Render(templ.WithChildren(ctx, templ_7745c5c3_Var3), templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			return nil
+		})
+		templ_7745c5c3_Err = layout().Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func ShippingInfo(viewModel ShippingInfoViewModel) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var7 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var7 == nil {
+			templ_7745c5c3_Var7 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Var8 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+			if !templ_7745c5c3_IsBuffer {
+				defer func() {
+					templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err == nil {
+						templ_7745c5c3_Err = templ_7745c5c3_BufErr
+					}
+				}()
+			}
+			ctx = templ.InitializeContext(ctx)
+			templ_7745c5c3_Err = components.NavBar(viewModel.navBarViewModel).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, " ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Var9 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+				templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+				templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+				if !templ_7745c5c3_IsBuffer {
+					defer func() {
+						templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+						if templ_7745c5c3_Err == nil {
+							templ_7745c5c3_Err = templ_7745c5c3_BufErr
+						}
+					}()
+				}
+				ctx = templ.InitializeContext(ctx)
+				templ_7745c5c3_Var10 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 					templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 					templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
 					if !templ_7745c5c3_IsBuffer {
@@ -232,33 +424,203 @@ func CustomerInfo(viewModel CustomerInfoViewModel) templ.Component {
 						}()
 					}
 					ctx = templ.InitializeContext(ctx)
-					templ_7745c5c3_Err = billingCheckbox("billingAsShipping", viewModel.UseBillingAddressAsShipping, "Użyj adresu płatności jako adres dostawy").Render(ctx, templ_7745c5c3_Buffer)
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
+					inputs := []components.InputConfig{
+						{
+							Icon:           "/public/icons/additional-info.svg",
+							IconAlt:        "miasto ikona",
+							Label:          "Miasto",
+							Value:          viewModel.City,
+							Placeholder:    "Miasto...",
+							ErrorElementID: "city-err",
+							Error:          viewModel.CityErr,
+							InputName:      "city",
+						},
+						{
+							Icon:           "/public/icons/additional-info.svg",
+							IconAlt:        "ulica i numer ikona",
+							Label:          "Ulica i numer",
+							Value:          viewModel.Address,
+							Placeholder:    "Ulica i numer...",
+							ErrorElementID: "address-err",
+							Error:          viewModel.AddressErr,
+							InputName:      "address",
+						},
+						{
+							Icon:           "/public/icons/additional-info.svg",
+							IconAlt:        "kod pocztowy ikona",
+							Label:          "Kod pocztowy",
+							Value:          viewModel.PostalCode,
+							Placeholder:    "Kod pocztowy...",
+							ErrorElementID: "postal-err",
+							Error:          viewModel.PostalCodeErr,
+							InputName:      "postal",
+						},
+						{
+							Icon:           "/public/icons/additional-info.svg",
+							IconAlt:        "numer lokalu ikona",
+							Label:          "Numer lokalu",
+							Value:          viewModel.LocalNumber,
+							Placeholder:    "Numer lokalu...",
+							ErrorElementID: "local-err",
+							Error:          viewModel.LocalNumberErr,
+							InputName:      "local",
+						},
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, " <button class=\"flex justify-center items-center gap-1 md:gap-2 lg:gap-4 bg-primary-300 text-primary-900 rounded-xl px-5 lg:px-6 py-3 md:py-4 md:rounded-xl mt-4 md:mt-5 lg:mt-6\" type=\"submit\"><img src=\"/public/icons/additional-info.svg\" alt=\"przejdż dalej ikona\" width=\"24px\" height=\"24px\"> Przejdż do kolejnego etapu</button>")
+					templ_7745c5c3_Var11 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+						templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+						templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+						if !templ_7745c5c3_IsBuffer {
+							defer func() {
+								templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+								if templ_7745c5c3_Err == nil {
+									templ_7745c5c3_Err = templ_7745c5c3_BufErr
+								}
+							}()
+						}
+						ctx = templ.InitializeContext(ctx)
+						templ_7745c5c3_Err = submitButton("Przejdż do kolejnego etapu").Render(ctx, templ_7745c5c3_Buffer)
+						if templ_7745c5c3_Err != nil {
+							return templ_7745c5c3_Err
+						}
+						return nil
+					})
+					templ_7745c5c3_Err = formSection("/public/icons/additional-info.svg", "dane do dostawy ikona", "Dane do dostawy", inputs).Render(templ.WithChildren(ctx, templ_7745c5c3_Var11), templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					return nil
 				})
-				templ_7745c5c3_Err = formSection("/public/icons/additional-info.svg", "Dane do płatności ikona", "Dane do płatności", paymentSectionInputs).Render(templ.WithChildren(ctx, templ_7745c5c3_Var5), templ_7745c5c3_Buffer)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</form>")
+				templ_7745c5c3_Err = form("/basket/customer/shipping", "post").Render(templ.WithChildren(ctx, templ_7745c5c3_Var10), templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				return nil
 			})
-			templ_7745c5c3_Err = templ.Fragment(CustomerInfoFragment).Render(templ.WithChildren(ctx, templ_7745c5c3_Var3), templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = templ.Fragment(ShippingInfoFragment).Render(templ.WithChildren(ctx, templ_7745c5c3_Var9), templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = layout().Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = layout().Render(templ.WithChildren(ctx, templ_7745c5c3_Var8), templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func form(action, method string) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var12 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var12 == nil {
+			templ_7745c5c3_Var12 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<form id=\"products\" hx-post=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var13 string
+		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(action)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 293, Col: 18}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\" hx-swap=\"outerHTML\" hx-push-url=\"true\" action=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var14 templ.SafeURL
+		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinURLErrs(action)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 296, Col: 17}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" method=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var15 string
+		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(method)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 297, Col: 17}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" class=\"flex flex-col lg:gap-12 lg:flex-row xl:justify-center px-3 py-6 md:px-8 md:py-12 bg-grey-100 lg:bg-grey-200 shadow-sm rounded-xl border-grey-300 border\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templ_7745c5c3_Var12.Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</form>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func submitButton(content string) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var16 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var16 == nil {
+			templ_7745c5c3_Var16 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<button class=\"flex justify-center items-center gap-1 md:gap-2 lg:gap-4 bg-primary-300 text-primary-900 rounded-xl px-5 lg:px-6 py-3 md:py-4 md:rounded-xl mt-4 md:mt-5 lg:mt-6\" type=\"submit\"><img src=\"/public/icons/additional-info.svg\" alt=\"przejdż dalej ikona\" width=\"24px\" height=\"24px\"> ")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var17 string
+		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(content)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 315, Col: 11}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</button>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -282,12 +644,12 @@ func formSection(headerIcon, headerAlt, headerContent string, inputs []component
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var6 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var6 == nil {
-			templ_7745c5c3_Var6 = templ.NopComponent
+		templ_7745c5c3_Var18 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var18 == nil {
+			templ_7745c5c3_Var18 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"flex flex-col gap-4 md:gap-5 w-full lg:bg-grey-100 px-3 py-6 md:px-6 lg:px-12 lg:py-16 rounded-2xl lg:shadow-md lg:border lg:border-grey-300\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<div class=\"flex flex-col gap-4 md:gap-5 w-full xl:w-1/2 lg:bg-grey-100 px-3 py-6 md:px-6 lg:px-12 lg:py-16 rounded-2xl lg:shadow-md lg:border lg:border-grey-300\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -301,11 +663,11 @@ func formSection(headerIcon, headerAlt, headerContent string, inputs []component
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templ_7745c5c3_Var6.Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = templ_7745c5c3_Var18.Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -329,64 +691,64 @@ func billingCheckbox(value string, checked bool, label string) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var7 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var7 == nil {
-			templ_7745c5c3_Var7 = templ.NopComponent
+		templ_7745c5c3_Var19 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var19 == nil {
+			templ_7745c5c3_Var19 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<div class=\"group shadow-lg has-checked:bg-tertiary-300 flex gap-2 md:gap-4 lg:gap-6 px-4 py-3 md:py-4 lg:py-5 border-2 border-tertiary-500 rounded-2xl w-full items-center mt-4 md:mt-5 lg:mt-6\"><input id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<div class=\"group shadow-lg has-checked:bg-tertiary-300 flex gap-2 md:gap-4 lg:gap-6 px-4 py-3 md:py-4 lg:py-5 border-2 border-tertiary-500 rounded-2xl w-full items-center mt-4 md:mt-5 lg:mt-6\"><input id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var8 string
-		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(value)
+		var templ_7745c5c3_Var20 string
+		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 182, Col: 13}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 332, Col: 13}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" type=\"checkbox\" name=\"sort\" checked=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var9 string
-		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(checked)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 185, Col: 20}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\" type=\"checkbox\" name=\"sort\" checked=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" class=\"w-6 h-6 ml-4\"> <label for=\"")
+		var templ_7745c5c3_Var21 string
+		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(checked)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 335, Col: 20}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var10 string
-		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(value)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 188, Col: 20}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\" class=\"w-6 h-6 ml-4\"> <label for=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" class=\"text-tertiary-900\">")
+		var templ_7745c5c3_Var22 string
+		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(value)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 338, Col: 20}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var11 string
-		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(label)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 188, Col: 56}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\" class=\"text-tertiary-900\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</label></div>")
+		var templ_7745c5c3_Var23 string
+		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(label)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 338, Col: 56}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</label></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

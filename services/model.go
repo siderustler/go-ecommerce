@@ -1,9 +1,5 @@
 package services
 
-import (
-	"errors"
-)
-
 type address struct {
 	City       string
 	Address    string
@@ -55,7 +51,7 @@ type Customer struct {
 	Email    string
 	Phone    string
 	Billing  Billing
-	shipping ShippingAddress
+	Shipping ShippingAddress
 }
 
 func NewCustomer(name, email, phone string, billing Billing, shipping ShippingAddress) Customer {
@@ -64,16 +60,8 @@ func NewCustomer(name, email, phone string, billing Billing, shipping ShippingAd
 		Email:    email,
 		Phone:    phone,
 		Billing:  billing,
-		shipping: shipping,
+		Shipping: shipping,
 	}
-}
-
-func (c Customer) Shipping() (ShippingAddress, error) {
-	if !c.shipping.isZero() {
-		return c.shipping, nil
-	}
-
-	return ShippingAddress{}, errors.New("shipping address is not specified")
 }
 
 type BasketProduct struct {

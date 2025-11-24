@@ -1,8 +1,17 @@
 package views
 
-import "github.com/siderustler/go-ecommerce/ports/views/components"
+import (
+	"github.com/siderustler/go-ecommerce/ports/views/components"
+	"github.com/siderustler/go-ecommerce/services"
+)
 
-type CustomerInfoViewModel struct {
+type billingInfoFragment struct{}
+type shippingInfoFragment struct{}
+
+var ShippingInfoFragment = shippingInfoFragment{}
+var BillingInfoFragment = billingInfoFragment{}
+
+type BillingInfoViewModel struct {
 	navBarViewModel components.NavBarViewModel
 
 	Name    string `form:"name"`
@@ -35,19 +44,85 @@ type CustomerInfoViewModel struct {
 	UseBillingAddressAsShipping bool `form:"billingAsShipping"`
 }
 
-func (c *CustomerInfoViewModel) Align(navBarViewModel components.NavBarViewModel) {
+func (c *BillingInfoViewModel) Align(navBarViewModel components.NavBarViewModel) {
 	c.navBarViewModel = navBarViewModel
 }
 
-type customerInfoFragment struct{}
+func (c BillingInfoViewModel) HasError() bool {
+	return c.AddressErr != "" ||
+		c.CityErr != "" ||
+		c.CompanyErr != "" ||
+		c.EmailErr != "" ||
+		c.LocalNumberErr != "" ||
+		c.NameErr != "" ||
+		c.NipCodeErr != "" ||
+		c.PhoneErr != "" ||
+		c.PostalCodeErr != ""
+}
 
-var CustomerInfoFragment = customerInfoFragment{}
+func (c BillingInfoViewModel) MapToDomainCustomer() services.Customer {
+	billing := services.NewBilling(
+		c.NipCode,
+		c.Company,
+		c.City,
+		c.Address,
+		c.PostalCode,
+		c.LocalNumber,
+	)
+	var shipping services.ShippingAddress
+	if c.UseBillingAddressAsShipping {
+		shipping = services.NewShippingAddress(c.City, c.Address, c.PostalCode, c.LocalNumber)
+	}
+	return services.NewCustomer(
+		c.Name,
+		c.Email,
+		c.Phone,
+		billing,
+		shipping,
+	)
+}
 
-templ CustomerInfo(viewModel CustomerInfoViewModel) {
+type ShippingInfoViewModel struct {
+	navBarViewModel components.NavBarViewModel
+
+	City    string `form:"city"`
+	CityErr string
+
+	Address    string `form:"address"`
+	AddressErr string
+
+	PostalCode    string `form:"postal"`
+	PostalCodeErr string
+
+	LocalNumber    string `form:"local"`
+	LocalNumberErr string
+}
+
+func (s *ShippingInfoViewModel) Align(navBarViewModel components.NavBarViewModel) {
+	s.navBarViewModel = navBarViewModel
+}
+
+func (s ShippingInfoViewModel) HasError() bool {
+	return s.AddressErr != "" ||
+		s.CityErr != "" ||
+		s.LocalNumberErr != "" ||
+		s.PostalCodeErr != ""
+}
+
+func (s ShippingInfoViewModel) MapToDomainShippingAddress() services.ShippingAddress {
+	return services.NewShippingAddress(
+		s.City,
+		s.Address,
+		s.PostalCode,
+		s.LocalNumber,
+	)
+}
+
+templ BillingInfo(viewModel BillingInfoViewModel) {
 	@layout() {
 		@components.NavBar(viewModel.navBarViewModel)
-		@templ.Fragment(CustomerInfoFragment) {
-			<form id="products" action="/basket/customer" method="post" class="flex flex-col lg:gap-12 lg:flex-row px-3 py-6 md:px-8 md:py-12 bg-grey-100 lg:bg-grey-200 shadow-sm rounded-xl">
+		@templ.Fragment(BillingInfoFragment) {
+			@form("/basket/customer/billing", "post") {
 				{{
 					contactSectionInputs := []components.InputConfig{
 						{
@@ -148,26 +223,101 @@ templ CustomerInfo(viewModel CustomerInfoViewModel) {
 				}
 				@formSection("/public/icons/additional-info.svg", "Dane do płatności ikona", "Dane do płatności", paymentSectionInputs) {
 					@billingCheckbox("billingAsShipping", viewModel.UseBillingAddressAsShipping, "Użyj adresu płatności jako adres dostawy")
-					<button
-						class="flex justify-center items-center gap-1 md:gap-2 lg:gap-4 bg-primary-300 text-primary-900 rounded-xl px-5 lg:px-6 py-3 md:py-4 md:rounded-xl mt-4 md:mt-5 lg:mt-6"
-						type="submit"
-					>
-						<img
-							src="/public/icons/additional-info.svg"
-							alt="przejdż dalej ikona"
-							width="24px"
-							height="24px"
-						/>
-						Przejdż do kolejnego etapu
-					</button>
+					@submitButton("Przejdż do kolejnego etapu")
 				}
-			</form>
+			}
 		}
 	}
 }
 
+templ ShippingInfo(viewModel ShippingInfoViewModel) {
+	@layout() {
+		@components.NavBar(viewModel.navBarViewModel)
+		@templ.Fragment(ShippingInfoFragment) {
+			@form("/basket/customer/shipping", "post") {
+				{{
+					inputs := []components.InputConfig{
+						{
+							Icon:           "/public/icons/additional-info.svg",
+							IconAlt:        "miasto ikona",
+							Label:          "Miasto",
+							Value:          viewModel.City,
+							Placeholder:    "Miasto...",
+							ErrorElementID: "city-err",
+							Error:          viewModel.CityErr,
+							InputName:      "city",
+						},
+						{
+							Icon:           "/public/icons/additional-info.svg",
+							IconAlt:        "ulica i numer ikona",
+							Label:          "Ulica i numer",
+							Value:          viewModel.Address,
+							Placeholder:    "Ulica i numer...",
+							ErrorElementID: "address-err",
+							Error:          viewModel.AddressErr,
+							InputName:      "address",
+						},
+						{
+							Icon:           "/public/icons/additional-info.svg",
+							IconAlt:        "kod pocztowy ikona",
+							Label:          "Kod pocztowy",
+							Value:          viewModel.PostalCode,
+							Placeholder:    "Kod pocztowy...",
+							ErrorElementID: "postal-err",
+							Error:          viewModel.PostalCodeErr,
+							InputName:      "postal",
+						},
+						{
+							Icon:           "/public/icons/additional-info.svg",
+							IconAlt:        "numer lokalu ikona",
+							Label:          "Numer lokalu",
+							Value:          viewModel.LocalNumber,
+							Placeholder:    "Numer lokalu...",
+							ErrorElementID: "local-err",
+							Error:          viewModel.LocalNumberErr,
+							InputName:      "local",
+						},
+					}
+				}}
+				@formSection("/public/icons/additional-info.svg", "dane do dostawy ikona", "Dane do dostawy", inputs) {
+					@submitButton("Przejdż do kolejnego etapu")
+				}
+			}
+		}
+	}
+}
+
+templ form(action, method string) {
+	<form
+		id="products"
+		hx-post={ action }
+		hx-swap="outerHTML"
+		hx-push-url="true"
+		action={ action }
+		method={ method }
+		class="flex flex-col lg:gap-12 lg:flex-row xl:justify-center px-3 py-6 md:px-8 md:py-12 bg-grey-100 lg:bg-grey-200 shadow-sm rounded-xl border-grey-300 border"
+	>
+		{ children... }
+	</form>
+}
+
+templ submitButton(content string) {
+	<button
+		class="flex justify-center items-center gap-1 md:gap-2 lg:gap-4 bg-primary-300 text-primary-900 rounded-xl px-5 lg:px-6 py-3 md:py-4 md:rounded-xl mt-4 md:mt-5 lg:mt-6"
+		type="submit"
+	>
+		<img
+			src="/public/icons/additional-info.svg"
+			alt="przejdż dalej ikona"
+			width="24px"
+			height="24px"
+		/>
+		{ content }
+	</button>
+}
+
 templ formSection(headerIcon, headerAlt, headerContent string, inputs []components.InputConfig) {
-	<div class="flex flex-col gap-4 md:gap-5 w-full lg:bg-grey-100 px-3 py-6 md:px-6 lg:px-12 lg:py-16 rounded-2xl lg:shadow-md lg:border lg:border-grey-300">
+	<div class="flex flex-col gap-4 md:gap-5 w-full xl:w-1/2 lg:bg-grey-100 px-3 py-6 md:px-6 lg:px-12 lg:py-16 rounded-2xl lg:shadow-md lg:border lg:border-grey-300">
 		@components.InfoHeader(headerIcon, headerAlt, headerContent)
 		for _, input := range inputs {
 			@components.PrimaryInput(input)

@@ -255,8 +255,8 @@ func (h handlers) updateBasket(c *fiber.Ctx) error {
 	return render(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
 }
 
-func (h handlers) getCustomerInfo(c *fiber.Ctx) error {
-	var customerInfoViewModel views.CustomerInfoViewModel
+func (h handlers) getBillingInfo(c *fiber.Ctx) error {
+	var billingInfoViewModel views.BillingInfoViewModel
 	var navBarViewModel components.NavBarViewModel
 	//FIXME retrieving search value in navbar while js is not enabled (use form or a tag and messy query?)
 	session := c.Cookies("session")
@@ -267,9 +267,113 @@ func (h handlers) getCustomerInfo(c *fiber.Ctx) error {
 		return c.Redirect("/")
 	}
 	navBarViewModel.Align(basketProducts)
-	customerInfoViewModel.Align(navBarViewModel)
+	billingInfoViewModel.Align(navBarViewModel)
 	if isHTMXRequest(c) {
-		return render(c, views.CustomerInfo(customerInfoViewModel), views.CustomerInfoFragment)
+		return render(c, views.BillingInfo(billingInfoViewModel), views.BillingInfoFragment)
 	}
-	return render(c, views.CustomerInfo(customerInfoViewModel))
+	return render(c, views.BillingInfo(billingInfoViewModel))
+}
+
+func (h handlers) postBillingInfo(c *fiber.Ctx) error {
+	var billingInfoViewModel views.BillingInfoViewModel
+	var navBarViewModel components.NavBarViewModel
+	//FIXME retrieving search value in navbar while js is not enabled (use form or a tag and messy query?)
+	session := c.Cookies("session")
+	_ = c.BodyParser(&billingInfoViewModel)
+
+	basketProducts, err := h.services.GetBasket(c.Context(), session)
+	//FIXME?
+	if err != nil {
+		return c.Redirect("/")
+	}
+	navBarViewModel.Align(basketProducts)
+	billingInfoViewModel.Align(navBarViewModel)
+
+	if billingInfoViewModel.HasError() {
+		if isHTMXRequest(c) {
+			return render(c, views.BillingInfo(billingInfoViewModel), views.BillingInfoFragment)
+		}
+		return render(c, views.BillingInfo(billingInfoViewModel))
+	}
+
+	customer := billingInfoViewModel.MapToDomainCustomer()
+	err = h.services.CreateCustomer(c.Context(), session, customer)
+	if err != nil {
+		if isHTMXRequest(c) {
+			//FIXME
+			// DISPLAY TOAST OTN ERROR
+			fmt.Printf("error occured creating customer: %+v", err)
+			return render(c, views.BillingInfo(billingInfoViewModel), views.BillingInfoFragment)
+		}
+		return render(c, views.BillingInfo(billingInfoViewModel))
+	}
+
+	if !billingInfoViewModel.UseBillingAddressAsShipping {
+		var shippingInfoViewModel views.ShippingInfoViewModel
+		shippingInfoViewModel.Align(navBarViewModel)
+
+		if isHTMXRequest(c) {
+			return render(c, views.ShippingInfo(shippingInfoViewModel), views.ShippingInfoFragment)
+		}
+		return render(c, views.ShippingInfo(shippingInfoViewModel))
+	}
+	//FIXME -- redirect to payment
+	if isHTMXRequest(c) {
+	}
+	//FIXME -- redirect to payment
+	return render(c, views.BillingInfo(billingInfoViewModel))
+}
+
+func (h handlers) getShippingInfo(c *fiber.Ctx) error {
+	var shippingInfoViewModel views.ShippingInfoViewModel
+	var navBarViewModel components.NavBarViewModel
+	//FIXME retrieving search value in navbar while js is not enabled (use form or a tag and messy query?)
+	session := c.Cookies("session")
+
+	basketProducts, err := h.services.GetBasket(c.Context(), session)
+	//FIXME?
+	if err != nil {
+		return c.Redirect("/")
+	}
+	navBarViewModel.Align(basketProducts)
+	shippingInfoViewModel.Align(navBarViewModel)
+
+	if isHTMXRequest(c) {
+		return render(c, views.ShippingInfo(shippingInfoViewModel), views.ShippingInfoFragment)
+	}
+	return render(c, views.ShippingInfo(shippingInfoViewModel))
+}
+
+func (h handlers) postShippingInfo(c *fiber.Ctx) error {
+	var navBarViewModel components.NavBarViewModel
+	var shippingInfoViewModel views.ShippingInfoViewModel
+	//FIXME retrieving search value in navbar while js is not enabled (use form or a tag and messy query?)
+	session := c.Cookies("session")
+	_ = c.BodyParser(&shippingInfoViewModel)
+
+	basketProducts, err := h.services.GetBasket(c.Context(), session)
+	//FIXME?
+	if err != nil {
+		return c.Redirect("/")
+	}
+	navBarViewModel.Align(basketProducts)
+	shippingInfoViewModel.Align(navBarViewModel)
+
+	if shippingInfoViewModel.HasError() {
+		if isHTMXRequest(c) {
+			return render(c, views.ShippingInfo(shippingInfoViewModel), views.ShippingInfoFragment)
+		}
+		return render(c, views.ShippingInfo(shippingInfoViewModel))
+	}
+	err = h.services.CreateShippingInfo(c.Context(), session, shippingInfoViewModel.MapToDomainShippingAddress())
+	if err != nil {
+		if isHTMXRequest(c) {
+			return render(c, views.ShippingInfo(shippingInfoViewModel), views.ShippingInfoFragment)
+		}
+		return render(c, views.ShippingInfo(shippingInfoViewModel))
+	}
+	if isHTMXRequest(c) {
+		return render(c, views.ShippingInfo(shippingInfoViewModel), views.ShippingInfoFragment)
+	}
+	return render(c, views.ShippingInfo(shippingInfoViewModel))
 }
