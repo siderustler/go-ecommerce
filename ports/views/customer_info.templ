@@ -292,7 +292,6 @@ templ form(action, method string) {
 		id="products"
 		hx-post={ action }
 		hx-swap="outerHTML"
-		hx-push-url="true"
 		action={ action }
 		method={ method }
 		class="flex flex-col lg:gap-12 lg:flex-row xl:justify-center px-3 py-6 md:px-8 md:py-12 bg-grey-100 lg:bg-grey-200 shadow-sm rounded-xl border-grey-300 border"
@@ -329,7 +328,7 @@ templ formSection(headerIcon, headerAlt, headerContent string, inputs []componen
 templ billingCheckbox(value string, checked bool, label string) {
 	<div class="group shadow-lg has-checked:bg-tertiary-300 flex gap-2 md:gap-4 lg:gap-6 px-4 py-3 md:py-4 lg:py-5 border-2 border-tertiary-500 rounded-2xl w-full items-center mt-4 md:mt-5 lg:mt-6">
 		<input
-			id={ value }
+			name={ value }
 			type="checkbox"
 			name="sort"
 			checked={ checked }

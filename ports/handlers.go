@@ -311,15 +311,14 @@ func (h handlers) postBillingInfo(c *fiber.Ctx) error {
 	if !billingInfoViewModel.UseBillingAddressAsShipping {
 		var shippingInfoViewModel views.ShippingInfoViewModel
 		shippingInfoViewModel.Align(navBarViewModel)
-
+		url := "/basket/customer/shipping"
 		if isHTMXRequest(c) {
+			c.Append("Hx-Push-Url", url)
 			return render(c, views.ShippingInfo(shippingInfoViewModel), views.ShippingInfoFragment)
 		}
-		return render(c, views.ShippingInfo(shippingInfoViewModel))
+		return c.Redirect(url)
 	}
-	//FIXME -- redirect to payment
-	if isHTMXRequest(c) {
-	}
+
 	//FIXME -- redirect to payment
 	return render(c, views.BillingInfo(billingInfoViewModel))
 }
@@ -368,6 +367,7 @@ func (h handlers) postShippingInfo(c *fiber.Ctx) error {
 	err = h.services.CreateShippingInfo(c.Context(), session, shippingInfoViewModel.MapToDomainShippingAddress())
 	if err != nil {
 		if isHTMXRequest(c) {
+			//FIXME -- toast on error
 			return render(c, views.ShippingInfo(shippingInfoViewModel), views.ShippingInfoFragment)
 		}
 		return render(c, views.ShippingInfo(shippingInfoViewModel))
