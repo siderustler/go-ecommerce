@@ -28,11 +28,13 @@ func NewHttpServer(services *services.Services) *httpServer {
 	h.srv.Get("/basket", h.handlers.getBasket)
 	h.srv.Get("/basket/customer/billing", h.handlers.getBillingInfo)
 	h.srv.Get("/basket/customer/shipping", h.handlers.getShippingInfo)
+	h.srv.Get("/basket/checkout", h.handlers.getCheckout)
 
 	h.srv.Post("/filter/products/validate/price", h.handlers.filterProductsPriceValidate)
 	h.srv.Post("/basket", h.handlers.updateBasket)
 	h.srv.Post("/basket/customer/billing", h.handlers.postBillingInfo)
 	h.srv.Post("/basket/customer/shipping", h.handlers.postShippingInfo)
+	h.srv.Post("/api/checkout", h.handlers.createCheckout)
 
 	h.srv.Static("/public", "./ports/views/public")
 	return h

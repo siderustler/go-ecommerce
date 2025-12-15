@@ -47,6 +47,7 @@ func NewBilling(nipCode string, company string, city, address, postalCode, local
 }
 
 type Customer struct {
+	ID       string
 	Name     string
 	Email    string
 	Phone    string
@@ -54,8 +55,9 @@ type Customer struct {
 	Shipping ShippingAddress
 }
 
-func NewCustomer(name, email, phone string, billing Billing, shipping ShippingAddress) Customer {
+func NewCustomer(id, name, email, phone string, billing Billing, shipping ShippingAddress) Customer {
 	return Customer{
+		ID:       id,
 		Name:     name,
 		Email:    email,
 		Phone:    phone,

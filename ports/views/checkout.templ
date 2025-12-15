@@ -1,0 +1,29 @@
+package views
+
+type checkoutFragment struct{}
+
+var CheckoutFragment = checkoutFragment{}
+
+type CheckoutViewModel struct {
+	Finalized bool
+}
+
+func NewCheckoutViewModel(finalized bool) CheckoutViewModel {
+	return CheckoutViewModel{Finalized: finalized}
+}
+
+templ Checkout(checkoutViewModel CheckoutViewModel) {
+	@layout() {
+		@templ.Fragment(CheckoutFragment) {
+			<section id="products">
+				if !checkoutViewModel.Finalized {
+					<div id="checkout"></div>
+					<script src="https://js.stripe.com/clover/stripe.js"></script>
+					<script src="/public/payment.js"></script>
+				} else {
+					<div>FINALIZED</div>
+				}
+			</section>
+		}
+	}
+}

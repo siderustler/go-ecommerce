@@ -50,7 +50,7 @@ func BasketAdder(id string, productID string, incDecRequestPath string, count in
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<form method=\"post\" action=\"/basket\" hx-post=\"/basket\" hx-target=\"#basket\" class=\"flex items-center justify-center\"><input name=\"count\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<form method=\"post\" action=\"/basket/add\" hx-post=\"/basket/add\" hx-target=\"#basket\" class=\"flex items-center justify-center\"><input name=\"count\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

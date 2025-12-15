@@ -3,7 +3,7 @@ package components
 templ BasketAdder(id string, productID string, incDecRequestPath string, count int) {
 	<div id={ id } class="flex justify-center gap-6 md:gap-4 min-h-14 md:flex-col">
 		@BasketCounter(id, GET, productID, incDecRequestPath, count)
-		<form method="post" action="/basket" hx-post="/basket" hx-target="#basket" class="flex items-center justify-center">
+		<form method="post" action="/basket/add" hx-post="/basket/add" hx-target="#basket" class="flex items-center justify-center">
 			<input
 				name="count"
 				value={ count }

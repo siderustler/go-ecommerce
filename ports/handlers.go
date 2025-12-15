@@ -9,6 +9,8 @@ import (
 	"github.com/siderustler/go-ecommerce/ports/views"
 	"github.com/siderustler/go-ecommerce/ports/views/components"
 	"github.com/siderustler/go-ecommerce/services"
+	"github.com/stripe/stripe-go/v83"
+	"github.com/stripe/stripe-go/v83/checkout/session"
 )
 
 type handlers struct {
@@ -311,16 +313,20 @@ func (h handlers) postBillingInfo(c *fiber.Ctx) error {
 	if !billingInfoViewModel.UseBillingAddressAsShipping {
 		var shippingInfoViewModel views.ShippingInfoViewModel
 		shippingInfoViewModel.Align(navBarViewModel)
-		url := "/basket/customer/shipping"
+		addShippingAddressUrl := "/basket/customer/shipping"
 		if isHTMXRequest(c) {
-			c.Append("Hx-Push-Url", url)
+			c.Append("Hx-Push-Url", addShippingAddressUrl)
 			return render(c, views.ShippingInfo(shippingInfoViewModel), views.ShippingInfoFragment)
 		}
-		return c.Redirect(url)
+		return c.Redirect(addShippingAddressUrl)
 	}
-
+	paymentUrl := "/basket/checkout"
+	if isHTMXRequest(c) {
+		c.Append("Hx-Push-Url", paymentUrl)
+		return render(c, views.Checkout(views.NewCheckoutViewModel(false)), views.CheckoutFragment)
+	}
 	//FIXME -- redirect to payment
-	return render(c, views.BillingInfo(billingInfoViewModel))
+	return c.Redirect(paymentUrl)
 }
 
 func (h handlers) getShippingInfo(c *fiber.Ctx) error {
@@ -372,8 +378,58 @@ func (h handlers) postShippingInfo(c *fiber.Ctx) error {
 		}
 		return render(c, views.ShippingInfo(shippingInfoViewModel))
 	}
+	paymentUrl := "/basket/checkout"
 	if isHTMXRequest(c) {
-		return render(c, views.ShippingInfo(shippingInfoViewModel), views.ShippingInfoFragment)
+		c.Append("Hx-Push-Url", paymentUrl)
+		return render(c, views.Checkout(views.NewCheckoutViewModel(false)), views.CheckoutFragment)
 	}
-	return render(c, views.ShippingInfo(shippingInfoViewModel))
+	return c.Redirect(paymentUrl)
+}
+
+func (h handlers) getCheckout(c *fiber.Ctx) error {
+	checkoutSession := c.Query("session_id")
+
+	s, err := session.Get(checkoutSession, nil)
+	checkoutFinalized := err == nil && s.Status == "complete"
+	checkoutViewModel := views.NewCheckoutViewModel(checkoutFinalized)
+
+	if isHTMXRequest(c) {
+		return render(c, views.Checkout(checkoutViewModel), views.CheckoutFragment)
+	}
+	return render(c, views.Checkout(checkoutViewModel))
+}
+
+func (h handlers) createCheckout(c *fiber.Ctx) error {
+	//move it to services
+	params := &stripe.CheckoutSessionParams{
+		Mode:      stripe.String(string(stripe.CheckoutSessionModePayment)),
+		UIMode:    stripe.String("embedded"),
+		ReturnURL: stripe.String("http://localhost:8080/basket/checkout?session_id={CHECKOUT_SESSION_ID}"),
+		LineItems: []*stripe.CheckoutSessionLineItemParams{
+			{
+				PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
+					Currency: stripe.String("usd"),
+					ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
+						Name: stripe.String("T-shirt"),
+					},
+					UnitAmount: stripe.Int64(2000),
+				},
+				Quantity: stripe.Int64(1),
+			},
+		},
+	}
+
+	s, err := session.New(params)
+
+	if err != nil {
+		return err
+	}
+
+	data := struct {
+		ClientSecret string `json:"clientSecret"`
+	}{
+		ClientSecret: s.ClientSecret,
+	}
+
+	return c.JSON(data)
 }
