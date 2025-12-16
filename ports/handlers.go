@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/go-querystring/query"
 	"github.com/google/uuid"
+	"github.com/siderustler/go-ecommerce/customer"
 	"github.com/siderustler/go-ecommerce/ports/views"
 	"github.com/siderustler/go-ecommerce/ports/views/components"
 	"github.com/siderustler/go-ecommerce/services"
@@ -15,7 +16,8 @@ import (
 )
 
 type handlers struct {
-	services *services.Services
+	services         *services.Services
+	customerServices *customer.Services
 }
 
 func (h handlers) getProductsRedirect(c *fiber.Ctx) error {
@@ -311,7 +313,7 @@ func (h handlers) postBillingInfo(c *fiber.Ctx) error {
 	}
 
 	customer := billingInfoViewModel.MapToDomainCustomer()
-	err = h.services.CreateCustomer(c.Context(), session, customer)
+	err = h.customerServices.CreateCustomer(c.Context(), session, customer)
 	if err != nil {
 		if isHTMXRequest(c) {
 			//FIXME
@@ -364,11 +366,11 @@ func (h handlers) getShippingInfo(c *fiber.Ctx) error {
 func (h handlers) postShippingInfo(c *fiber.Ctx) error {
 	var navBarViewModel components.NavBarViewModel
 	var shippingInfoViewModel views.ShippingInfoViewModel
+	id := c.Cookies("userID")
 	//FIXME retrieving search value in navbar while js is not enabled (use form or a tag and messy query?)
-	session := c.Cookies("session")
 	_ = c.BodyParser(&shippingInfoViewModel)
 
-	basketProducts, err := h.services.GetBasket(c.Context(), session)
+	basketProducts, err := h.services.GetBasket(c.Context(), id)
 	//FIXME?
 	if err != nil {
 		return c.Redirect("/")
@@ -382,7 +384,16 @@ func (h handlers) postShippingInfo(c *fiber.Ctx) error {
 		}
 		return render(c, views.ShippingInfo(shippingInfoViewModel))
 	}
-	err = h.services.CreateShippingInfo(c.Context(), session, shippingInfoViewModel.MapToDomainShippingAddress())
+	customer, err := h.customerServices.Customer(id)
+	if err != nil {
+		if isHTMXRequest(c) {
+			//FIXME -- toast on error
+			return render(c, views.ShippingInfo(shippingInfoViewModel), views.ShippingInfoFragment)
+		}
+		return render(c, views.ShippingInfo(shippingInfoViewModel))
+	}
+	customer.Shipping = shippingInfoViewModel.MapToDomainShippingAddress()
+	err = h.customerServices.UpdateCustomer(c.Context(), customer)
 	if err != nil {
 		if isHTMXRequest(c) {
 			//FIXME -- toast on error

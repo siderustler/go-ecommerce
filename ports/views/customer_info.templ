@@ -2,8 +2,8 @@ package views
 
 import (
 	"github.com/google/uuid"
+	"github.com/siderustler/go-ecommerce/customer"
 	"github.com/siderustler/go-ecommerce/ports/views/components"
-	"github.com/siderustler/go-ecommerce/services"
 )
 
 type billingInfoFragment struct{}
@@ -61,8 +61,8 @@ func (c BillingInfoViewModel) HasError() bool {
 		c.PostalCodeErr != ""
 }
 
-func (c BillingInfoViewModel) MapToDomainCustomer() services.Customer {
-	billing := services.NewBilling(
+func (c BillingInfoViewModel) MapToDomainCustomer() customer.Customer {
+	billing := customer.NewBilling(
 		c.NipCode,
 		c.Company,
 		c.City,
@@ -70,15 +70,14 @@ func (c BillingInfoViewModel) MapToDomainCustomer() services.Customer {
 		c.PostalCode,
 		c.LocalNumber,
 	)
-	var shipping services.ShippingAddress
+	var shipping customer.ShippingAddress
 	if c.UseBillingAddressAsShipping {
-		shipping = services.NewShippingAddress(c.City, c.Address, c.PostalCode, c.LocalNumber)
+		shipping = customer.NewShippingAddress(c.City, c.Address, c.PostalCode, c.LocalNumber)
 	}
-	return services.NewCustomer(
+	credentials := customer.NewCredentials(c.Name, c.Email, c.Phone)
+	return customer.NewCustomer(
 		uuid.NewString(),
-		c.Name,
-		c.Email,
-		c.Phone,
+		credentials,
 		billing,
 		shipping,
 	)
@@ -111,8 +110,8 @@ func (s ShippingInfoViewModel) HasError() bool {
 		s.PostalCodeErr != ""
 }
 
-func (s ShippingInfoViewModel) MapToDomainShippingAddress() services.ShippingAddress {
-	return services.NewShippingAddress(
+func (s ShippingInfoViewModel) MapToDomainShippingAddress() customer.ShippingAddress {
+	return customer.NewShippingAddress(
 		s.City,
 		s.Address,
 		s.PostalCode,
