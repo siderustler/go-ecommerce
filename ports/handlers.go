@@ -7,16 +7,18 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/go-querystring/query"
 	"github.com/google/uuid"
+	"github.com/siderustler/go-ecommerce/basket"
 	"github.com/siderustler/go-ecommerce/customer"
 	"github.com/siderustler/go-ecommerce/ports/views"
 	"github.com/siderustler/go-ecommerce/ports/views/components"
-	"github.com/siderustler/go-ecommerce/services"
+	"github.com/siderustler/go-ecommerce/product"
 	"github.com/stripe/stripe-go/v83"
 	"github.com/stripe/stripe-go/v83/checkout/session"
 )
 
 type handlers struct {
-	services         *services.Services
+	productServices  *product.Services
+	basketServices   *basket.Services
 	customerServices *customer.Services
 }
 
@@ -37,13 +39,13 @@ func (h handlers) getProducts(c *fiber.Ctx) error {
 	var navBarViewModel components.NavBarViewModel
 	_ = c.QueryParser(&navBarViewModel)
 
-	products, err := h.services.GetProducts(c.Context(), page, filterViewModel.MapToDomainFilter())
+	products, err := h.productServices.Products(c.Context(), page, filterViewModel.MapToDomainFilter())
 	//FIXME -- display empty product list
 	if err != nil {
 		return c.Redirect("/products/1")
 	}
 
-	basketProducts, err := h.services.GetBasket(c.Context(), "")
+	basketProducts, err := h.basketServices.GetBasket(c.Context(), "")
 	//FIXME
 	if err != nil {
 		return c.Redirect("/products/1")
@@ -89,13 +91,13 @@ func (h handlers) getProductDetails(c *fiber.Ctx) error {
 	_ = c.QueryParser(&navBarViewModel)
 
 	productID := c.Params("productID", "")
-	productDetails, err := h.services.GetProductDetails(c.Context(), productID)
+	productDetails, err := h.productServices.GetProductDetails(c.Context(), productID)
 	//FIXME?
 	if err != nil {
 		return c.Redirect("/products/1")
 	}
 
-	basketProducts, err := h.services.GetBasket(c.Context(), "")
+	basketProducts, err := h.basketServices.GetBasket(c.Context(), "")
 	//FIXME
 	if err != nil {
 		return c.Redirect("/products/1")
@@ -185,14 +187,14 @@ func (h handlers) filterProductsPriceValidate(c *fiber.Ctx) error {
 func (h handlers) getDashboard(c *fiber.Ctx) error {
 	slide := c.QueryInt("slide", 0)
 	promotionPage := c.QueryInt("promotions", 0)
-	promos, err := h.services.GetPromotions(c.Context())
+	promos, err := h.productServices.GetPromotions(c.Context())
 	//FIXME
 	if err != nil {
 		fmt.Printf("retrieving promotions: %v", err)
 		return c.Redirect("/")
 	}
 
-	basketProducts, err := h.services.GetBasket(c.Context(), "")
+	basketProducts, err := h.basketServices.GetBasket(c.Context(), "")
 	//FIXME
 	if err != nil {
 		return c.Redirect("/")
@@ -215,13 +217,19 @@ func (h handlers) getBasket(c *fiber.Ctx) error {
 	//FIXME retrieving search value in navbar while js is not enabled
 
 	session := c.Cookies("session")
-	basketProducts, err := h.services.GetBasket(c.Context(), session)
+	basketProducts, err := h.basketServices.GetBasket(c.Context(), session)
 	//FIXME?
 	if err != nil {
 		return c.Redirect("/")
 	}
 	navBarViewModel.Align(basketProducts)
-	basketViewModel := views.NewBasketViewModel(basketProducts, navBarViewModel)
+	basketItems := make([]views.BasketItemViewModel, 0, len(basketProducts))
+	//FIXME -- read in one query
+	for _, basketProduct := range basketProducts {
+		product, _ := h.productServices.ProductByID(basketProduct.ProductID)
+		basketItems = append(basketItems, views.NewBasketItemViewModel(product, basketProduct.Count))
+	}
+	basketViewModel := views.NewBasketViewModel(basketItems, navBarViewModel)
 
 	if !isHTMXRequest(c) {
 		return render(c, views.Basket(basketViewModel))
@@ -236,14 +244,21 @@ func (h handlers) updateBasket(c *fiber.Ctx) error {
 
 	session := c.Cookies("session")
 	if basketViewModel.DecBasket {
-		_ = h.services.DecrementBasketItem(c.Context(), session, basketViewModel.ChangeCountID)
+		_ = h.basketServices.DecrementBasketItem(c.Context(), session, basketViewModel.ChangeCountID)
 	}
 	if basketViewModel.IncBasket {
-		_ = h.services.IncrementBasketItem(c.Context(), session, basketViewModel.ChangeCountID)
+		_ = h.basketServices.IncrementBasketItem(c.Context(), session, basketViewModel.ChangeCountID)
 	}
-	basketProducts, _ := h.services.GetBasket(c.Context(), session)
+	basketProducts, _ := h.basketServices.GetBasket(c.Context(), session)
+	//FIXME -- create mapper
+	basketItems := make([]views.BasketItemViewModel, 0, len(basketProducts))
+	//FIXME -- read in one query
+	for _, basketProduct := range basketProducts {
+		product, _ := h.productServices.ProductByID(basketProduct.ProductID)
+		basketItems = append(basketItems, views.NewBasketItemViewModel(product, basketProduct.Count))
+	}
 
-	basketViewModel.Align(basketProducts, components.NavBarViewModel{})
+	basketViewModel.Align(basketItems, components.NavBarViewModel{})
 	if isHTMXRequest(c) {
 		return render(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
 	}
@@ -264,7 +279,7 @@ func (h handlers) addItemToBasket(c *fiber.Ctx) error {
 		session = uuid.NewString()
 	}
 	c.Cookie(&fiber.Cookie{Name: "session", Value: session})
-	basketCount, _ := h.services.AddToBasket(c.Context(), session, basketAdd.ProductID, basketAdd.Count)
+	basketCount, _ := h.basketServices.AddToBasket(c.Context(), session, basketAdd.ProductID, basketAdd.Count)
 	if isHTMXRequest(c) {
 		return render(c, components.NavBar(components.NewNavBarViewModel("", basketCount)), components.BasketCountFragment)
 	}
@@ -277,7 +292,7 @@ func (h handlers) getBillingInfo(c *fiber.Ctx) error {
 	//FIXME retrieving search value in navbar while js is not enabled (use form or a tag and messy query?)
 	session := c.Cookies("session")
 
-	basketProducts, err := h.services.GetBasket(c.Context(), session)
+	basketProducts, err := h.basketServices.GetBasket(c.Context(), session)
 	//FIXME?
 	if err != nil {
 		return c.Redirect("/")
@@ -297,7 +312,7 @@ func (h handlers) postBillingInfo(c *fiber.Ctx) error {
 	session := c.Cookies("session")
 	_ = c.BodyParser(&billingInfoViewModel)
 
-	basketProducts, err := h.services.GetBasket(c.Context(), session)
+	basketProducts, err := h.basketServices.GetBasket(c.Context(), session)
 	//FIXME?
 	if err != nil {
 		return c.Redirect("/")
@@ -349,7 +364,7 @@ func (h handlers) getShippingInfo(c *fiber.Ctx) error {
 	//FIXME retrieving search value in navbar while js is not enabled (use form or a tag and messy query?)
 	session := c.Cookies("session")
 
-	basketProducts, err := h.services.GetBasket(c.Context(), session)
+	basketProducts, err := h.basketServices.GetBasket(c.Context(), session)
 	//FIXME?
 	if err != nil {
 		return c.Redirect("/")
@@ -370,7 +385,7 @@ func (h handlers) postShippingInfo(c *fiber.Ctx) error {
 	//FIXME retrieving search value in navbar while js is not enabled (use form or a tag and messy query?)
 	_ = c.BodyParser(&shippingInfoViewModel)
 
-	basketProducts, err := h.services.GetBasket(c.Context(), id)
+	basketProducts, err := h.basketServices.GetBasket(c.Context(), id)
 	//FIXME?
 	if err != nil {
 		return c.Redirect("/")

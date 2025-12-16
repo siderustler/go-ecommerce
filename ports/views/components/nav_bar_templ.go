@@ -8,7 +8,7 @@ package components
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-import "github.com/siderustler/go-ecommerce/services"
+import "github.com/siderustler/go-ecommerce/basket"
 
 type NavBarViewModel struct {
 	Search      string `query:"search" url:"search,omitempty"`
@@ -25,7 +25,7 @@ func NewNavBarViewModel(search string, basketCount int) NavBarViewModel {
 	}
 }
 
-func (n *NavBarViewModel) Align(basketProducts []services.BasketProduct) {
+func (n *NavBarViewModel) Align(basketProducts []basket.BasketProduct) {
 	n.basketCount = len(basketProducts)
 }
 

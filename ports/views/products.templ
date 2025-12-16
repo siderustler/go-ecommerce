@@ -1,12 +1,14 @@
 package views
 
-import "strconv"
-import "fmt"
-import "github.com/siderustler/go-ecommerce/services"
-import "github.com/siderustler/go-ecommerce/ports/views/components"
+import (
+	"fmt"
+	"github.com/siderustler/go-ecommerce/ports/views/components"
+	"github.com/siderustler/go-ecommerce/product"
+	"strconv"
+)
 
 type productViewModel struct {
-	domain services.Product
+	domain product.Product
 
 	addBasketCount int
 	currentUrl     string
@@ -34,7 +36,7 @@ type ProductsListViewModel struct {
 	AddBasketCount       int    `query:"count"`
 }
 
-func (p *ProductsListViewModel) Align(domainProducts []services.Product, filterViewModel FilterViewModel, navBarViewModel components.NavBarViewModel, actualPage, maxPagesBoundary int, encodedFilter string) {
+func (p *ProductsListViewModel) Align(domainProducts []product.Product, filterViewModel FilterViewModel, navBarViewModel components.NavBarViewModel, actualPage, maxPagesBoundary int, encodedFilter string) {
 	if actualPage < 1 {
 		actualPage = 1
 	}

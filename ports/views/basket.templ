@@ -1,12 +1,27 @@
 package views
 
-import "github.com/siderustler/go-ecommerce/services"
 import "github.com/siderustler/go-ecommerce/ports/views/components"
 import "fmt"
+import "github.com/siderustler/go-ecommerce/product"
+
+type BasketItemViewModel struct {
+	product product.Product
+	count   int
+}
+
+func NewBasketItemViewModel(product product.Product, count int) BasketItemViewModel {
+	if count < 1 {
+		count = 1
+	}
+	return BasketItemViewModel{
+		product: product,
+		count:   count,
+	}
+}
 
 type BasketViewModel struct {
 	navBarViewModel components.NavBarViewModel
-	items           []services.BasketProduct
+	items           []BasketItemViewModel
 
 	ChangeCountID string `form:"id"`
 	IncBasket     bool   `form:"inc"`
@@ -14,14 +29,14 @@ type BasketViewModel struct {
 	Count         int    `form:"count"`
 }
 
-func NewBasketViewModel(items []services.BasketProduct, navBarViewModel components.NavBarViewModel) BasketViewModel {
+func NewBasketViewModel(items []BasketItemViewModel, navBarViewModel components.NavBarViewModel) BasketViewModel {
 	return BasketViewModel{
 		items:           items,
 		navBarViewModel: navBarViewModel,
 	}
 }
 
-func (b *BasketViewModel) Align(items []services.BasketProduct, navBarViewModel components.NavBarViewModel) {
+func (b *BasketViewModel) Align(items []BasketItemViewModel, navBarViewModel components.NavBarViewModel) {
 	b.items = items
 	b.navBarViewModel = navBarViewModel
 
@@ -36,8 +51,8 @@ func (b *BasketViewModel) Align(items []services.BasketProduct, navBarViewModel 
 		b.Count += 1
 	}
 	for i := 0; i < len(b.items); i++ {
-		if b.items[i].Product.ID == b.ChangeCountID {
-			b.items[i].Count = b.Count
+		if b.items[i].product.ID == b.ChangeCountID {
+			b.items[i].count = b.Count
 		}
 	}
 }
@@ -76,37 +91,37 @@ templ emptyBasket() {
 	</div>
 }
 
-templ basketProductItem(item services.BasketProduct) {
+templ basketProductItem(item BasketItemViewModel) {
 	<div class="flex flex-col md:flex-row md:items-center p-4 md:p-8 lg:p-12 gap-4 md:gap-8 lg:gap-12 shadow-md border border-grey-300 rounded-xl min-w-fit bg-grey-100">
-		<img src={ item.Product.Image } alt={ item.Product.Name + " ilustracja" } width="195px" height="195px" class="rounded-2xl shadow-sm"/>
+		<img src={ item.product.Image } alt={ item.product.Name + " ilustracja" } width="195px" height="195px" class="rounded-2xl shadow-sm"/>
 		<div class="flex flex-col gap-6 py-4 max-w-full md:max-w-1/4 2xl:max-w-full">
 			@components.Info("Nazwa produktu") {
-				<h2 class="text-xl text-primary-900">{ item.Product.Name }</h2>
+				<h2 class="text-xl text-primary-900">{ item.product.Name }</h2>
 			}
-			if item.Product.PriceBefore != 0 {
-				@promotionPrice(item.Product.PriceBefore, item.Product.Price)
+			if item.product.PriceBefore != 0 {
+				@promotionPrice(item.product.PriceBefore, item.product.Price)
 			} else {
 				@components.Info("Cena") {
-					<p class="text-xl">{ item.Product.Price }</p>
+					<p class="text-xl">{ item.product.Price }</p>
 				}
 			}
 		</div>
-		{{ id := BasketItemFragment(item.Product.ID) }}
+		{{ id := BasketItemFragment(item.product.ID) }}
 		@templ.Fragment(id) {
 			<div id={ id }>
 				@components.InfoStyled("Dostosuj ilość", "text-center") {
-					@components.BasketCounter(id, components.POST, item.Product.ID, "/basket/update", item.Count)
+					@components.BasketCounter(id, components.POST, item.product.ID, "/basket/update", item.count)
 				}
 			</div>
 		}
 	</div>
 }
 
-templ basketSummary(items []services.BasketProduct) {
+templ basketSummary(items []BasketItemViewModel) {
 	{{
 		var partPrice, fullPrice float32
 		for _, item := range items {
-			partPrice += item.Product.Price
+			partPrice += item.product.Price
 		}
 		fullPrice = partPrice
 	}}

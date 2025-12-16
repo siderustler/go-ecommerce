@@ -5,7 +5,9 @@ import (
 
 	"github.com/a-h/templ"
 	"github.com/gofiber/fiber/v2"
-	"github.com/siderustler/go-ecommerce/services"
+	"github.com/siderustler/go-ecommerce/basket"
+	"github.com/siderustler/go-ecommerce/customer"
+	"github.com/siderustler/go-ecommerce/product"
 )
 
 type httpServer struct {
@@ -13,10 +15,18 @@ type httpServer struct {
 	handlers *handlers
 }
 
-func NewHttpServer(services *services.Services) *httpServer {
+func NewHttpServer(
+	customerServices *customer.Services,
+	productServices *product.Services,
+	basketServices *basket.Services,
+) *httpServer {
 	h := &httpServer{
-		srv:      fiber.New(),
-		handlers: &handlers{services: services},
+		srv: fiber.New(),
+		handlers: &handlers{
+			customerServices: customerServices,
+			productServices:  productServices,
+			basketServices:   basketServices,
+		},
 	}
 	h.srv.Use("/public", ignoreCacheStaticFilesInDev)
 

@@ -1,12 +1,14 @@
 package views
 
-import "strconv"
-import "strings"
-import "github.com/siderustler/go-ecommerce/services"
-import "github.com/siderustler/go-ecommerce/ports/views/components"
+import (
+	"github.com/siderustler/go-ecommerce/ports/views/components"
+	"github.com/siderustler/go-ecommerce/product"
+	"strconv"
+	"strings"
+)
 
 type ProductDetailViewModel struct {
-	domain          services.ProductDetail
+	domain          product.ProductDetail
 	navBarViewModel components.NavBarViewModel
 
 	SelectedImage         int    `query:"img"`
@@ -21,7 +23,7 @@ type ProductDetailViewModel struct {
 	IncrementBasketCount bool `query:"inc"`
 }
 
-func (p *ProductDetailViewModel) Align(productDetail services.ProductDetail, navBarViewModel components.NavBarViewModel) {
+func (p *ProductDetailViewModel) Align(productDetail product.ProductDetail, navBarViewModel components.NavBarViewModel) {
 	p.domain = productDetail
 	p.navBarViewModel = navBarViewModel
 	if p.BackUrl == "" {

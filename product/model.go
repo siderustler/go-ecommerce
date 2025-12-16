@@ -1,9 +1,4 @@
-package services
-
-type BasketProduct struct {
-	Product Product
-	Count   int
-}
+package product
 
 type Product struct {
 	ID          string
@@ -76,6 +71,11 @@ func NewPromoProductDetail(id, name string, images, productInfo, technicalParame
 	}
 }
 
+type BasketProduct struct {
+	ProductID string
+	Count     int
+}
+
 func NewProduct(id, name, image string, price float32) Product {
 	return Product{
 		ID:    id,
@@ -92,18 +92,5 @@ func NewPromoProduct(id, name, image string, priceBefore float32, price float32)
 		Price:       price,
 		Image:       image,
 		PriceBefore: priceBefore,
-	}
-}
-
-func NewBasketProduct(id, name, image string, price float32, priceBefore float32, count int) BasketProduct {
-	return BasketProduct{
-		Product: Product{
-			ID:          id,
-			Name:        name,
-			Image:       image,
-			PriceBefore: priceBefore,
-			Price:       price,
-		},
-		Count: count,
 	}
 }

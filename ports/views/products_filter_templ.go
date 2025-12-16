@@ -8,7 +8,7 @@ package views
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-import "github.com/siderustler/go-ecommerce/services"
+import "github.com/siderustler/go-ecommerce/product"
 
 type FilterViewModel struct {
 	PriceFrom       float32 `query:"price-from" url:"price-from,omitempty"`
@@ -23,8 +23,8 @@ type FilterViewModel struct {
 	Search          string        `query:"search" url:"search,omitempty"`
 }
 
-func (f FilterViewModel) MapToDomainFilter() services.Filter {
-	return services.NewFilter(
+func (f FilterViewModel) MapToDomainFilter() product.Filter {
+	return product.NewFilter(
 		f.PriceFrom,
 		f.PriceTo,
 		f.Machines,

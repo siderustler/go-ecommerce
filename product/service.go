@@ -1,4 +1,4 @@
-package services
+package product
 
 type Services struct{}
 

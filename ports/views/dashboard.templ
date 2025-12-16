@@ -4,13 +4,14 @@ package views
 	koszyk na dashboardzie powinien byc wqyciagany na podsstawie sesji
 	dodanie / usuniecie itemu do koszyka usuwa item i aktualizuje liczbe rzeczy w koszyku na widoku
 */
-import "github.com/siderustler/go-ecommerce/services"
+
 import "strconv"
 import "math"
 import "github.com/siderustler/go-ecommerce/ports/views/components"
+import "github.com/siderustler/go-ecommerce/product"
 
 type dashboardViewModel struct {
-	products            []services.Product
+	products            []product.Product
 	selectedProduct     int
 	displayedPromotions int
 	maxPromotions       int
@@ -28,7 +29,7 @@ func maxPromotionPages(allProducts int, productsPerPage int) int {
 	return int(math.Ceil(float64(allProducts / productsPerPage)))
 }
 
-func NewDashboardViewModel(products []services.Product, selectedProduct, displayedPromotions int, navBarViewModel components.NavBarViewModel) dashboardViewModel {
+func NewDashboardViewModel(products []product.Product, selectedProduct, displayedPromotions int, navBarViewModel components.NavBarViewModel) dashboardViewModel {
 	isSelectedProductOutOfBounds := selectedProduct < 0 || selectedProduct > len(products)-1
 	if isSelectedProductOutOfBounds {
 		selectedProduct = 0
@@ -152,7 +153,7 @@ templ promotedProductsSection(dashboardViewModel dashboardViewModel) {
 	</div>
 }
 
-templ promoProduct(product services.Product) {
+templ promoProduct(product product.Product) {
 	{{ productPath := "/products/details/" + product.ID }}
 	<div class="flex flex-col gap-6 lg:gap-8 p-6 md:p-8 items-center justify-center rounded-xl border-primary-300 border-2 shadow-lg bg-grey-100 max-w-sm relative">
 		<img src="/public/icons/product-sale.svg" alt="produkt w promocji ikona" height="48px" width="48px" class="absolute -top-3 -left-2"/>

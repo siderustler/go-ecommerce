@@ -8,13 +8,28 @@ package views
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-import "github.com/siderustler/go-ecommerce/services"
 import "github.com/siderustler/go-ecommerce/ports/views/components"
 import "fmt"
+import "github.com/siderustler/go-ecommerce/product"
+
+type BasketItemViewModel struct {
+	product product.Product
+	count   int
+}
+
+func NewBasketItemViewModel(product product.Product, count int) BasketItemViewModel {
+	if count < 1 {
+		count = 1
+	}
+	return BasketItemViewModel{
+		product: product,
+		count:   count,
+	}
+}
 
 type BasketViewModel struct {
 	navBarViewModel components.NavBarViewModel
-	items           []services.BasketProduct
+	items           []BasketItemViewModel
 
 	ChangeCountID string `form:"id"`
 	IncBasket     bool   `form:"inc"`
@@ -22,14 +37,14 @@ type BasketViewModel struct {
 	Count         int    `form:"count"`
 }
 
-func NewBasketViewModel(items []services.BasketProduct, navBarViewModel components.NavBarViewModel) BasketViewModel {
+func NewBasketViewModel(items []BasketItemViewModel, navBarViewModel components.NavBarViewModel) BasketViewModel {
 	return BasketViewModel{
 		items:           items,
 		navBarViewModel: navBarViewModel,
 	}
 }
 
-func (b *BasketViewModel) Align(items []services.BasketProduct, navBarViewModel components.NavBarViewModel) {
+func (b *BasketViewModel) Align(items []BasketItemViewModel, navBarViewModel components.NavBarViewModel) {
 	b.items = items
 	b.navBarViewModel = navBarViewModel
 
@@ -44,8 +59,8 @@ func (b *BasketViewModel) Align(items []services.BasketProduct, navBarViewModel 
 		b.Count += 1
 	}
 	for i := 0; i < len(b.items); i++ {
-		if b.items[i].Product.ID == b.ChangeCountID {
-			b.items[i].Count = b.Count
+		if b.items[i].product.ID == b.ChangeCountID {
+			b.items[i].count = b.Count
 		}
 	}
 }
@@ -197,7 +212,7 @@ func emptyBasket() templ.Component {
 	})
 }
 
-func basketProductItem(item services.BasketProduct) templ.Component {
+func basketProductItem(item BasketItemViewModel) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -223,9 +238,9 @@ func basketProductItem(item services.BasketProduct) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var6 string
-		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(item.Product.Image)
+		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(item.product.Image)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 81, Col: 31}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 96, Col: 31}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -236,9 +251,9 @@ func basketProductItem(item services.BasketProduct) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var7 string
-		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(item.Product.Name + " ilustracja")
+		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(item.product.Name + " ilustracja")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 81, Col: 73}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 96, Col: 73}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -265,9 +280,9 @@ func basketProductItem(item services.BasketProduct) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var9 string
-			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(item.Product.Name)
+			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(item.product.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 84, Col: 60}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 99, Col: 60}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -283,8 +298,8 @@ func basketProductItem(item services.BasketProduct) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if item.Product.PriceBefore != 0 {
-			templ_7745c5c3_Err = promotionPrice(item.Product.PriceBefore, item.Product.Price).Render(ctx, templ_7745c5c3_Buffer)
+		if item.product.PriceBefore != 0 {
+			templ_7745c5c3_Err = promotionPrice(item.product.PriceBefore, item.product.Price).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -306,9 +321,9 @@ func basketProductItem(item services.BasketProduct) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var11 string
-				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(item.Product.Price)
+				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(item.product.Price)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 90, Col: 44}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 105, Col: 44}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 				if templ_7745c5c3_Err != nil {
@@ -329,7 +344,7 @@ func basketProductItem(item services.BasketProduct) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		id := BasketItemFragment(item.Product.ID)
+		id := BasketItemFragment(item.product.ID)
 		templ_7745c5c3_Var12 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
@@ -349,7 +364,7 @@ func basketProductItem(item services.BasketProduct) templ.Component {
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(id)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 96, Col: 15}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 111, Col: 15}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {
@@ -371,7 +386,7 @@ func basketProductItem(item services.BasketProduct) templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = components.BasketCounter(id, components.POST, item.Product.ID, "/basket/update", item.Count).Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = components.BasketCounter(id, components.POST, item.product.ID, "/basket/update", item.count).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -399,7 +414,7 @@ func basketProductItem(item services.BasketProduct) templ.Component {
 	})
 }
 
-func basketSummary(items []services.BasketProduct) templ.Component {
+func basketSummary(items []BasketItemViewModel) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -422,7 +437,7 @@ func basketSummary(items []services.BasketProduct) templ.Component {
 		ctx = templ.ClearChildren(ctx)
 		var partPrice, fullPrice float32
 		for _, item := range items {
-			partPrice += item.Product.Price
+			partPrice += item.product.Price
 		}
 		fullPrice = partPrice
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<div class=\"flex flex-1 flex-col gap-6 px-4 pb-6 pt-4 md:px-6 md:py-6 lg:px-8 lg:py-8 shadow-md rounded-xl border-2 border-grey-300\">")
@@ -452,7 +467,7 @@ func basketSummary(items []services.BasketProduct) templ.Component {
 		var templ_7745c5c3_Var16 templ.SafeURL
 		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinURLErrs("/basket/customer/billing")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 121, Col: 36}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 136, Col: 36}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
@@ -494,7 +509,7 @@ func summaryItem(title, description string) templ.Component {
 		var templ_7745c5c3_Var18 string
 		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 140, Col: 49}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 155, Col: 49}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 		if templ_7745c5c3_Err != nil {
@@ -507,7 +522,7 @@ func summaryItem(title, description string) templ.Component {
 		var templ_7745c5c3_Var19 string
 		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(description)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 141, Col: 73}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 156, Col: 73}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 		if templ_7745c5c3_Err != nil {

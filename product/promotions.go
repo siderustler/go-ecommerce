@@ -1,8 +1,6 @@
-package services
+package product
 
-import (
-	"context"
-)
+import "context"
 
 func (s *Services) GetPromotions(ctx context.Context) ([]Product, error) {
 	return []Product{
