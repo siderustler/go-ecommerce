@@ -180,20 +180,34 @@ templ promoProduct(product services.Product) {
 			</div>
 		</a>
 		@promotionPrice(product.PriceBefore, product.Price)
-		<button
-			class="flex justify-center items-center gap-1 md:gap-2 lg:gap-4 bg-primary-300 p-3 md:px-5 lg:px-6 md:py-3 lg:py-4 rounded-xl w-full"
-			hx-post="/basket/add"
-			hx-target="#basket"
-			hx-swap="innerHTML"
-		>
-			<img
-				src="/public/icons/shop-cart.svg"
-				alt="dodaj do koszyka ikona"
-				width="24px"
-				height="24px"
+		<form action="/basket/add" method="post" hx-post="/basket/add" hx-target="#basket-counter" hx-swap="outerHTML" class="w-full">
+			<input
+				name="count"
+				value="1"
+				hidden
 			/>
-			<span class="text-primary-900 text-sm">Dodaj do koszyka</span>
-		</button>
+			<input
+				name="productID"
+				value={ product.ID }
+				hidden
+			/>
+			<input
+				name="redirect"
+				value="/"
+				hidden
+			/>
+			<button
+				class="flex justify-center items-center gap-1 md:gap-2 lg:gap-4 bg-primary-300 p-3 md:px-5 lg:px-6 md:py-3 lg:py-4 rounded-xl w-full"
+			>
+				<img
+					src="/public/icons/shop-cart.svg"
+					alt="dodaj do koszyka ikona"
+					width="24px"
+					height="24px"
+				/>
+				<span class="text-primary-900 text-sm">Dodaj do koszyka</span>
+			</button>
+		</form>
 	</div>
 }
 

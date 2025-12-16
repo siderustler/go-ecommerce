@@ -31,7 +31,8 @@ func NewHttpServer(services *services.Services) *httpServer {
 	h.srv.Get("/basket/checkout", h.handlers.getCheckout)
 
 	h.srv.Post("/filter/products/validate/price", h.handlers.filterProductsPriceValidate)
-	h.srv.Post("/basket", h.handlers.updateBasket)
+	h.srv.Post("/basket/update", h.handlers.updateBasket)
+	h.srv.Post("/basket/add", h.handlers.addItemToBasket)
 	h.srv.Post("/basket/customer/billing", h.handlers.postBillingInfo)
 	h.srv.Post("/basket/customer/shipping", h.handlers.postShippingInfo)
 	h.srv.Post("/api/checkout", h.handlers.createCheckout)

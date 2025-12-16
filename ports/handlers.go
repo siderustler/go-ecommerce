@@ -6,6 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/go-querystring/query"
+	"github.com/google/uuid"
 	"github.com/siderustler/go-ecommerce/ports/views"
 	"github.com/siderustler/go-ecommerce/ports/views/components"
 	"github.com/siderustler/go-ecommerce/services"
@@ -232,29 +233,40 @@ func (h handlers) updateBasket(c *fiber.Ctx) error {
 	_ = c.BodyParser(&basketViewModel)
 
 	session := c.Cookies("session")
-	var err error
 	if basketViewModel.DecBasket {
-		err = h.services.DecrementBasketItem(c.Context(), session, basketViewModel.ChangeCountID)
+		_ = h.services.DecrementBasketItem(c.Context(), session, basketViewModel.ChangeCountID)
 	}
 	if basketViewModel.IncBasket {
-		err = h.services.IncrementBasketItem(c.Context(), session, basketViewModel.ChangeCountID)
+		_ = h.services.IncrementBasketItem(c.Context(), session, basketViewModel.ChangeCountID)
 	}
-	//FIXME?
-	if err != nil {
-		return c.Redirect("/basket")
-	}
-	if !isHTMXRequest(c) {
-		return c.Redirect("/basket")
-	}
+	basketProducts, _ := h.services.GetBasket(c.Context(), session)
 
-	basketProducts, err := h.services.GetBasket(c.Context(), session)
-	if err != nil {
-		//FIXME?
-		return c.Redirect("/basket")
-	}
 	basketViewModel.Align(basketProducts, components.NavBarViewModel{})
+	if isHTMXRequest(c) {
+		return render(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
+	}
+	return c.Redirect("/basket")
+}
 
-	return render(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
+func (h handlers) addItemToBasket(c *fiber.Ctx) error {
+	session := c.Cookies("session")
+
+	var basketAdd struct {
+		Count     int    `form:"count"`
+		ProductID string `form:"productID"`
+		Redirect  string `form:"redirect"`
+	}
+	_ = c.BodyParser(&basketAdd)
+	isBasketSessionEstablished := session != ""
+	if !isBasketSessionEstablished {
+		session = uuid.NewString()
+	}
+	c.Cookie(&fiber.Cookie{Name: "session", Value: session})
+	basketCount, _ := h.services.AddToBasket(c.Context(), session, basketAdd.ProductID, basketAdd.Count)
+	if isHTMXRequest(c) {
+		return render(c, components.NavBar(components.NewNavBarViewModel("", basketCount)), components.BasketCountFragment)
+	}
+	return c.Redirect(basketAdd.Redirect)
 }
 
 func (h handlers) getBillingInfo(c *fiber.Ctx) error {

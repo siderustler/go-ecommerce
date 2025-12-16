@@ -5,14 +5,12 @@ package views
 
 //lint:file-ignore SA4006 This context is only used if a nested component is present.
 
-import (
-	"fmt"
+import "github.com/a-h/templ"
+import templruntime "github.com/a-h/templ/runtime"
 
-	"github.com/a-h/templ"
-	templruntime "github.com/a-h/templ/runtime"
-	"github.com/siderustler/go-ecommerce/ports/views/components"
-	"github.com/siderustler/go-ecommerce/services"
-)
+import "github.com/siderustler/go-ecommerce/services"
+import "github.com/siderustler/go-ecommerce/ports/views/components"
+import "fmt"
 
 type BasketViewModel struct {
 	navBarViewModel components.NavBarViewModel
@@ -373,7 +371,7 @@ func basketProductItem(item services.BasketProduct) templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = components.BasketCounter(id, components.POST, item.Product.ID, "/basket", item.Count).Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = components.BasketCounter(id, components.POST, item.Product.ID, "/basket/update", item.Count).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

@@ -95,7 +95,7 @@ templ basketProductItem(item services.BasketProduct) {
 		@templ.Fragment(id) {
 			<div id={ id }>
 				@components.InfoStyled("Dostosuj ilość", "text-center") {
-					@components.BasketCounter(id, components.POST, item.Product.ID, "/basket", item.Count)
+					@components.BasketCounter(id, components.POST, item.Product.ID, "/basket/update", item.Count)
 				}
 			</div>
 		}

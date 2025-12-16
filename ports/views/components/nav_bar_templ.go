@@ -29,6 +29,10 @@ func (n *NavBarViewModel) Align(basketProducts []services.BasketProduct) {
 	n.basketCount = len(basketProducts)
 }
 
+type basketCountFragment struct{}
+
+var BasketCountFragment = basketCountFragment{}
+
 func NavBar(viewModel NavBarViewModel) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -77,7 +81,7 @@ func NavBar(viewModel NavBarViewModel) templ.Component {
 			var templ_7745c5c3_Var3 templ.SafeURL
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinURLErrs(item.href)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/nav_bar.templ`, Line: 40, Col: 23}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/nav_bar.templ`, Line: 44, Col: 23}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -90,7 +94,7 @@ func NavBar(viewModel NavBarViewModel) templ.Component {
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(item.href)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/nav_bar.templ`, Line: 40, Col: 44}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/nav_bar.templ`, Line: 44, Col: 44}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -116,7 +120,7 @@ func NavBar(viewModel NavBarViewModel) templ.Component {
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(item.icon)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/nav_bar.templ`, Line: 42, Col: 21}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/nav_bar.templ`, Line: 46, Col: 21}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -129,7 +133,7 @@ func NavBar(viewModel NavBarViewModel) templ.Component {
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(item.name + " ikona")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/nav_bar.templ`, Line: 43, Col: 32}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/nav_bar.templ`, Line: 47, Col: 32}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -152,7 +156,7 @@ func NavBar(viewModel NavBarViewModel) templ.Component {
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(item.name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/nav_bar.templ`, Line: 50, Col: 16}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/nav_bar.templ`, Line: 54, Col: 16}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -163,20 +167,38 @@ func NavBar(viewModel NavBarViewModel) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			if item.name == "Koszyk" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<p class=\"absolute left-5 -top-3 px-1.5 py-px text-xs rounded-full border-2 border-secondary-200 text-secondary-900 bg-secondary-100\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var9 string
-				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(viewModel.basketCount)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/nav_bar.templ`, Line: 53, Col: 30}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</p>")
+				templ_7745c5c3_Var9 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+					templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+					templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+					if !templ_7745c5c3_IsBuffer {
+						defer func() {
+							templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+							if templ_7745c5c3_Err == nil {
+								templ_7745c5c3_Err = templ_7745c5c3_BufErr
+							}
+						}()
+					}
+					ctx = templ.InitializeContext(ctx)
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<p id=\"basket-counter\" class=\"absolute left-5 -top-3 px-1.5 py-px text-xs rounded-full border-2 border-secondary-200 text-secondary-900 bg-secondary-100\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var10 string
+					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(viewModel.basketCount)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/nav_bar.templ`, Line: 58, Col: 31}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</p>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					return nil
+				})
+				templ_7745c5c3_Err = templ.Fragment(BasketCountFragment).Render(templ.WithChildren(ctx, templ_7745c5c3_Var9), templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -218,21 +240,21 @@ func searchInput(searchInputValue string) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var10 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var10 == nil {
-			templ_7745c5c3_Var10 = templ.NopComponent
+		templ_7745c5c3_Var11 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var11 == nil {
+			templ_7745c5c3_Var11 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<form action=\"/products/1\" method=\"GET\" class=\"flex gap-3 md:gap-4 w-full items-center justify-center\" hx-get=\"/products/1\" hx-swap=\"outerHTML\" hx-target=\"#products\"><div class=\"flex gap-2 md:gap-4 bg-grey-100 border-2 border-grey-500 rounded-xl hover:border-tertiary-300 has-focus:border-tertiary-500 px-4 md:px-6 py-3 w-full md:w-2/3 xl:w-2/5 shadow-lg\"><img src=\"/public/icons/search.svg\" alt=\"szukanie ikona\" height=\"24px\" width=\"24px\"> <input id=\"search\" type=\"text\" name=\"search\" placeholder=\"Wyszukaj produkt...\" class=\"placeholder:text-grey-700 text-grey-900 outline-none w-full\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var11 string
-		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(searchInputValue)
+		var templ_7745c5c3_Var12 string
+		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(searchInputValue)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/nav_bar.templ`, Line: 73, Col: 28}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/nav_bar.templ`, Line: 79, Col: 28}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
