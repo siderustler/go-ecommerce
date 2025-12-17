@@ -6,7 +6,6 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/go-querystring/query"
-	"github.com/google/uuid"
 	"github.com/siderustler/go-ecommerce/basket"
 	"github.com/siderustler/go-ecommerce/customer"
 	"github.com/siderustler/go-ecommerce/ports/views"
@@ -45,13 +44,13 @@ func (h handlers) getProducts(c *fiber.Ctx) error {
 		return c.Redirect("/products/1")
 	}
 
-	basketProducts, err := h.basketServices.GetBasket(c.Context(), "")
+	basket, err := h.basketServices.BasketByUserID(c.Context(), "")
 	//FIXME
 	if err != nil {
 		return c.Redirect("/products/1")
 	}
 
-	navBarViewModel.Align(basketProducts)
+	navBarViewModel.Align(basket.Products)
 
 	//FIXME -- get max products count to display (paginated)
 	maxPagesBoundary := 10
@@ -97,13 +96,13 @@ func (h handlers) getProductDetails(c *fiber.Ctx) error {
 		return c.Redirect("/products/1")
 	}
 
-	basketProducts, err := h.basketServices.GetBasket(c.Context(), "")
+	basket, err := h.basketServices.BasketByUserID(c.Context(), "")
 	//FIXME
 	if err != nil {
 		return c.Redirect("/products/1")
 	}
 
-	navBarViewModel.Align(basketProducts)
+	navBarViewModel.Align(basket.Products)
 	productDetailViewModel.Align(productDetails, navBarViewModel)
 
 	if !isHTMXRequest(c) {
@@ -194,12 +193,12 @@ func (h handlers) getDashboard(c *fiber.Ctx) error {
 		return c.Redirect("/")
 	}
 
-	basketProducts, err := h.basketServices.GetBasket(c.Context(), "")
+	basket, err := h.basketServices.BasketByUserID(c.Context(), "")
 	//FIXME
 	if err != nil {
 		return c.Redirect("/")
 	}
-	navBarViewModel := components.NewNavBarViewModel("", len(basketProducts))
+	navBarViewModel := components.NewNavBarViewModel("", len(basket.Products))
 	if !isHTMXRequest(c) {
 		return render(c, views.Dashboard(views.NewDashboardViewModel(promos, slide, promotionPage, navBarViewModel)))
 	}
@@ -216,16 +215,16 @@ func (h handlers) getBasket(c *fiber.Ctx) error {
 	var navBarViewModel components.NavBarViewModel
 	//FIXME retrieving search value in navbar while js is not enabled
 
-	session := c.Cookies("session")
-	basketProducts, err := h.basketServices.GetBasket(c.Context(), session)
+	userID := c.Cookies("session")
+	basket, err := h.basketServices.BasketByUserID(c.Context(), userID)
 	//FIXME?
 	if err != nil {
 		return c.Redirect("/")
 	}
-	navBarViewModel.Align(basketProducts)
-	basketItems := make([]views.BasketItemViewModel, 0, len(basketProducts))
+	navBarViewModel.Align(basket.Products)
+	basketItems := make([]views.BasketItemViewModel, 0, len(basket.Products))
 	//FIXME -- read in one query
-	for _, basketProduct := range basketProducts {
+	for _, basketProduct := range basket.Products {
 		product, _ := h.productServices.ProductByID(basketProduct.ProductID)
 		basketItems = append(basketItems, views.NewBasketItemViewModel(product, basketProduct.Count))
 	}
@@ -242,18 +241,18 @@ func (h handlers) updateBasket(c *fiber.Ctx) error {
 	var basketViewModel views.BasketViewModel
 	_ = c.BodyParser(&basketViewModel)
 
-	session := c.Cookies("session")
-	if basketViewModel.DecBasket {
-		_ = h.basketServices.DecrementBasketItem(c.Context(), session, basketViewModel.ChangeCountID)
-	}
+	userID := c.Cookies("userID")
 	if basketViewModel.IncBasket {
-		_ = h.basketServices.IncrementBasketItem(c.Context(), session, basketViewModel.ChangeCountID)
+		_, _ = h.basketServices.AddToBasket(c.Context(), userID, basket.NewBasketProduct(basketViewModel.ChangeCountID, basketViewModel.Count))
 	}
-	basketProducts, _ := h.basketServices.GetBasket(c.Context(), session)
+	if basketViewModel.DecBasket {
+		_ = h.basketServices.RemoveProductFromBasket(c.Context(), userID, basketViewModel.ChangeCountID)
+	}
 	//FIXME -- create mapper
-	basketItems := make([]views.BasketItemViewModel, 0, len(basketProducts))
+	basket, _ := h.basketServices.BasketByUserID(c.Context(), userID)
+	basketItems := make([]views.BasketItemViewModel, 0, len(basket.Products))
 	//FIXME -- read in one query
-	for _, basketProduct := range basketProducts {
+	for _, basketProduct := range basket.Products {
 		product, _ := h.productServices.ProductByID(basketProduct.ProductID)
 		basketItems = append(basketItems, views.NewBasketItemViewModel(product, basketProduct.Count))
 	}
@@ -266,7 +265,7 @@ func (h handlers) updateBasket(c *fiber.Ctx) error {
 }
 
 func (h handlers) addItemToBasket(c *fiber.Ctx) error {
-	session := c.Cookies("session")
+	userID := c.Cookies("userID")
 
 	var basketAdd struct {
 		Count     int    `form:"count"`
@@ -274,12 +273,9 @@ func (h handlers) addItemToBasket(c *fiber.Ctx) error {
 		Redirect  string `form:"redirect"`
 	}
 	_ = c.BodyParser(&basketAdd)
-	isBasketSessionEstablished := session != ""
-	if !isBasketSessionEstablished {
-		session = uuid.NewString()
-	}
-	c.Cookie(&fiber.Cookie{Name: "session", Value: session})
-	basketCount, _ := h.basketServices.AddToBasket(c.Context(), session, basketAdd.ProductID, basketAdd.Count)
+
+	basketCount, _ := h.basketServices.AddToBasket(c.Context(), userID, basket.NewBasketProduct(basketAdd.ProductID, basketAdd.Count))
+
 	if isHTMXRequest(c) {
 		return render(c, components.NavBar(components.NewNavBarViewModel("", basketCount)), components.BasketCountFragment)
 	}
@@ -290,14 +286,14 @@ func (h handlers) getBillingInfo(c *fiber.Ctx) error {
 	var billingInfoViewModel views.BillingInfoViewModel
 	var navBarViewModel components.NavBarViewModel
 	//FIXME retrieving search value in navbar while js is not enabled (use form or a tag and messy query?)
-	session := c.Cookies("session")
+	userID := c.Cookies("userID")
 
-	basketProducts, err := h.basketServices.GetBasket(c.Context(), session)
+	basket, err := h.basketServices.BasketByUserID(c.Context(), userID)
 	//FIXME?
 	if err != nil {
 		return c.Redirect("/")
 	}
-	navBarViewModel.Align(basketProducts)
+	navBarViewModel.Align(basket.Products)
 	billingInfoViewModel.Align(navBarViewModel)
 	if isHTMXRequest(c) {
 		return render(c, views.BillingInfo(billingInfoViewModel), views.BillingInfoFragment)
@@ -309,15 +305,15 @@ func (h handlers) postBillingInfo(c *fiber.Ctx) error {
 	var billingInfoViewModel views.BillingInfoViewModel
 	var navBarViewModel components.NavBarViewModel
 	//FIXME retrieving search value in navbar while js is not enabled (use form or a tag and messy query?)
-	session := c.Cookies("session")
+	userID := c.Cookies("userID")
 	_ = c.BodyParser(&billingInfoViewModel)
 
-	basketProducts, err := h.basketServices.GetBasket(c.Context(), session)
+	basket, err := h.basketServices.BasketByUserID(c.Context(), userID)
 	//FIXME?
 	if err != nil {
 		return c.Redirect("/")
 	}
-	navBarViewModel.Align(basketProducts)
+	navBarViewModel.Align(basket.Products)
 	billingInfoViewModel.Align(navBarViewModel)
 
 	if billingInfoViewModel.HasError() {
@@ -328,7 +324,7 @@ func (h handlers) postBillingInfo(c *fiber.Ctx) error {
 	}
 
 	customer := billingInfoViewModel.MapToDomainCustomer()
-	err = h.customerServices.CreateCustomer(c.Context(), session, customer)
+	err = h.customerServices.CreateCustomer(c.Context(), userID, customer)
 	if err != nil {
 		if isHTMXRequest(c) {
 			//FIXME
@@ -362,14 +358,14 @@ func (h handlers) getShippingInfo(c *fiber.Ctx) error {
 	var shippingInfoViewModel views.ShippingInfoViewModel
 	var navBarViewModel components.NavBarViewModel
 	//FIXME retrieving search value in navbar while js is not enabled (use form or a tag and messy query?)
-	session := c.Cookies("session")
+	userID := c.Cookies("userID")
 
-	basketProducts, err := h.basketServices.GetBasket(c.Context(), session)
+	basket, err := h.basketServices.BasketByUserID(c.Context(), userID)
 	//FIXME?
 	if err != nil {
 		return c.Redirect("/")
 	}
-	navBarViewModel.Align(basketProducts)
+	navBarViewModel.Align(basket.Products)
 	shippingInfoViewModel.Align(navBarViewModel)
 
 	if isHTMXRequest(c) {
@@ -385,12 +381,12 @@ func (h handlers) postShippingInfo(c *fiber.Ctx) error {
 	//FIXME retrieving search value in navbar while js is not enabled (use form or a tag and messy query?)
 	_ = c.BodyParser(&shippingInfoViewModel)
 
-	basketProducts, err := h.basketServices.GetBasket(c.Context(), id)
+	basket, err := h.basketServices.BasketByUserID(c.Context(), id)
 	//FIXME?
 	if err != nil {
 		return c.Redirect("/")
 	}
-	navBarViewModel.Align(basketProducts)
+	navBarViewModel.Align(basket.Products)
 	shippingInfoViewModel.Align(navBarViewModel)
 
 	if shippingInfoViewModel.HasError() {
@@ -399,16 +395,8 @@ func (h handlers) postShippingInfo(c *fiber.Ctx) error {
 		}
 		return render(c, views.ShippingInfo(shippingInfoViewModel))
 	}
-	customer, err := h.customerServices.Customer(id)
-	if err != nil {
-		if isHTMXRequest(c) {
-			//FIXME -- toast on error
-			return render(c, views.ShippingInfo(shippingInfoViewModel), views.ShippingInfoFragment)
-		}
-		return render(c, views.ShippingInfo(shippingInfoViewModel))
-	}
-	customer.Shipping = shippingInfoViewModel.MapToDomainShippingAddress()
-	err = h.customerServices.UpdateCustomer(c.Context(), customer)
+
+	err = h.customerServices.AddShippingAddress(c.Context(), shippingInfoViewModel.MapToDomainShippingAddress())
 	if err != nil {
 		if isHTMXRequest(c) {
 			//FIXME -- toast on error

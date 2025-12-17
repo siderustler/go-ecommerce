@@ -2,11 +2,15 @@ package basket
 
 import "context"
 
-func (s *Services) GetBasket(ctx context.Context, session string) ([]BasketProduct, error) {
-	return []BasketProduct{
-		NewBasketProduct("1", 1),
-		NewBasketProduct("2", 2),
-		NewBasketProduct("3", 3),
-		NewBasketProduct("4", 3),
+func (s *Services) BasketByUserID(ctx context.Context, userID string) (Basket, error) {
+	return Basket{
+		ID:         "",
+		CustomerID: userID,
+		Products: BasketProducts{
+			"1": NewBasketProduct("1", 1),
+			"2": NewBasketProduct("2", 2),
+			"3": NewBasketProduct("3", 3),
+			"4": NewBasketProduct("4", 3),
+		},
 	}, nil
 }
