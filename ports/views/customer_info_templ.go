@@ -5,10 +5,9 @@ package views
 
 //lint:file-ignore SA4006 This context is only used if a nested component is present.
 
-import "github.com/a-h/templ"
-import templruntime "github.com/a-h/templ/runtime"
-
 import (
+	"github.com/a-h/templ"
+	templruntime "github.com/a-h/templ/runtime"
 	"github.com/google/uuid"
 	"github.com/siderustler/go-ecommerce/customer"
 	"github.com/siderustler/go-ecommerce/ports/views/components"
@@ -71,6 +70,7 @@ func (c BillingInfoViewModel) HasError() bool {
 
 func (c BillingInfoViewModel) MapToDomainCustomer() customer.Customer {
 	billing := customer.NewBilling(
+		uuid.NewString(),
 		c.NipCode,
 		c.Company,
 		c.City,
@@ -80,7 +80,7 @@ func (c BillingInfoViewModel) MapToDomainCustomer() customer.Customer {
 	)
 	var shipping customer.ShippingAddress
 	if c.UseBillingAddressAsShipping {
-		shipping = customer.NewShippingAddress(c.City, c.Address, c.PostalCode, c.LocalNumber)
+		shipping = customer.NewShippingAddress(uuid.NewString(), c.City, c.Address, c.PostalCode, c.LocalNumber)
 	}
 	credentials := customer.NewCredentials(c.Name, c.Email, c.Phone)
 	return customer.NewCustomer(
@@ -120,6 +120,7 @@ func (s ShippingInfoViewModel) HasError() bool {
 
 func (s ShippingInfoViewModel) MapToDomainShippingAddress() customer.ShippingAddress {
 	return customer.NewShippingAddress(
+		uuid.NewString(),
 		s.City,
 		s.Address,
 		s.PostalCode,
@@ -539,7 +540,7 @@ func form(action, method string) templ.Component {
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(action)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 294, Col: 18}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 296, Col: 18}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
@@ -552,7 +553,7 @@ func form(action, method string) templ.Component {
 		var templ_7745c5c3_Var14 templ.SafeURL
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinURLErrs(action)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 296, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 298, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
@@ -565,7 +566,7 @@ func form(action, method string) templ.Component {
 		var templ_7745c5c3_Var15 string
 		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(method)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 297, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 299, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 		if templ_7745c5c3_Err != nil {
@@ -615,7 +616,7 @@ func submitButton(content string) templ.Component {
 		var templ_7745c5c3_Var17 string
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(content)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 315, Col: 11}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 317, Col: 11}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
@@ -704,7 +705,7 @@ func billingCheckbox(value string, checked bool, label string) templ.Component {
 		var templ_7745c5c3_Var20 string
 		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 332, Col: 15}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 334, Col: 15}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {
@@ -717,7 +718,7 @@ func billingCheckbox(value string, checked bool, label string) templ.Component {
 		var templ_7745c5c3_Var21 string
 		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(checked)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 335, Col: 20}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 337, Col: 20}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 		if templ_7745c5c3_Err != nil {
@@ -730,7 +731,7 @@ func billingCheckbox(value string, checked bool, label string) templ.Component {
 		var templ_7745c5c3_Var22 string
 		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 338, Col: 20}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 340, Col: 20}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 		if templ_7745c5c3_Err != nil {
@@ -743,7 +744,7 @@ func billingCheckbox(value string, checked bool, label string) templ.Component {
 		var templ_7745c5c3_Var23 string
 		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 338, Col: 56}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 340, Col: 56}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 		if templ_7745c5c3_Err != nil {

@@ -13,6 +13,7 @@ type repository struct {
 }
 
 func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
+	return nil, nil
 	_, err := db.ExecContext(ctx,
 		`CREATE TABLE baskets (
 			id UUID PRIMARY KEY,

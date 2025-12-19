@@ -63,6 +63,7 @@ func (c BillingInfoViewModel) HasError() bool {
 
 func (c BillingInfoViewModel) MapToDomainCustomer() customer.Customer {
 	billing := customer.NewBilling(
+		uuid.NewString(),
 		c.NipCode,
 		c.Company,
 		c.City,
@@ -72,7 +73,7 @@ func (c BillingInfoViewModel) MapToDomainCustomer() customer.Customer {
 	)
 	var shipping customer.ShippingAddress
 	if c.UseBillingAddressAsShipping {
-		shipping = customer.NewShippingAddress(c.City, c.Address, c.PostalCode, c.LocalNumber)
+		shipping = customer.NewShippingAddress(uuid.NewString(), c.City, c.Address, c.PostalCode, c.LocalNumber)
 	}
 	credentials := customer.NewCredentials(c.Name, c.Email, c.Phone)
 	return customer.NewCustomer(
@@ -110,8 +111,9 @@ func (s ShippingInfoViewModel) HasError() bool {
 		s.PostalCodeErr != ""
 }
 
-func (s ShippingInfoViewModel) MapToDomainShippingAddress() customer.ShippingAddress {
+func (s ShippingInfoViewModel) MapToDomainShippingAddress(id string) customer.ShippingAddress {
 	return customer.NewShippingAddress(
+		id,
 		s.City,
 		s.Address,
 		s.PostalCode,

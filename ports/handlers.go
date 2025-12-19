@@ -6,18 +6,18 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/go-querystring/query"
-	"github.com/siderustler/go-ecommerce/basket"
 	"github.com/siderustler/go-ecommerce/customer"
 	"github.com/siderustler/go-ecommerce/ports/views"
 	"github.com/siderustler/go-ecommerce/ports/views/components"
 	"github.com/siderustler/go-ecommerce/product"
+	"github.com/siderustler/go-ecommerce/store"
 	"github.com/stripe/stripe-go/v83"
 	"github.com/stripe/stripe-go/v83/checkout/session"
 )
 
 type handlers struct {
 	productServices  *product.Services
-	basketServices   *basket.Services
+	basketServices   *store.Services
 	customerServices *customer.Services
 }
 
@@ -242,21 +242,28 @@ func (h handlers) updateBasket(c *fiber.Ctx) error {
 	_ = c.BodyParser(&basketViewModel)
 
 	userID := c.Cookies("userID")
-	if basketViewModel.IncBasket {
-		_, _ = h.basketServices.AddToBasket(c.Context(), userID, basket.NewBasketProduct(basketViewModel.ChangeCountID, basketViewModel.Count))
+
+	err := h.basketServices.UpdateBasketProduct(c.Context(), userID, store.NewBasketProduct(basketViewModel.ChangeCountID, basketViewModel.Count))
+	if err != nil {
+		return render(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
 	}
-	if basketViewModel.DecBasket {
-		_ = h.basketServices.RemoveProductFromBasket(c.Context(), userID, basketViewModel.ChangeCountID)
+	basket, err := h.basketServices.BasketByUserID(c.Context(), userID)
+	if err != nil {
+		return render(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
 	}
 	//FIXME -- create mapper
-	basket, _ := h.basketServices.BasketByUserID(c.Context(), userID)
 	basketItems := make([]views.BasketItemViewModel, 0, len(basket.Products))
-	//FIXME -- read in one query
+	productIds := make([]string, 0, len(basket.Products))
 	for _, basketProduct := range basket.Products {
-		product, _ := h.productServices.ProductByID(basketProduct.ProductID)
-		basketItems = append(basketItems, views.NewBasketItemViewModel(product, basketProduct.Count))
+		productIds = append(productIds, basketProduct.ProductID)
 	}
-
+	products, err := h.productServices.ProductsByIDs(productIds)
+	if err != nil {
+		return render(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
+	}
+	for _, product := range products {
+		basketItems = append(basketItems, views.NewBasketItemViewModel(product, basket.Products[store.ProductID(product.ID)].Count))
+	}
 	basketViewModel.Align(basketItems, components.NavBarViewModel{})
 	if isHTMXRequest(c) {
 		return render(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
@@ -274,10 +281,18 @@ func (h handlers) addItemToBasket(c *fiber.Ctx) error {
 	}
 	_ = c.BodyParser(&basketAdd)
 
-	basketCount, _ := h.basketServices.AddToBasket(c.Context(), userID, basket.NewBasketProduct(basketAdd.ProductID, basketAdd.Count))
-
+	err := h.basketServices.UpdateBasketProduct(c.Context(), userID, store.NewBasketProduct(basketAdd.ProductID, basketAdd.Count))
+	if err != nil {
+		//FIXME
+		return c.Redirect(basketAdd.Redirect)
+	}
+	basket, err := h.basketServices.BasketByUserID(c.Context(), userID)
+	if err != nil {
+		//FIXME
+		return c.Redirect(basketAdd.Redirect)
+	}
 	if isHTMXRequest(c) {
-		return render(c, components.NavBar(components.NewNavBarViewModel("", basketCount)), components.BasketCountFragment)
+		return render(c, components.NavBar(components.NewNavBarViewModel("", len(basket.Products))), components.BasketCountFragment)
 	}
 	return c.Redirect(basketAdd.Redirect)
 }

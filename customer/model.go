@@ -17,12 +17,14 @@ func newAddress(city, addr, postalCode, local string) address {
 }
 
 type ShippingAddress struct {
+	ID      string
 	Address address
 }
 
-func NewShippingAddress(city, address, postalCode, local string) ShippingAddress {
+func NewShippingAddress(id, city, address, postalCode, local string) ShippingAddress {
 	shipping := newAddress(city, address, postalCode, local)
 	return ShippingAddress{
+		ID:      id,
 		Address: shipping,
 	}
 }
@@ -32,14 +34,16 @@ func (s ShippingAddress) isZero() bool {
 }
 
 type Billing struct {
+	ID      string
 	NIPCode string
 	Company string
 	Address address
 }
 
-func NewBilling(nipCode string, company string, city, address, postalCode, local string) Billing {
+func NewBilling(id, nipCode, company, city, address, postalCode, local string) Billing {
 	billingAddress := newAddress(city, address, postalCode, local)
 	return Billing{
+		ID:      id,
 		NIPCode: nipCode,
 		Company: company,
 		Address: billingAddress,

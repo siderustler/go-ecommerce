@@ -34,3 +34,6 @@ live/sync_assets:
 # start all 5 watch processes in parallel.
 live: 
 	make -j4 live/templ live/server live/tailwind live/sync_assets
+
+db:
+	docker run -it -e POSTGRES_PASSWORD=secret -p 5432:5432 postgres

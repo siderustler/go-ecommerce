@@ -5,9 +5,9 @@ import (
 
 	"github.com/a-h/templ"
 	"github.com/gofiber/fiber/v2"
-	"github.com/siderustler/go-ecommerce/basket"
 	"github.com/siderustler/go-ecommerce/customer"
 	"github.com/siderustler/go-ecommerce/product"
+	"github.com/siderustler/go-ecommerce/store"
 )
 
 type httpServer struct {
@@ -18,7 +18,7 @@ type httpServer struct {
 func NewHttpServer(
 	customerServices *customer.Services,
 	productServices *product.Services,
-	basketServices *basket.Services,
+	basketServices *store.Services,
 ) *httpServer {
 	h := &httpServer{
 		srv: fiber.New(),
