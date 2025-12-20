@@ -12,3 +12,11 @@ func ignoreCacheStaticFilesInDev(c *fiber.Ctx) error {
 	}
 	return c.Next()
 }
+
+func anonymoUser(c *fiber.Ctx) error {
+	sessionEstablished := c.Cookies("session") != ""
+	if !sessionEstablished {
+		c.Cookie(&fiber.Cookie{Name: "session", Value: "XD"})
+	}
+	return c.Next()
+}

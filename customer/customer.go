@@ -1,5 +1,7 @@
 package customer
 
-func (s Services) Customer(id string) (Customer, error) {
-	return Customer{}, nil
+import "context"
+
+func (s Services) Customer(ctx context.Context, id string) (Customer, error) {
+	return s.repository.CustomerByID(ctx, id)
 }

@@ -340,8 +340,9 @@ func (h handlers) postBillingInfo(c *fiber.Ctx) error {
 	}
 
 	customer := billingInfoViewModel.MapToDomainCustomer()
-	err = h.customerServices.CreateCustomer(c.Context(), userID, customer)
+	err = h.customerServices.CreateCustomer(c.Context(), customer)
 	if err != nil {
+		fmt.Printf("ERROR")
 		if isHTMXRequest(c) {
 			//FIXME
 			// DISPLAY TOAST OTN ERROR
@@ -412,7 +413,7 @@ func (h handlers) postShippingInfo(c *fiber.Ctx) error {
 		return render(c, views.ShippingInfo(shippingInfoViewModel))
 	}
 
-	err = h.customerServices.AddShippingAddress(c.Context(), shippingInfoViewModel.MapToDomainShippingAddress(uuid.NewString()))
+	err = h.customerServices.AddShippingAddress(c.Context(), id, shippingInfoViewModel.MapToDomainShippingAddress(uuid.NewString()))
 	if err != nil {
 		if isHTMXRequest(c) {
 			//FIXME -- toast on error

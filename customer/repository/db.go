@@ -94,54 +94,61 @@ func (r repository) CustomerByID(ctx context.Context, userID string) (customer.C
 	return cust, nil
 }
 
-func (r repository) UpsertCredentials(ctx context.Context, customer customer.Customer) error {
-	_, err := r.db.ExecContext(
-		ctx,
-		"INSERT INTO customers (customer_id, name, email, phone) VALUES ($1, $2, $3, $4) ON CONFLICT DO UPDATE SET name = $2, email = $3, phone = $4",
-		customer.ID, customer.Credentials.Name, customer.Credentials.Email, customer.Credentials.Phone,
-	)
-	if err != nil {
-		return fmt.Errorf("creating credentials: %w", err)
-	}
-	return nil
-}
-
-func (r repository) UpsertBillingAddress(ctx context.Context, userID string, billing customer.Billing) error {
+func (r repository) CreateCustomer(ctx context.Context, customer customer.Customer) error {
 	return RunInTx(ctx, r.db, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
 		_, err := r.db.ExecContext(
 			ctx,
-			`INSERT INTO billings (id, nip_code, company, city, address, postal_code, local) VALUES ($1, $2, $3, $4, $5, $6)
-			 ON CONFLICT DO UPDATE SET id = $7, nip_code = $1, company = $2, city = $3, address = $4, postal_code = $5, local = $6`,
-			billing.NIPCode,
-			billing.Company,
-			billing.Address.City,
-			billing.Address.Address,
-			billing.Address.PostalCode,
-			billing.Address.Local,
-			billing.ID,
+			`INSERT INTO billings (id, nip_code, company, city, address, postal_code, local) VALUES ($1, $2, $3, $4, $5, $6, $7)
+			 ON CONFLICT (id) DO UPDATE SET nip_code = $2, company = $3, city = $4, address = $5, postal_code = $6, local = $7`,
+			customer.Billing.ID,
+			customer.Billing.NIPCode,
+			customer.Billing.Company,
+			customer.Billing.Address.City,
+			customer.Billing.Address.Address,
+			customer.Billing.Address.PostalCode,
+			customer.Billing.Address.Local,
 		)
 		if err != nil {
-			return fmt.Errorf("creating credentials: %w", err)
+			return fmt.Errorf("creating repo billings: %w", err)
 		}
-
-		_, err = r.db.ExecContext(
-			ctx,
-			`UPDATE customers SET billing = $1 WHERE customer_id = $2`,
-			billing.ID, userID,
+		if !customer.Shipping.IsZero() {
+			_, err := r.db.ExecContext(
+				ctx,
+				`INSERT INTO shippings (id, city, address, postal_code, local) VALUES ($1, $2, $3, $4, $5)
+			 ON CONFLICT (id) DO UPDATE SET city = $2, address = $3, postal_code = $4, local = $5`,
+				customer.Shipping.ID,
+				customer.Shipping.Address.City,
+				customer.Shipping.Address.Address,
+				customer.Shipping.Address.PostalCode,
+				customer.Shipping.Address.Local,
+			)
+			if err != nil {
+				return fmt.Errorf("creating repo shippings: %w", err)
+			}
+		}
+		_, err = tx.ExecContext(ctx,
+			`INSERT INTO customers (customer_id, name, email, phone, billing, shipping) 
+		VALUES ($1, $2, $3, $4, $5, $6) 
+		ON CONFLICT (customer_id) DO UPDATE SET name = $2, email = $3, phone = $4, billing = $5, shipping = $6`,
+			customer.ID,
+			customer.Credentials.Name,
+			customer.Credentials.Email,
+			customer.Credentials.Phone,
+			customer.Billing.ID,
+			customer.Shipping.ID,
 		)
 		if err != nil {
-			return fmt.Errorf("creating credentials: %w", err)
+			return fmt.Errorf("creating repo customer: %w", err)
 		}
 		return nil
 	})
 }
 
-func (r repository) UpsertShippingAddress(ctx context.Context, userID string, shipping customer.ShippingAddress) error {
+func (r repository) UpdateShippingAddress(ctx context.Context, userID string, shipping customer.ShippingAddress) error {
 	return RunInTx(ctx, r.db, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
 		_, err := r.db.ExecContext(
 			ctx,
-			`INSERT INTO shippings (id, city, address, postal_code, local) VALUES ($1, $2, $3, $4, $5, $6)
-			 ON CONFLICT DO UPDATE SET id = $1, city = $2, address = $3, postal_code = $4, local = $5`,
+			`UPDATE shippings SET city = $2, address = $3, postal_code = $4, local = $5 WHERE id = $1`,
 			shipping.ID,
 			shipping.Address.City,
 			shipping.Address.Address,
@@ -162,17 +169,6 @@ func (r repository) UpsertShippingAddress(ctx context.Context, userID string, sh
 		}
 		return nil
 	})
-}
-func (r repository) CreateCredentials(ctx context.Context, customer customer.Customer) error {
-	_, err := r.db.ExecContext(
-		ctx,
-		"INSERT INTO customers (customer_id, name, email, phone) VALUES ($1, $2, $3, $4)",
-		customer.ID, customer.Credentials.Name, customer.Credentials.Email, customer.Credentials.Phone,
-	)
-	if err != nil {
-		return fmt.Errorf("creating credentials: %w", err)
-	}
-	return nil
 }
 
 func RunInTx(ctx context.Context, db *sql.DB, opts *sql.TxOptions, txFunc func(tx *sql.Tx) error) (err error) {

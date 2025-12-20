@@ -29,7 +29,7 @@ func NewShippingAddress(id, city, address, postalCode, local string) ShippingAdd
 	}
 }
 
-func (s ShippingAddress) isZero() bool {
+func (s ShippingAddress) IsZero() bool {
 	return s == ShippingAddress{}
 }
 
