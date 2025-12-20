@@ -25,7 +25,7 @@ func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
 		) ON CONFLICT DO NOTHING`,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("creating baskets table: %w", err)
+		return nil, fmt.Errorf("creating billings table: %w", err)
 	}
 	_, err = db.ExecContext(ctx,
 		`CREATE TABLE shippings (
@@ -37,7 +37,7 @@ func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
 		) ON CONFLICT DO NOTHING`,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("creating baskets table: %w", err)
+		return nil, fmt.Errorf("creating shippings table: %w", err)
 	}
 	_, err = db.ExecContext(ctx,
 		`CREATE TABLE users (
