@@ -13,54 +13,53 @@ type repository struct {
 }
 
 func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
-	return nil, nil
 	_, err := db.ExecContext(ctx,
-		`CREATE TABLE baskets (
+		`CREATE TABLE IF NOT EXISTS baskets (
 			id UUID PRIMARY KEY,
-			user_id UUID NOT NULL REFERENCES users(id),
-			last_modified_at TIMESTAMP NOT NULL,
-		) ON CONFLICT DO NOTHING`,
+			customer_id UUID NOT NULL REFERENCES customers(customer_id),
+			last_modified_at TIMESTAMP NOT NULL
+		)`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("creating baskets table: %w", err)
 	}
 	_, err = db.ExecContext(ctx,
-		`CREATE TABLE basket_products (
+		`CREATE TABLE IF NOT EXISTS basket_products (
 			id UUID NOT NULL REFERENCES baskets(id),
 			product_id UUID NOT NULL REFERENCES products(id),
 			count INT NOT NULL,
 			PRIMARY KEY(id, product_id)
-		) ON CONFLICT DO NOTHING`,
+		)`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("creating basket_products table: %w", err)
 	}
 	_, err = db.ExecContext(ctx,
-		`CREATE TABLE stock (
+		`CREATE TABLE IF NOT EXISTS stock (
 			product_id UUID NOT NULL REFERENCES products(id),
 			available_amount INT DEFAULT 0,
-			reserved_amount INT DEFAULT 0,
-		) ON CONFLICT DO NOTHING`,
+			reserved_amount INT DEFAULT 0
+		)`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("creating stock table: %w", err)
 	}
 	_, err = db.ExecContext(ctx,
-		`CREATE TABLE stock_reservations (
+		`CREATE TABLE IF NOT EXISTS stock_reservations (
 			basket_id UUID PRIMARY KEY REFERENCES baskets(id),
 			product_id UUID REFERENCES products(id),
 			amount INT DEFAULT 0,
-			reserved_at TIMESTAMP NOT NULL,
-		) ON CONFLICT DO NOTHING`,
+			reserved_at TIMESTAMP NOT NULL
+		)`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("creating stock_reservations table: %w", err)
 	}
 	_, err = db.ExecContext(ctx,
-		`CREATE TABLE checkouts (
+		`CREATE TABLE IF NOT EXISTS checkouts (
 			checkout_id UUID PRIMARY KEY REFERENCES baskets(id),
-			created_at TIMESTAMP NOT NULL,
-		) ON CONFLICT DO NOTHING`,
+			created_at TIMESTAMP NOT NULL
+		)`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("creating stock_reservations table: %w", err)
@@ -151,7 +150,7 @@ func (r repository) Checkout(ctx context.Context, checkoutID string) (store.Chec
 }
 
 func (r repository) BasketByUserID(ctx context.Context, userID string) (store.Basket, error) {
-	row := r.db.QueryRowContext(ctx, "SELECT basket_id FROM baskets WHERE user_id = $1", userID)
+	row := r.db.QueryRowContext(ctx, "SELECT basket_id FROM baskets WHERE customer_id = $1", userID)
 
 	var basketID string
 	err := row.Scan(&basketID)
@@ -159,7 +158,7 @@ func (r repository) BasketByUserID(ctx context.Context, userID string) (store.Ba
 		return store.Basket{}, fmt.Errorf("scanning basketID: %w", err)
 	}
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT b.id, b.user_id, b.last_modified_at, bp.count, bp.product_id FROM baskets AS b
+		SELECT b.id, b.customer_id, b.last_modified_at, bp.count, bp.product_id FROM baskets AS b
 		JOIN basket_products AS bp ON bp.id = b.id WHERE b.id = $1`,
 		basketID,
 	)
@@ -256,7 +255,7 @@ func (r repository) UpdateStockItem(
 func (r repository) UpsertBasket(ctx context.Context, basket store.Basket) error {
 	return RunInTx(ctx, r.db, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx,
-			`INSERT INTO baskets (id, user_id, last_modified_at) VALUES ($1, $2, $3)
+			`INSERT INTO baskets (id, customer_id, last_modified_at) VALUES ($1, $2, $3)
 			ON CONFLICT DO NOTHING`,
 			basket.ID, basket.CustomerID, basket.LastModifiedAt,
 		)

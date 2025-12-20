@@ -36,4 +36,4 @@ live:
 	make -j4 live/templ live/server live/tailwind live/sync_assets
 
 db:
-	docker run -it -e POSTGRES_PASSWORD=secret -p 5432:5432 postgres
+	docker run -it -e POSTGRES_USER=user -e POSTGRES_PASSWORD=secret -e POSTGRES_DB=ecomm -p 5432:5432 postgres

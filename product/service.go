@@ -1,7 +1,13 @@
 package product
 
-type Services struct{}
+type repository interface{}
 
-func NewServices() *Services {
-	return &Services{}
+type Services struct {
+	repository repository
+}
+
+func NewServices(repository repository) *Services {
+	return &Services{
+		repository: repository,
+	}
 }

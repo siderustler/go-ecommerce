@@ -5,9 +5,10 @@ package views
 
 //lint:file-ignore SA4006 This context is only used if a nested component is present.
 
+import "github.com/a-h/templ"
+import templruntime "github.com/a-h/templ/runtime"
+
 import (
-	"github.com/a-h/templ"
-	templruntime "github.com/a-h/templ/runtime"
 	"github.com/google/uuid"
 	"github.com/siderustler/go-ecommerce/customer"
 	"github.com/siderustler/go-ecommerce/ports/views/components"
@@ -118,9 +119,9 @@ func (s ShippingInfoViewModel) HasError() bool {
 		s.PostalCodeErr != ""
 }
 
-func (s ShippingInfoViewModel) MapToDomainShippingAddress() customer.ShippingAddress {
+func (s ShippingInfoViewModel) MapToDomainShippingAddress(id string) customer.ShippingAddress {
 	return customer.NewShippingAddress(
-		uuid.NewString(),
+		id,
 		s.City,
 		s.Address,
 		s.PostalCode,

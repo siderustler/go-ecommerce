@@ -14,7 +14,7 @@ type repository struct {
 
 func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
 	_, err := db.ExecContext(ctx,
-		`CREATE TABLE billings (
+		`CREATE TABLE IF NOT EXISTS billings (
 			id UUID PRIMARY KEY,
 			nip_code TEXT,
 			company TEXT,
@@ -22,35 +22,35 @@ func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
 			address TEXT NOT NULL,
 			postal_code TEXT NOT NULL,
 			local TEXT
-		) ON CONFLICT DO NOTHING`,
+		)`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("creating billings table: %w", err)
 	}
 	_, err = db.ExecContext(ctx,
-		`CREATE TABLE shippings (
+		`CREATE TABLE IF NOT EXISTS shippings (
 			id UUID PRIMARY KEY,
 			city TEXT NOT NULL,
 			address TEXT NOT NULL,
 			postal_code TEXT NOT NULL,
 			local TEXT
-		) ON CONFLICT DO NOTHING`,
+		)`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("creating shippings table: %w", err)
 	}
 	_, err = db.ExecContext(ctx,
-		`CREATE TABLE users (
-			user_id UUID PRIMARY KEY,
+		`CREATE TABLE IF NOT EXISTS customers (
+			customer_id UUID PRIMARY KEY,
 			name TEXT NOT NULL,
 			email TEXT NOT NULL,
 			phone TEXT NOT NULL,
 			billing UUID REFERENCES billings(id),
 			shipping UUID REFERENCES shippings(id)
-		) ON CONFLICT DO NOTHING`,
+		)`,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("creating users table: %w", err)
+		return nil, fmt.Errorf("creating customers table: %w", err)
 	}
 	return &repository{db: db}, nil
 }
@@ -59,13 +59,13 @@ func (r repository) CustomerByID(ctx context.Context, userID string) (customer.C
 	row := r.db.QueryRowContext(
 		ctx,
 		`SELECT 
-		c.user_id, c.name, c.email, c.phone, 
+		c.customer_id, c.name, c.email, c.phone, 
 		s.id, s.city, s.address, s.local, s.postal_code,
 		b.id, b.city, b.address, b.local, b.postal_code, b.nip_code, b.company
-		FROM users AS c 
+		FROM customers AS c 
 		LEFT JOIN billings AS b ON c.billing = b.id 
 		LEFT JOIN shippings AS s ON c.shipping = s.id
-		WHERE c.user_id = $1`,
+		WHERE c.customer_id = $1`,
 		userID,
 	)
 	var cust customer.Customer
@@ -97,7 +97,7 @@ func (r repository) CustomerByID(ctx context.Context, userID string) (customer.C
 func (r repository) UpsertCredentials(ctx context.Context, customer customer.Customer) error {
 	_, err := r.db.ExecContext(
 		ctx,
-		"INSERT INTO users (user_id, name, email, phone) VALUES ($1, $2, $3, $4) ON CONFLICT DO UPDATE SET name = $2, email = $3, phone = $4",
+		"INSERT INTO customers (customer_id, name, email, phone) VALUES ($1, $2, $3, $4) ON CONFLICT DO UPDATE SET name = $2, email = $3, phone = $4",
 		customer.ID, customer.Credentials.Name, customer.Credentials.Email, customer.Credentials.Phone,
 	)
 	if err != nil {
@@ -126,7 +126,7 @@ func (r repository) UpsertBillingAddress(ctx context.Context, userID string, bil
 
 		_, err = r.db.ExecContext(
 			ctx,
-			`UPDATE users SET billing = $1 WHERE user_id = $2`,
+			`UPDATE customers SET billing = $1 WHERE customer_id = $2`,
 			billing.ID, userID,
 		)
 		if err != nil {
@@ -154,7 +154,7 @@ func (r repository) UpsertShippingAddress(ctx context.Context, userID string, sh
 
 		_, err = r.db.ExecContext(
 			ctx,
-			`UPDATE users SET shipping = $1 WHERE user_id = $2`,
+			`UPDATE customers SET shipping = $1 WHERE customer_id = $2`,
 			shipping.ID, userID,
 		)
 		if err != nil {
@@ -166,7 +166,7 @@ func (r repository) UpsertShippingAddress(ctx context.Context, userID string, sh
 func (r repository) CreateCredentials(ctx context.Context, customer customer.Customer) error {
 	_, err := r.db.ExecContext(
 		ctx,
-		"INSERT INTO users (user_id, name, email, phone) VALUES ($1, $2, $3, $4)",
+		"INSERT INTO customers (customer_id, name, email, phone) VALUES ($1, $2, $3, $4)",
 		customer.ID, customer.Credentials.Name, customer.Credentials.Email, customer.Credentials.Phone,
 	)
 	if err != nil {

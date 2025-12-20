@@ -6,6 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/go-querystring/query"
+	"github.com/google/uuid"
 	"github.com/siderustler/go-ecommerce/customer"
 	"github.com/siderustler/go-ecommerce/ports/views"
 	"github.com/siderustler/go-ecommerce/ports/views/components"
@@ -411,7 +412,7 @@ func (h handlers) postShippingInfo(c *fiber.Ctx) error {
 		return render(c, views.ShippingInfo(shippingInfoViewModel))
 	}
 
-	err = h.customerServices.AddShippingAddress(c.Context(), shippingInfoViewModel.MapToDomainShippingAddress())
+	err = h.customerServices.AddShippingAddress(c.Context(), shippingInfoViewModel.MapToDomainShippingAddress(uuid.NewString()))
 	if err != nil {
 		if isHTMXRequest(c) {
 			//FIXME -- toast on error
