@@ -61,10 +61,6 @@ func (h handlers) getProducts(c *fiber.Ctx) error {
 
 	productsListViewModel.Align(products, filterViewModel, navBarViewModel, page, maxPagesBoundary, encodedFilter)
 
-	if !isHTMXRequest(c) {
-		return render(c, views.Products(productsListViewModel))
-	}
-
 	productListUrl := fmt.Sprintf("/products/%d?%s", page, encodedFilter)
 	isAlreadyOnProductList := strings.HasSuffix(c.Get("HX-Current-Url"), productListUrl)
 
@@ -77,10 +73,10 @@ func (h handlers) getProducts(c *fiber.Ctx) error {
 	}
 
 	if productsListViewModel.DecrementBasketCount || productsListViewModel.IncrementBasketCount {
-		return render(c, views.Products(productsListViewModel), "basket-adder-"+productsListViewModel.ChangeCountID)
+		return renderFragmentOrView(c, views.Products(productsListViewModel), "basket-adder-"+productsListViewModel.ChangeCountID)
 	}
 
-	return render(c, views.Products(productsListViewModel), views.ProductListFragment)
+	return renderFragmentOrView(c, views.Products(productsListViewModel), views.ProductListFragment)
 }
 
 func (h handlers) getProductDetails(c *fiber.Ctx) error {
@@ -105,10 +101,6 @@ func (h handlers) getProductDetails(c *fiber.Ctx) error {
 
 	navBarViewModel.Align(basket.Products)
 	productDetailViewModel.Align(productDetails, navBarViewModel)
-
-	if !isHTMXRequest(c) {
-		return render(c, views.ProductDetails(productDetailViewModel))
-	}
 
 	var fragments []any
 	toggleLocalInfo := c.Query("local") != ""
@@ -139,9 +131,9 @@ func (h handlers) getProductDetails(c *fiber.Ctx) error {
 	isOnProductDetails := strings.Contains(c.Get("Hx-Current-Url"), "/products/details/")
 
 	if !isOnProductDetails {
-		return render(c, views.ProductDetails(productDetailViewModel), views.ProductDetailFragment)
+		return renderFragmentOrView(c, views.ProductDetails(productDetailViewModel), views.ProductDetailFragment)
 	}
-	return render(c, views.ProductDetails(productDetailViewModel), fragments...)
+	return renderFragmentOrView(c, views.ProductDetails(productDetailViewModel), fragments...)
 }
 
 func (h handlers) getFilterProducts(c *fiber.Ctx) error {
@@ -150,9 +142,6 @@ func (h handlers) getFilterProducts(c *fiber.Ctx) error {
 	_ = c.QueryParser(&filterViewModel)
 	filterViewModel.Validate()
 
-	if !isHTMXRequest(c) {
-		return render(c, views.ProductsFilter(filterViewModel))
-	}
 	currentUrl, ok := c.GetReqHeaders()["Hx-Current-Url"]
 	isOnFilterPageAlready := ok && len(currentUrl) >= 1 && strings.HasSuffix(currentUrl[0], "/filter/products")
 	if !isOnFilterPageAlready {
@@ -164,7 +153,7 @@ func (h handlers) getFilterProducts(c *fiber.Ctx) error {
 		}
 		c.Append("HX-Push-Url", url)
 	}
-	return render(c, views.ProductsFilter(filterViewModel), views.ProductsFilterFragment)
+	return renderFragmentOrView(c, views.ProductsFilter(filterViewModel), views.ProductsFilterFragment)
 }
 
 func (h handlers) filterProductsPriceValidate(c *fiber.Ctx) error {
@@ -181,7 +170,7 @@ func (h handlers) filterProductsPriceValidate(c *fiber.Ctx) error {
 		c.Append("Hx-Trigger", fmt.Sprintf(`{"preserveFilterInputFocus":{"triggerElement" : "%s"}}`, trigger[0]))
 	}
 	preserveFocus()
-	return render(c, views.ProductsFilter(filterViewModel), views.PriceFilterFragment)
+	return renderFragmentOrView(c, views.ProductsFilter(filterViewModel), views.PriceFilterFragment)
 }
 
 func (h handlers) getDashboard(c *fiber.Ctx) error {
@@ -200,16 +189,13 @@ func (h handlers) getDashboard(c *fiber.Ctx) error {
 		return c.Redirect("/")
 	}
 	navBarViewModel := components.NewNavBarViewModel("", len(basket.Products))
-	if !isHTMXRequest(c) {
-		return render(c, views.Dashboard(views.NewDashboardViewModel(promos, slide, promotionPage, navBarViewModel)))
-	}
 
 	isPromotionRequest := c.Query("promotions") != ""
 	if isPromotionRequest {
-		return render(c, views.Dashboard(views.NewDashboardViewModel(promos, slide, promotionPage, navBarViewModel)), views.PromotedProductSelectorFragment)
+		return renderFragmentOrView(c, views.Dashboard(views.NewDashboardViewModel(promos, slide, promotionPage, navBarViewModel)), views.PromotedProductSelectorFragment)
 	}
 
-	return render(c, views.Dashboard(views.NewDashboardViewModel(promos, slide, promotionPage, navBarViewModel)), views.DashboardSelectorFragment)
+	return renderFragmentOrView(c, views.Dashboard(views.NewDashboardViewModel(promos, slide, promotionPage, navBarViewModel)), views.DashboardSelectorFragment)
 }
 
 func (h handlers) getBasket(c *fiber.Ctx) error {
@@ -231,11 +217,7 @@ func (h handlers) getBasket(c *fiber.Ctx) error {
 	}
 	basketViewModel := views.NewBasketViewModel(basketItems, navBarViewModel)
 
-	if !isHTMXRequest(c) {
-		return render(c, views.Basket(basketViewModel))
-	}
-
-	return render(c, views.Basket(basketViewModel), views.BasketFragment)
+	return renderFragmentOrView(c, views.Basket(basketViewModel), views.BasketFragment)
 }
 
 func (h handlers) updateBasket(c *fiber.Ctx) error {
@@ -246,11 +228,11 @@ func (h handlers) updateBasket(c *fiber.Ctx) error {
 
 	err := h.basketServices.UpdateBasketProduct(c.Context(), userID, store.NewBasketProduct(basketViewModel.ChangeCountID, basketViewModel.Count))
 	if err != nil {
-		return render(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
+		return renderFragmentOrView(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
 	}
 	basket, err := h.basketServices.BasketByUserID(c.Context(), userID)
 	if err != nil {
-		return render(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
+		return renderFragmentOrView(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
 	}
 	//FIXME -- create mapper
 	basketItems := make([]views.BasketItemViewModel, 0, len(basket.Products))
@@ -260,16 +242,14 @@ func (h handlers) updateBasket(c *fiber.Ctx) error {
 	}
 	products, err := h.productServices.ProductsByIDs(productIds)
 	if err != nil {
-		return render(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
+		return renderFragmentOrView(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
 	}
 	for _, product := range products {
 		basketItems = append(basketItems, views.NewBasketItemViewModel(product, basket.Products[store.ProductID(product.ID)].Count))
 	}
 	basketViewModel.Align(basketItems, components.NavBarViewModel{})
-	if isHTMXRequest(c) {
-		return render(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
-	}
-	return c.Redirect("/basket")
+
+	return renderFragmentOrRedirect(c, views.Basket(basketViewModel), "/basket", views.BasketItemFragment(basketViewModel.ChangeCountID))
 }
 
 func (h handlers) addItemToBasket(c *fiber.Ctx) error {
@@ -292,10 +272,8 @@ func (h handlers) addItemToBasket(c *fiber.Ctx) error {
 		//FIXME
 		return c.Redirect(basketAdd.Redirect)
 	}
-	if isHTMXRequest(c) {
-		return render(c, components.NavBar(components.NewNavBarViewModel("", len(basket.Products))), components.BasketCountFragment)
-	}
-	return c.Redirect(basketAdd.Redirect)
+
+	return renderFragmentOrRedirect(c, components.NavBar(components.NewNavBarViewModel("", len(basket.Products))), basketAdd.Redirect, components.BasketCountFragment)
 }
 
 func (h handlers) getBillingInfo(c *fiber.Ctx) error {
@@ -311,10 +289,8 @@ func (h handlers) getBillingInfo(c *fiber.Ctx) error {
 	}
 	navBarViewModel.Align(basket.Products)
 	billingInfoViewModel.Align(navBarViewModel)
-	if isHTMXRequest(c) {
-		return render(c, views.BillingInfo(billingInfoViewModel), views.BillingInfoFragment)
-	}
-	return render(c, views.BillingInfo(billingInfoViewModel))
+
+	return renderFragmentOrView(c, views.BillingInfo(billingInfoViewModel), views.BillingInfoFragment)
 }
 
 func (h handlers) postBillingInfo(c *fiber.Ctx) error {
@@ -333,42 +309,35 @@ func (h handlers) postBillingInfo(c *fiber.Ctx) error {
 	billingInfoViewModel.Align(navBarViewModel)
 
 	if billingInfoViewModel.HasError() {
-		if isHTMXRequest(c) {
-			return render(c, views.BillingInfo(billingInfoViewModel), views.BillingInfoFragment)
-		}
-		return render(c, views.BillingInfo(billingInfoViewModel))
+		return renderFragmentOrView(c, views.BillingInfo(billingInfoViewModel), views.BillingInfoFragment)
 	}
 
-	customer := billingInfoViewModel.MapToDomainCustomer()
+	customer, err := billingInfoViewModel.MapToDomainCustomer()
+	if err != nil {
+		fmt.Printf("error occured creating customer: %+v", err)
+		return renderFragmentOrView(c, views.BillingInfo(billingInfoViewModel), views.BillingInfoFragment)
+	}
 	err = h.customerServices.CreateCustomer(c.Context(), customer)
 	if err != nil {
 		fmt.Printf("ERROR")
-		if isHTMXRequest(c) {
-			//FIXME
-			// DISPLAY TOAST OTN ERROR
-			fmt.Printf("error occured creating customer: %+v", err)
-			return render(c, views.BillingInfo(billingInfoViewModel), views.BillingInfoFragment)
-		}
-		return render(c, views.BillingInfo(billingInfoViewModel))
+		//FIXME
+		// DISPLAY TOAST OTN ERROR
+		fmt.Printf("error occured creating customer: %+v", err)
+		return renderFragmentOrView(c, views.BillingInfo(billingInfoViewModel), views.BillingInfoFragment)
 	}
 
 	if !billingInfoViewModel.UseBillingAddressAsShipping {
 		var shippingInfoViewModel views.ShippingInfoViewModel
 		shippingInfoViewModel.Align(navBarViewModel)
 		addShippingAddressUrl := "/basket/customer/shipping"
-		if isHTMXRequest(c) {
-			c.Append("Hx-Push-Url", addShippingAddressUrl)
-			return render(c, views.ShippingInfo(shippingInfoViewModel), views.ShippingInfoFragment)
-		}
-		return c.Redirect(addShippingAddressUrl)
+
+		c.Append("Hx-Push-Url", addShippingAddressUrl)
+		return renderFragmentOrRedirect(c, views.ShippingInfo(shippingInfoViewModel), addShippingAddressUrl, views.ShippingInfoFragment)
 	}
 	paymentUrl := "/basket/checkout"
-	if isHTMXRequest(c) {
-		c.Append("Hx-Push-Url", paymentUrl)
-		return render(c, views.Checkout(views.NewCheckoutViewModel(false)), views.CheckoutFragment)
-	}
-	//FIXME -- redirect to payment
-	return c.Redirect(paymentUrl)
+	c.Append("Hx-Push-Url", paymentUrl)
+
+	return renderFragmentOrRedirect(c, views.Checkout(views.NewCheckoutViewModel(false)), paymentUrl, views.CheckoutFragment)
 }
 
 func (h handlers) getShippingInfo(c *fiber.Ctx) error {
@@ -385,10 +354,7 @@ func (h handlers) getShippingInfo(c *fiber.Ctx) error {
 	navBarViewModel.Align(basket.Products)
 	shippingInfoViewModel.Align(navBarViewModel)
 
-	if isHTMXRequest(c) {
-		return render(c, views.ShippingInfo(shippingInfoViewModel), views.ShippingInfoFragment)
-	}
-	return render(c, views.ShippingInfo(shippingInfoViewModel))
+	return renderFragmentOrView(c, views.ShippingInfo(shippingInfoViewModel), views.ShippingInfoFragment)
 }
 
 func (h handlers) postShippingInfo(c *fiber.Ctx) error {
@@ -407,26 +373,21 @@ func (h handlers) postShippingInfo(c *fiber.Ctx) error {
 	shippingInfoViewModel.Align(navBarViewModel)
 
 	if shippingInfoViewModel.HasError() {
-		if isHTMXRequest(c) {
-			return render(c, views.ShippingInfo(shippingInfoViewModel), views.ShippingInfoFragment)
-		}
-		return render(c, views.ShippingInfo(shippingInfoViewModel))
+		return renderFragmentOrView(c, views.ShippingInfo(shippingInfoViewModel), views.ShippingInfoFragment)
 	}
-
-	err = h.customerServices.AddShippingAddress(c.Context(), id, shippingInfoViewModel.MapToDomainShippingAddress(uuid.NewString()))
+	shipping, err := shippingInfoViewModel.MapToDomainShippingAddress(uuid.NewString())
 	if err != nil {
-		if isHTMXRequest(c) {
-			//FIXME -- toast on error
-			return render(c, views.ShippingInfo(shippingInfoViewModel), views.ShippingInfoFragment)
-		}
-		return render(c, views.ShippingInfo(shippingInfoViewModel))
+		return renderFragmentOrView(c, views.ShippingInfo(shippingInfoViewModel), views.ShippingInfoFragment)
+	}
+	err = h.customerServices.AddShippingAddress(c.Context(), id, shipping)
+	if err != nil {
+		//FIXME -- toast on error
+		return renderFragmentOrView(c, views.ShippingInfo(shippingInfoViewModel), views.ShippingInfoFragment)
 	}
 	paymentUrl := "/basket/checkout"
-	if isHTMXRequest(c) {
-		c.Append("Hx-Push-Url", paymentUrl)
-		return render(c, views.Checkout(views.NewCheckoutViewModel(false)), views.CheckoutFragment)
-	}
-	return c.Redirect(paymentUrl)
+	c.Append("Hx-Push-Url", paymentUrl)
+
+	return renderFragmentOrRedirect(c, views.Checkout(views.NewCheckoutViewModel(false)), paymentUrl, views.CheckoutFragment)
 }
 
 func (h handlers) getCheckout(c *fiber.Ctx) error {
@@ -436,10 +397,7 @@ func (h handlers) getCheckout(c *fiber.Ctx) error {
 	checkoutFinalized := err == nil && s.Status == "complete"
 	checkoutViewModel := views.NewCheckoutViewModel(checkoutFinalized)
 
-	if isHTMXRequest(c) {
-		return render(c, views.Checkout(checkoutViewModel), views.CheckoutFragment)
-	}
-	return render(c, views.Checkout(checkoutViewModel))
+	return renderFragmentOrView(c, views.Checkout(checkoutViewModel), views.CheckoutFragment)
 }
 
 func (h handlers) createCheckout(c *fiber.Ctx) error {

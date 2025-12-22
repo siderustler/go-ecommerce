@@ -55,14 +55,20 @@ func (h *httpServer) Run(ctx context.Context, addr string) error {
 	return h.srv.Listen(addr)
 }
 
-func render(c *fiber.Ctx, component templ.Component, fragments ...any) error {
+func renderFragmentOrView(c *fiber.Ctx, component templ.Component, fragments ...any) error {
 	c.Set("Content-Type", "text/html")
-	if len(fragments) > 0 {
+	if len(fragments) > 0 && isHTMXRequest(c) {
 		return templ.RenderFragments(c.Context(), c.Response().BodyWriter(), component, fragments...)
 	}
 	return component.Render(c.Context(), c.Response().BodyWriter())
 }
-
+func renderFragmentOrRedirect(c *fiber.Ctx, component templ.Component, redirect string, fragments ...any) error {
+	c.Set("Content-Type", "text/html")
+	if len(fragments) > 0 && isHTMXRequest(c) {
+		return templ.RenderFragments(c.Context(), c.Response().BodyWriter(), component, fragments...)
+	}
+	return c.Redirect(redirect)
+}
 func isHTMXRequest(c *fiber.Ctx) bool {
 	_, ok := c.GetReqHeaders()["Hx-Request"]
 	return ok
