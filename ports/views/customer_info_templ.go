@@ -9,6 +9,7 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
+	"errors"
 	"github.com/google/uuid"
 	"github.com/siderustler/go-ecommerce/customer"
 	"github.com/siderustler/go-ecommerce/ports/views/components"
@@ -57,20 +58,9 @@ func (c *BillingInfoViewModel) Align(navBarViewModel components.NavBarViewModel)
 	c.navBarViewModel = navBarViewModel
 }
 
-func (c BillingInfoViewModel) HasError() bool {
-	return c.AddressErr != "" ||
-		c.CityErr != "" ||
-		c.CompanyErr != "" ||
-		c.EmailErr != "" ||
-		c.LocalNumberErr != "" ||
-		c.NameErr != "" ||
-		c.NipCodeErr != "" ||
-		c.PhoneErr != "" ||
-		c.PostalCodeErr != ""
-}
-
-func (c BillingInfoViewModel) MapToDomainCustomer() customer.Customer {
-	billing := customer.NewBilling(
+func (c BillingInfoViewModel) ParseToDomainCustomer() (customer.Customer, error) {
+	var joinErr error
+	billing, err := customer.NewBilling(
 		uuid.NewString(),
 		c.NipCode,
 		c.Company,
@@ -79,17 +69,56 @@ func (c BillingInfoViewModel) MapToDomainCustomer() customer.Customer {
 		c.PostalCode,
 		c.LocalNumber,
 	)
+	if err != nil {
+		joinErr = errors.Join(err)
+	}
 	var shipping customer.ShippingAddress
 	if c.UseBillingAddressAsShipping {
-		shipping = customer.NewShippingAddress(uuid.NewString(), c.City, c.Address, c.PostalCode, c.LocalNumber)
+		shipping, err = customer.NewShippingAddress(uuid.NewString(), c.City, c.Address, c.PostalCode, c.LocalNumber)
+		if err != nil {
+			joinErr = errors.Join(joinErr, err)
+		}
 	}
-	credentials := customer.NewCredentials(c.Name, c.Email, c.Phone)
+	credentials, err := customer.NewCredentials(c.Name, c.Email, c.Phone)
+	if err != nil {
+		joinErr = errors.Join(joinErr, err)
+	}
 	return customer.NewCustomer(
 		uuid.NewString(),
 		credentials,
 		billing,
 		shipping,
-	)
+	), joinErr
+}
+
+func (c *BillingInfoViewModel) MapDomainErrorToViewModelError(err error) {
+	if errors.Is(err, customer.ErrNameEmpty) {
+		c.NameErr = customer.ErrNameEmpty.Error()
+	}
+	if errors.Is(err, customer.ErrAddressEmpty) {
+		c.AddressErr = customer.ErrAddressEmpty.Error()
+	}
+	if errors.Is(err, customer.ErrCityEmpty) {
+		c.CityErr = customer.ErrCityEmpty.Error()
+	}
+	if errors.Is(err, customer.ErrCompanyNameEmpty) {
+		c.CompanyErr = customer.ErrCompanyNameEmpty.Error()
+	}
+	if errors.Is(err, customer.ErrEmailEmpty) {
+		c.EmailErr = customer.ErrEmailEmpty.Error()
+	}
+	if errors.Is(err, customer.ErrLocalNumberEmpty) {
+		c.LocalNumberErr = customer.ErrLocalNumberEmpty.Error()
+	}
+	if errors.Is(err, customer.ErrNipCodeEmpty) {
+		c.NipCodeErr = customer.ErrNipCodeEmpty.Error()
+	}
+	if errors.Is(err, customer.ErrPhoneEmpty) {
+		c.PhoneErr = customer.ErrPhoneEmpty.Error()
+	}
+	if errors.Is(err, customer.ErrPostalCodeEmpty) {
+		c.PostalCodeErr = customer.ErrPostalCodeEmpty.Error()
+	}
 }
 
 type ShippingInfoViewModel struct {
@@ -112,14 +141,7 @@ func (s *ShippingInfoViewModel) Align(navBarViewModel components.NavBarViewModel
 	s.navBarViewModel = navBarViewModel
 }
 
-func (s ShippingInfoViewModel) HasError() bool {
-	return s.AddressErr != "" ||
-		s.CityErr != "" ||
-		s.LocalNumberErr != "" ||
-		s.PostalCodeErr != ""
-}
-
-func (s ShippingInfoViewModel) MapToDomainShippingAddress(id string) customer.ShippingAddress {
+func (s ShippingInfoViewModel) ParseToDomainShippingAddress(id string) (customer.ShippingAddress, error) {
 	return customer.NewShippingAddress(
 		id,
 		s.City,
@@ -127,6 +149,21 @@ func (s ShippingInfoViewModel) MapToDomainShippingAddress(id string) customer.Sh
 		s.PostalCode,
 		s.LocalNumber,
 	)
+}
+
+func (s *ShippingInfoViewModel) MapDomainErrorToViewModelError(err error) {
+	if errors.Is(err, customer.ErrAddressEmpty) {
+		s.AddressErr = customer.ErrAddressEmpty.Error()
+	}
+	if errors.Is(err, customer.ErrCityEmpty) {
+		s.CityErr = customer.ErrCityEmpty.Error()
+	}
+	if errors.Is(err, customer.ErrLocalNumberEmpty) {
+		s.LocalNumberErr = customer.ErrLocalNumberEmpty.Error()
+	}
+	if errors.Is(err, customer.ErrPostalCodeEmpty) {
+		s.PostalCodeErr = customer.ErrPostalCodeEmpty.Error()
+	}
 }
 
 func BillingInfo(viewModel BillingInfoViewModel) templ.Component {
@@ -244,7 +281,7 @@ func BillingInfo(viewModel BillingInfoViewModel) templ.Component {
 							Value:          viewModel.NipCode,
 							Placeholder:    "Kod NIP...",
 							ErrorElementID: "nip-err",
-							Error:          viewModel.NipCode,
+							Error:          viewModel.NipCodeErr,
 							InputName:      "nip",
 						},
 						{
@@ -541,7 +578,7 @@ func form(action, method string) templ.Component {
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(action)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 296, Col: 18}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 333, Col: 18}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
@@ -554,7 +591,7 @@ func form(action, method string) templ.Component {
 		var templ_7745c5c3_Var14 templ.SafeURL
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinURLErrs(action)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 298, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 335, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
@@ -567,7 +604,7 @@ func form(action, method string) templ.Component {
 		var templ_7745c5c3_Var15 string
 		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(method)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 299, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 336, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 		if templ_7745c5c3_Err != nil {
@@ -617,7 +654,7 @@ func submitButton(content string) templ.Component {
 		var templ_7745c5c3_Var17 string
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(content)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 317, Col: 11}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 354, Col: 11}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
@@ -706,52 +743,49 @@ func billingCheckbox(value string, checked bool, label string) templ.Component {
 		var templ_7745c5c3_Var20 string
 		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 334, Col: 15}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 371, Col: 15}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\" type=\"checkbox\" name=\"sort\" checked=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\" type=\"checkbox\" name=\"sort\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if checked {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, " checked")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, " class=\"w-6 h-6 ml-4\"> <label for=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var21 string
-		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(checked)
+		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 337, Col: 20}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 379, Col: 20}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\" class=\"w-6 h-6 ml-4\"> <label for=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "\" class=\"text-tertiary-900\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var22 string
-		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(value)
+		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 340, Col: 20}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 379, Col: 56}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\" class=\"text-tertiary-900\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var23 string
-		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(label)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/customer_info.templ`, Line: 340, Col: 56}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</label></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</label></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

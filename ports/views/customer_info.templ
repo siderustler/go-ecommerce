@@ -1,6 +1,7 @@
 package views
 
 import (
+	"errors"
 	"github.com/google/uuid"
 	"github.com/siderustler/go-ecommerce/customer"
 	"github.com/siderustler/go-ecommerce/ports/views/components"
@@ -49,20 +50,9 @@ func (c *BillingInfoViewModel) Align(navBarViewModel components.NavBarViewModel)
 	c.navBarViewModel = navBarViewModel
 }
 
-func (c BillingInfoViewModel) HasError() bool {
-	return c.AddressErr != "" ||
-		c.CityErr != "" ||
-		c.CompanyErr != "" ||
-		c.EmailErr != "" ||
-		c.LocalNumberErr != "" ||
-		c.NameErr != "" ||
-		c.NipCodeErr != "" ||
-		c.PhoneErr != "" ||
-		c.PostalCodeErr != ""
-}
-
-func (c BillingInfoViewModel) MapToDomainCustomer() customer.Customer {
-	billing := customer.NewBilling(
+func (c BillingInfoViewModel) ParseToDomainCustomer() (customer.Customer, error) {
+	var joinErr error
+	billing, err := customer.NewBilling(
 		uuid.NewString(),
 		c.NipCode,
 		c.Company,
@@ -71,17 +61,56 @@ func (c BillingInfoViewModel) MapToDomainCustomer() customer.Customer {
 		c.PostalCode,
 		c.LocalNumber,
 	)
+	if err != nil {
+		joinErr = errors.Join(err)
+	}
 	var shipping customer.ShippingAddress
 	if c.UseBillingAddressAsShipping {
-		shipping = customer.NewShippingAddress(uuid.NewString(), c.City, c.Address, c.PostalCode, c.LocalNumber)
+		shipping, err = customer.NewShippingAddress(uuid.NewString(), c.City, c.Address, c.PostalCode, c.LocalNumber)
+		if err != nil {
+			joinErr = errors.Join(joinErr, err)
+		}
 	}
-	credentials := customer.NewCredentials(c.Name, c.Email, c.Phone)
+	credentials, err := customer.NewCredentials(c.Name, c.Email, c.Phone)
+	if err != nil {
+		joinErr = errors.Join(joinErr, err)
+	}
 	return customer.NewCustomer(
 		uuid.NewString(),
 		credentials,
 		billing,
 		shipping,
-	)
+	), joinErr
+}
+
+func (c *BillingInfoViewModel) MapDomainErrorToViewModelError(err error) {
+	if errors.Is(err, customer.ErrNameEmpty) {
+		c.NameErr = customer.ErrNameEmpty.Error()
+	}
+	if errors.Is(err, customer.ErrAddressEmpty) {
+		c.AddressErr = customer.ErrAddressEmpty.Error()
+	}
+	if errors.Is(err, customer.ErrCityEmpty) {
+		c.CityErr = customer.ErrCityEmpty.Error()
+	}
+	if errors.Is(err, customer.ErrCompanyNameEmpty) {
+		c.CompanyErr = customer.ErrCompanyNameEmpty.Error()
+	}
+	if errors.Is(err, customer.ErrEmailEmpty) {
+		c.EmailErr = customer.ErrEmailEmpty.Error()
+	}
+	if errors.Is(err, customer.ErrLocalNumberEmpty) {
+		c.LocalNumberErr = customer.ErrLocalNumberEmpty.Error()
+	}
+	if errors.Is(err, customer.ErrNipCodeEmpty) {
+		c.NipCodeErr = customer.ErrNipCodeEmpty.Error()
+	}
+	if errors.Is(err, customer.ErrPhoneEmpty) {
+		c.PhoneErr = customer.ErrPhoneEmpty.Error()
+	}
+	if errors.Is(err, customer.ErrPostalCodeEmpty) {
+		c.PostalCodeErr = customer.ErrPostalCodeEmpty.Error()
+	}
 }
 
 type ShippingInfoViewModel struct {
@@ -104,14 +133,7 @@ func (s *ShippingInfoViewModel) Align(navBarViewModel components.NavBarViewModel
 	s.navBarViewModel = navBarViewModel
 }
 
-func (s ShippingInfoViewModel) HasError() bool {
-	return s.AddressErr != "" ||
-		s.CityErr != "" ||
-		s.LocalNumberErr != "" ||
-		s.PostalCodeErr != ""
-}
-
-func (s ShippingInfoViewModel) MapToDomainShippingAddress(id string) customer.ShippingAddress {
+func (s ShippingInfoViewModel) ParseToDomainShippingAddress(id string) (customer.ShippingAddress, error) {
 	return customer.NewShippingAddress(
 		id,
 		s.City,
@@ -119,6 +141,21 @@ func (s ShippingInfoViewModel) MapToDomainShippingAddress(id string) customer.Sh
 		s.PostalCode,
 		s.LocalNumber,
 	)
+}
+
+func (s *ShippingInfoViewModel) MapDomainErrorToViewModelError(err error) {
+	if errors.Is(err, customer.ErrAddressEmpty) {
+		s.AddressErr = customer.ErrAddressEmpty.Error()
+	}
+	if errors.Is(err, customer.ErrCityEmpty) {
+		s.CityErr = customer.ErrCityEmpty.Error()
+	}
+	if errors.Is(err, customer.ErrLocalNumberEmpty) {
+		s.LocalNumberErr = customer.ErrLocalNumberEmpty.Error()
+	}
+	if errors.Is(err, customer.ErrPostalCodeEmpty) {
+		s.PostalCodeErr = customer.ErrPostalCodeEmpty.Error()
+	}
 }
 
 templ BillingInfo(viewModel BillingInfoViewModel) {
@@ -177,7 +214,7 @@ templ BillingInfo(viewModel BillingInfoViewModel) {
 							Value:          viewModel.NipCode,
 							Placeholder:    "Kod NIP...",
 							ErrorElementID: "nip-err",
-							Error:          viewModel.NipCode,
+							Error:          viewModel.NipCodeErr,
 							InputName:      "nip",
 						},
 						{
@@ -334,7 +371,9 @@ templ billingCheckbox(value string, checked bool, label string) {
 			name={ value }
 			type="checkbox"
 			name="sort"
-			checked={ checked }
+			if checked {
+				checked
+			}
 			class="w-6 h-6 ml-4"
 		/>
 		<label for={ value } class="text-tertiary-900">{ label }</label>
