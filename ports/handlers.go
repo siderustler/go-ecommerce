@@ -307,16 +307,13 @@ func (h handlers) postBillingInfo(c *fiber.Ctx) error {
 	}
 	navBarViewModel.Align(basket.Products)
 	billingInfoViewModel.Align(navBarViewModel)
-
-	if billingInfoViewModel.HasError() {
-		return renderFragmentOrView(c, views.BillingInfo(billingInfoViewModel), views.BillingInfoFragment)
-	}
-
-	customer, err := billingInfoViewModel.MapToDomainCustomer()
+	customer, err := billingInfoViewModel.ParseToDomainCustomer()
 	if err != nil {
 		fmt.Printf("error occured creating customer: %+v", err)
+		billingInfoViewModel.MapDomainErrorToViewModelError(err)
 		return renderFragmentOrView(c, views.BillingInfo(billingInfoViewModel), views.BillingInfoFragment)
 	}
+
 	err = h.customerServices.CreateCustomer(c.Context(), customer)
 	if err != nil {
 		fmt.Printf("ERROR")
@@ -325,7 +322,7 @@ func (h handlers) postBillingInfo(c *fiber.Ctx) error {
 		fmt.Printf("error occured creating customer: %+v", err)
 		return renderFragmentOrView(c, views.BillingInfo(billingInfoViewModel), views.BillingInfoFragment)
 	}
-
+	c.Cookie(&fiber.Cookie{Name: "userID", Value: customer.ID})
 	if !billingInfoViewModel.UseBillingAddressAsShipping {
 		var shippingInfoViewModel views.ShippingInfoViewModel
 		shippingInfoViewModel.Align(navBarViewModel)
@@ -372,15 +369,14 @@ func (h handlers) postShippingInfo(c *fiber.Ctx) error {
 	navBarViewModel.Align(basket.Products)
 	shippingInfoViewModel.Align(navBarViewModel)
 
-	if shippingInfoViewModel.HasError() {
-		return renderFragmentOrView(c, views.ShippingInfo(shippingInfoViewModel), views.ShippingInfoFragment)
-	}
-	shipping, err := shippingInfoViewModel.MapToDomainShippingAddress(uuid.NewString())
+	shipping, err := shippingInfoViewModel.ParseToDomainShippingAddress(uuid.NewString())
 	if err != nil {
+		shippingInfoViewModel.MapDomainErrorToViewModelError(err)
 		return renderFragmentOrView(c, views.ShippingInfo(shippingInfoViewModel), views.ShippingInfoFragment)
 	}
 	err = h.customerServices.AddShippingAddress(c.Context(), id, shipping)
 	if err != nil {
+		fmt.Printf("error: %v", err)
 		//FIXME -- toast on error
 		return renderFragmentOrView(c, views.ShippingInfo(shippingInfoViewModel), views.ShippingInfoFragment)
 	}

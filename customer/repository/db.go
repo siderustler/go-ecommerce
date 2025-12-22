@@ -126,17 +126,32 @@ func (r repository) CreateCustomer(ctx context.Context, customer customer.Custom
 				return fmt.Errorf("creating repo shippings: %w", err)
 			}
 		}
-		_, err = tx.ExecContext(ctx,
-			`INSERT INTO customers (customer_id, name, email, phone, billing, shipping) 
-		VALUES ($1, $2, $3, $4, $5, $6) 
-		ON CONFLICT (customer_id) DO UPDATE SET name = $2, email = $3, phone = $4, billing = $5, shipping = $6`,
-			customer.ID,
-			customer.Credentials.Name,
-			customer.Credentials.Email,
-			customer.Credentials.Phone,
-			customer.Billing.ID,
-			customer.Shipping.ID,
-		)
+		if !customer.Shipping.IsZero() {
+			statement := `INSERT INTO customers (customer_id, name, email, phone, billing, shipping) 
+			VALUES ($1, $2, $3, $4, $5, $6) 
+			ON CONFLICT (customer_id) DO UPDATE SET name = $2, email = $3, phone = $4, billing = $5, shipping = $6`
+			_, err = tx.ExecContext(ctx,
+				statement,
+				customer.ID,
+				customer.Credentials.Name,
+				customer.Credentials.Email,
+				customer.Credentials.Phone,
+				customer.Billing.ID,
+				customer.Shipping.ID,
+			)
+		} else {
+			statement := `INSERT INTO customers (customer_id, name, email, phone, billing) 
+			VALUES ($1, $2, $3, $4, $5) 
+			ON CONFLICT (customer_id) DO UPDATE SET name = $2, email = $3, phone = $4, billing = $5`
+			_, err = tx.ExecContext(ctx,
+				statement,
+				customer.ID,
+				customer.Credentials.Name,
+				customer.Credentials.Email,
+				customer.Credentials.Phone,
+				customer.Billing.ID,
+			)
+		}
 		if err != nil {
 			return fmt.Errorf("creating repo customer: %w", err)
 		}
@@ -148,7 +163,8 @@ func (r repository) UpdateShippingAddress(ctx context.Context, userID string, sh
 	return RunInTx(ctx, r.db, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
 		_, err := r.db.ExecContext(
 			ctx,
-			`UPDATE shippings SET city = $2, address = $3, postal_code = $4, local = $5 WHERE id = $1`,
+			`INSERT INTO shippings (id, city, address, postal_code, local) VALUES ($1, $2, $3, $4, $5)
+			 ON CONFLICT (id) DO UPDATE SET city = $2, address = $3, postal_code = $4, local = $5`,
 			shipping.ID,
 			shipping.Address.City,
 			shipping.Address.Address,
