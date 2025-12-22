@@ -21,12 +21,19 @@ type repository interface {
 			actualReservation Reservation,
 		) (updatedReservation Reservation, updatedStockItem StockItem, err error),
 	) error
+
 	UpdateStockItem(
 		ctx context.Context,
 		itemID string,
 		updateFn func(item StockItem) (updatedItem StockItem, err error),
 	) error
-	UpsertBasket(ctx context.Context, basket Basket) error
+
+	UpdateBasket(
+		ctx context.Context,
+		userID string,
+		item BasketProduct,
+		onUpdate func(stockItem StockItem) error,
+	) error
 }
 
 type Services struct {

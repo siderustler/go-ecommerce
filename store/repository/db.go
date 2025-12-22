@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/siderustler/go-ecommerce/store"
 )
@@ -252,29 +253,54 @@ func (r repository) UpdateStockItem(
 	})
 }
 
-func (r repository) UpsertBasket(ctx context.Context, basket store.Basket) error {
+func (r repository) UpdateBasket(
+	ctx context.Context,
+	customerID string,
+	basketProduct store.BasketProduct,
+	onUpdateFn func(stockItem store.StockItem) error,
+) error {
 	return RunInTx(ctx, r.db, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
-		_, err := tx.ExecContext(ctx,
+		//FIXME abstract it with function and interface which will allow db and tx operations
+		row := tx.QueryRowContext(ctx, `SELECT id, customer_id FROM baskets WHERE customer_id = $1`)
+
+		var basketID, customerID string
+		err := row.Scan(basketID, customerID)
+		if err != nil {
+			return fmt.Errorf("retrieving basket: %w", err)
+		}
+
+		//FIXME abstract it with function and interface which will allow db and tx operations
+		row = r.db.QueryRowContext(ctx, "SELECT product_id, available_amount, reserved_amount FROM stock WHERE product_id = $1", basketProduct.ProductID)
+		var stockItem store.StockItem
+
+		err = row.Scan(&stockItem.ProductID, &stockItem.AvailableAmount, &stockItem.ReservedAmount)
+		if err != nil {
+			return fmt.Errorf("retrieving stock item: %w", err)
+		}
+		err = onUpdateFn(stockItem)
+		if err != nil {
+			return fmt.Errorf("on domain update stock item: %w", err)
+		}
+		_, err = tx.ExecContext(ctx,
 			`INSERT INTO baskets (id, customer_id, last_modified_at) VALUES ($1, $2, $3)
 			ON CONFLICT DO NOTHING`,
-			basket.ID, basket.CustomerID, basket.LastModifiedAt,
+			basketID, customerID, time.Now().UTC().Format(time.RFC3339),
 		)
 		if err != nil {
 			return fmt.Errorf("updating basket: %w", err)
 		}
-		for _, product := range basket.Products {
-			_, err = tx.ExecContext(ctx,
-				`INSERT INTO basket_products
+		_, err = tx.ExecContext(ctx,
+			`INSERT INTO basket_products
 				(id, product_id, count)
 				VALUES ($1, $2, $3)
 				ON CONFLICT DO 
 				UPDATE SET product_id = $2, count = $3 WHERE id = $1`,
-				basket.ID, product.ProductID, product.Count,
-			)
-			if err != nil {
-				return fmt.Errorf("updating basket products: %w", err)
-			}
+			basketID, basketProduct.ProductID, basketProduct.Count,
+		)
+		if err != nil {
+			return fmt.Errorf("updating basket products: %w", err)
 		}
+
 		return nil
 	})
 }

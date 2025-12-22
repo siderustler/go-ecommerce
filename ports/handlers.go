@@ -209,11 +209,17 @@ func (h handlers) getBasket(c *fiber.Ctx) error {
 		return c.Redirect("/")
 	}
 	navBarViewModel.Align(basket.Products)
+	//FIXME -- create mapper
 	basketItems := make([]views.BasketItemViewModel, 0, len(basket.Products))
-	//FIXME -- read in one query
+	productIds := make([]string, 0, len(basket.Products))
 	for _, basketProduct := range basket.Products {
-		product, _ := h.productServices.ProductByID(basketProduct.ProductID)
-		basketItems = append(basketItems, views.NewBasketItemViewModel(product, basketProduct.Count))
+		productIds = append(productIds, basketProduct.ProductID)
+	}
+
+	products, _ := h.productServices.ProductsByIDs(productIds)
+
+	for _, product := range products {
+		basketItems = append(basketItems, views.NewBasketItemViewModel(product, basket.Products[store.ProductID(product.ID)].Count))
 	}
 	basketViewModel := views.NewBasketViewModel(basketItems, navBarViewModel)
 
@@ -223,7 +229,6 @@ func (h handlers) getBasket(c *fiber.Ctx) error {
 func (h handlers) updateBasket(c *fiber.Ctx) error {
 	var basketViewModel views.BasketViewModel
 	_ = c.BodyParser(&basketViewModel)
-
 	userID := c.Cookies("userID")
 
 	err := h.basketServices.UpdateBasketProduct(c.Context(), userID, store.NewBasketProduct(basketViewModel.ChangeCountID, basketViewModel.Count))
@@ -244,9 +249,11 @@ func (h handlers) updateBasket(c *fiber.Ctx) error {
 	if err != nil {
 		return renderFragmentOrView(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
 	}
+
 	for _, product := range products {
 		basketItems = append(basketItems, views.NewBasketItemViewModel(product, basket.Products[store.ProductID(product.ID)].Count))
 	}
+
 	basketViewModel.Align(basketItems, components.NavBarViewModel{})
 
 	return renderFragmentOrRedirect(c, views.Basket(basketViewModel), "/basket", views.BasketItemFragment(basketViewModel.ChangeCountID))
