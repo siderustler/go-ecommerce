@@ -113,15 +113,13 @@ func (s *StockItem) RemoveItem(count int) error {
 }
 
 type Reservation struct {
-	BasketID   string
 	ProductID  string
 	Amount     int
 	ReservedAt string
 }
 
-func NewReservation(basketID, productID, reservedAt string, amount int) Reservation {
+func NewReservation(productID, reservedAt string, amount int) Reservation {
 	return Reservation{
-		BasketID:   basketID,
 		ProductID:  productID,
 		ReservedAt: reservedAt,
 		Amount:     amount,
@@ -140,23 +138,67 @@ func (r Reservation) IsExpired() (bool, error) {
 	return isExpired, nil
 }
 
-type Checkout struct {
-	ID        string
-	CreatedAt string
+type CheckoutStatus string
+
+var (
+	CheckoutPending     CheckoutStatus = "PENDING"
+	CheckoutFinalized   CheckoutStatus = "FINALIZED"
+	CheckoutInvalidated CheckoutStatus = "INVALIDATED"
+)
+
+func CheckoutStatusFromRawString(rawStatus string) CheckoutStatus {
+	switch rawStatus {
+	case string(CheckoutPending):
+		return CheckoutPending
+	case string(CheckoutFinalized):
+		return CheckoutFinalized
+	default:
+		return CheckoutInvalidated
+	}
 }
 
-func (c Checkout) IsExpired(lastBasketModifyTime string) (bool, error) {
-	if c.CreatedAt == "" {
-		return false, nil
+type Reservations map[ProductID]Reservation
+type Stock map[ProductID]StockItem
+
+func (b BasketProducts) MapToReservations() Reservations {
+	reservations := make(Reservations, len(b))
+	reservationTime := time.Now().UTC().Format(time.RFC3339)
+	for _, product := range b {
+		reservations[ProductID(product.ProductID)] = NewReservation(product.ProductID, reservationTime, product.Count)
 	}
-	parsedTime, err := time.Parse(time.RFC3339, c.CreatedAt)
-	if err != nil {
-		return true, fmt.Errorf("parsing checkout time: %w", err)
+	return reservations
+}
+
+type Checkout struct {
+	ID             string
+	BasketID       string
+	CreatedAt      string
+	Status         CheckoutStatus
+	BasketProducts BasketProducts
+}
+
+func NewCheckout(id string, basketID string, createdAt string, status string, basketProducts BasketProducts) Checkout {
+	return Checkout{
+		ID:             id,
+		BasketID:       basketID,
+		CreatedAt:      createdAt,
+		Status:         CheckoutStatusFromRawString(status),
+		BasketProducts: basketProducts,
 	}
-	parsedBasketModifyTime, err := time.Parse(time.RFC3339, lastBasketModifyTime)
-	if err != nil {
-		return true, fmt.Errorf("parsing basket modify time: %w", err)
-	}
-	isExpired := parsedTime.Before(parsedBasketModifyTime)
-	return isExpired, nil
+}
+
+func (c Checkout) IsInvalidated() bool {
+	return c.Status == CheckoutInvalidated
+}
+
+func (c *Checkout) MarkPending() {
+	c.Status = CheckoutPending
+}
+
+func (c *Checkout) Invalidate() {
+	c.Status = CheckoutInvalidated
+}
+
+func (c *Checkout) Finalize() {
+	c.Status = CheckoutFinalized
 }

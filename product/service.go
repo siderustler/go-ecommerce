@@ -1,6 +1,13 @@
 package product
 
-type repository interface{}
+import "context"
+
+type repository interface {
+	Products(
+		ctx context.Context,
+		filter Filter,
+	) ([]Product, error)
+}
 
 type Services struct {
 	repository repository

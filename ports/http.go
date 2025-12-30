@@ -7,7 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/siderustler/go-ecommerce/customer"
 	"github.com/siderustler/go-ecommerce/product"
-	"github.com/siderustler/go-ecommerce/store"
+	store "github.com/siderustler/go-ecommerce/store2"
 )
 
 type httpServer struct {
@@ -18,18 +18,19 @@ type httpServer struct {
 func NewHttpServer(
 	customerServices *customer.Services,
 	productServices *product.Services,
-	basketServices *store.Services,
+	storeServices *store.Services,
 ) *httpServer {
 	h := &httpServer{
 		srv: fiber.New(),
 		handlers: &handlers{
 			customerServices: customerServices,
 			productServices:  productServices,
-			basketServices:   basketServices,
+			storeServices:    storeServices,
 		},
 	}
+	m := &middleware{r: customerServices}
 	h.srv.Use("/public", ignoreCacheStaticFilesInDev)
-	anonymoUserGrp := h.srv.Group("/", anonymoUser)
+	anonymoUserGrp := h.srv.Group("/", m.anonymoUser)
 	anonymoUserGrp.Get("/products", h.handlers.getProductsRedirect)
 	anonymoUserGrp.Get("/products/:page", h.handlers.getProducts)
 	anonymoUserGrp.Get("/products/details/:productID", h.handlers.getProductDetails)

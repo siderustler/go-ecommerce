@@ -11,6 +11,18 @@ type repository interface {
 	BasketByUserID(ctx context.Context, userID string) (Basket, error)
 	BasketModifyTime(ctx context.Context, basketID string) (string, error)
 
+	CreateCheckout(
+		ctx context.Context,
+		checkout Checkout,
+		onUpdateFn func(stock Stock) (updatedStock Stock, err error),
+	) error
+
+	UpdateCheckout(
+		ctx context.Context,
+		checkout Checkout,
+		onUpdateFn func(stock Stock) (updatedStock Stock, err error),
+	) error
+
 	UpsertReservations(
 		ctx context.Context,
 		basketID string,

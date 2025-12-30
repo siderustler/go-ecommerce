@@ -14,8 +14,8 @@ import (
 	"github.com/siderustler/go-ecommerce/ports"
 	"github.com/siderustler/go-ecommerce/product"
 	"github.com/siderustler/go-ecommerce/product/repository"
-	"github.com/siderustler/go-ecommerce/store"
-	storeRepository "github.com/siderustler/go-ecommerce/store/repository"
+	store "github.com/siderustler/go-ecommerce/store2"
+	store_repository "github.com/siderustler/go-ecommerce/store2/repository"
 	"github.com/stripe/stripe-go/v83"
 )
 
@@ -34,12 +34,21 @@ func main() {
 	}
 
 	productsRepo, err := repository.NewRepository(context.Background(), db)
+	if err != nil {
+		panic(fmt.Errorf("creating products repo: %w", err))
+	}
 	productServices := product.NewServices(productsRepo)
 
 	customerRepo, err := customerRepository.NewRepository(context.Background(), db)
+	if err != nil {
+		panic(fmt.Errorf("creating customer repo: %w", err))
+	}
 	customerServices := customer.NewServices(customerRepo)
 
-	storeRepo, err := storeRepository.NewRepository(context.Background(), db)
+	storeRepo, err := store_repository.NewRepository(context.Background(), db)
+	if err != nil {
+		panic(fmt.Errorf("creating store repo: %w", err))
+	}
 	storeServices := store.NewServices(storeRepo)
 
 	httpServer := ports.NewHttpServer(customerServices, productServices, storeServices)

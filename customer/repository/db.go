@@ -18,9 +18,9 @@ func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
 			id UUID PRIMARY KEY,
 			nip_code TEXT,
 			company TEXT,
-			city TEXT NOT NULL,
-			address TEXT NOT NULL,
-			postal_code TEXT NOT NULL,
+			city TEXT,
+			address TEXT,
+			postal_code TEXT,
 			local TEXT
 		)`,
 	)
@@ -30,9 +30,9 @@ func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
 	_, err = db.ExecContext(ctx,
 		`CREATE TABLE IF NOT EXISTS shippings (
 			id UUID PRIMARY KEY,
-			city TEXT NOT NULL,
-			address TEXT NOT NULL,
-			postal_code TEXT NOT NULL,
+			city TEXT,
+			address TEXT,
+			postal_code TEXT,
 			local TEXT
 		)`,
 	)
@@ -42,9 +42,9 @@ func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
 	_, err = db.ExecContext(ctx,
 		`CREATE TABLE IF NOT EXISTS customers (
 			customer_id UUID PRIMARY KEY,
-			name TEXT NOT NULL,
-			email TEXT NOT NULL,
-			phone TEXT NOT NULL,
+			name TEXT,
+			email TEXT,
+			phone TEXT,
 			billing UUID REFERENCES billings(id),
 			shipping UUID REFERENCES shippings(id)
 		)`,
