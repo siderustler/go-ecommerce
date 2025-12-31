@@ -7,6 +7,10 @@ type repository interface {
 		ctx context.Context,
 		filter Filter,
 	) ([]Product, error)
+	ProductsByIDs(
+		ctx context.Context,
+		ids []string,
+	) ([]Product, error)
 }
 
 type Services struct {

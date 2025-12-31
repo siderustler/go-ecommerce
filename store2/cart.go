@@ -7,5 +7,5 @@ import (
 )
 
 func (s Services) Cart(ctx context.Context, userID string) (store_domain.Cart, error) {
-	return store_domain.Cart{}, nil
+	return s.repository.Cart(ctx, userID)
 }

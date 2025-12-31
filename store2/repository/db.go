@@ -74,6 +74,30 @@ func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
 	return &repository{db: db}, nil
 }
 
+// Cart implements store.Repository.
+func (r repository) Cart(ctx context.Context, userID string) (store_domain.Cart, error) {
+	rows, err := r.db.QueryContext(
+		ctx,
+		`SELECT b.id, b.customer_id, b.last_modified_at, b.status, bp.product_id, bp.count FROM baskets AS b 
+		JOIN basket_products AS bp ON bp.id = b.id WHERE b.customer_id = $1`,
+		userID,
+	)
+	if err != nil {
+		return store_domain.Cart{}, fmt.Errorf("retrieving cart: %w", err)
+	}
+	defer rows.Close()
+	cart := store_domain.Cart{Products: make(map[string]store_domain.CartProduct)}
+	for rows.Next() {
+		var cartProduct store_domain.CartProduct
+		err := rows.Scan(&cart.ID, &cart.CustomerID, &cart.LastModifiedAt, &cart.Status, &cartProduct.ProductID, &cartProduct.Count)
+		if err != nil {
+			return store_domain.Cart{}, fmt.Errorf("scanning cart: %w", err)
+		}
+		cart.Products[cartProduct.ProductID] = cartProduct
+	}
+	return cart, nil
+}
+
 // CartCount implements store.Repository.
 func (r repository) CartCount(ctx context.Context, userID string) (int, error) {
 	row := r.db.QueryRowContext(
@@ -275,7 +299,7 @@ func (r repository) UpsertCart(ctx context.Context, userID string, item store_do
 		if !checkout.IsZero() {
 			rows, err = tx.QueryContext(
 				ctx,
-				`SELECT product_id, available_amount, reserved_amount FROM stock WHERE product_id ANY($1) FOR UPDATE`,
+				`SELECT product_id, available_amount, reserved_amount FROM stock WHERE product_id = ANY($1) FOR UPDATE`,
 				checkoutProductIds,
 			)
 			if err != nil {

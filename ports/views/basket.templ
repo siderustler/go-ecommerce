@@ -3,13 +3,33 @@ package views
 import "github.com/siderustler/go-ecommerce/ports/views/components"
 import "fmt"
 import "github.com/siderustler/go-ecommerce/product"
+import "github.com/siderustler/go-ecommerce/store2/domain"
 
 type BasketItemViewModel struct {
 	product product.Product
 	count   int
 }
 
-func NewBasketItemViewModel(product product.Product, count int) BasketItemViewModel {
+func MapDomainCartDomainProductsToBasketViewModel(
+	products []product.Product,
+	cartProducts map[string]store_domain.CartProduct,
+	navBarViewModel components.NavBarViewModel,
+) BasketViewModel {
+	items := make([]BasketItemViewModel, 0, len(cartProducts))
+	for _, product := range products {
+		cartProduct, exists := cartProducts[product.ID]
+		if !exists {
+			continue
+		}
+		items = append(items, newBasketItemViewModel(product, cartProduct.Count))
+	}
+	return BasketViewModel{
+		items:           items,
+		navBarViewModel: navBarViewModel,
+	}
+}
+
+func newBasketItemViewModel(product product.Product, count int) BasketItemViewModel {
 	if count < 1 {
 		count = 1
 	}
@@ -27,34 +47,6 @@ type BasketViewModel struct {
 	IncBasket     bool   `form:"inc"`
 	DecBasket     bool   `form:"dec"`
 	Count         int    `form:"count"`
-}
-
-func NewBasketViewModel(items []BasketItemViewModel, navBarViewModel components.NavBarViewModel) BasketViewModel {
-	return BasketViewModel{
-		items:           items,
-		navBarViewModel: navBarViewModel,
-	}
-}
-
-func (b *BasketViewModel) Align(items []BasketItemViewModel, navBarViewModel components.NavBarViewModel) {
-	b.items = items
-	b.navBarViewModel = navBarViewModel
-
-	if b.Count < 1 {
-		b.Count = 1
-	}
-	isBasketDecrementable := b.DecBasket && b.Count > 1
-	if isBasketDecrementable {
-		b.Count -= 1
-	}
-	if b.IncBasket {
-		b.Count += 1
-	}
-	for i := 0; i < len(b.items); i++ {
-		if b.items[i].product.ID == b.ChangeCountID {
-			b.items[i].count = b.Count
-		}
-	}
 }
 
 type basketFragment struct{}
@@ -85,7 +77,7 @@ templ Basket(viewModel BasketViewModel) {
 }
 
 templ emptyBasket() {
-	<div class="flex flex-col bg-grey-200 shadow-md items-center justify-center px-8 md:px-12 lg:px-16 py-8 md:py-10 lg:py-12 gap-6 md:gap-8 lg:gap-10 rounded-xl border-2 border-grey-300">
+	<div class="flex flex-col bg-grey-200 shadow-md items-center justify-center px-8 md:px-12 lg:px-16 xl:p py-16 md:py-20 lg:py-24 gap-6 md:gap-8 lg:gap-10 rounded-xl border-2 border-grey-300">
 		<p class="text-2xl text-secondary-900">Nie masz żadnych produktów w koszyku</p>
 		@components.IconButton(components.PrimaryIconButton, components.IconButtonShop)
 	</div>

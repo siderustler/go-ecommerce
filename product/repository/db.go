@@ -108,6 +108,26 @@ func (r repository) Products(ctx context.Context, filter product.Filter) ([]prod
 	return products, nil
 }
 
+func (r repository) ProductsByIDs(ctx context.Context, ids []string) ([]product.Product, error) {
+	rows, err := r.db.QueryContext(
+		ctx,
+		`SELECT id, name, main_image, price, price_before FROM products WHERE id = ANY ($1)`,
+		ids,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("retrieving products: %w", err)
+	}
+	products := make([]product.Product, len(ids))
+	for rows.Next() {
+		var product product.Product
+		err := rows.Scan(&product.ID, &product.Name, &product.Image, &product.Price, &product.PriceBefore)
+		if err != nil {
+			return nil, fmt.Errorf("scannig product: %w", err)
+		}
+		products = append(products, product)
+	}
+	return products, nil
+}
 func RunInTx(ctx context.Context, db *sql.DB, opts *sql.TxOptions, txFunc func(tx *sql.Tx) error) (err error) {
 	tx, err := db.BeginTx(ctx, nil)
 	defer func() {

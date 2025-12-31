@@ -18,6 +18,10 @@ type Repository interface {
 		updateFn func(stockItem *store_domain.StockItem) error,
 	)
 
+	Cart(
+		ctx context.Context,
+		userID string,
+	) (store_domain.Cart, error)
 	CartCount(
 		ctx context.Context,
 		userID string,

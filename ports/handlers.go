@@ -180,6 +180,7 @@ func (h handlers) filterProductsPriceValidate(c *fiber.Ctx) error {
 func (h handlers) getDashboard(c *fiber.Ctx) error {
 	slide := c.QueryInt("slide", 0)
 	promotionPage := c.QueryInt("promotions", 0)
+	userID := c.Cookies("session")
 	promos, err := h.productServices.GetPromotions(c.Context())
 	//FIXME
 	if err != nil {
@@ -187,12 +188,12 @@ func (h handlers) getDashboard(c *fiber.Ctx) error {
 		return c.Redirect("/")
 	}
 
-	basket, err := h.storeServices.Cart(c.Context(), "")
+	cart, err := h.storeServices.Cart(c.Context(), userID)
 	//FIXME
 	if err != nil {
 		return c.Redirect("/")
 	}
-	navBarViewModel := components.NewNavBarViewModel("", len(basket.Products))
+	navBarViewModel := components.NewNavBarViewModel("", len(cart.Products))
 
 	isPromotionRequest := c.Query("promotions") != ""
 	if isPromotionRequest {
@@ -214,19 +215,18 @@ func (h handlers) getBasket(c *fiber.Ctx) error {
 	}
 	cartCount := len(cart.Products)
 	navBarViewModel.Align(cartCount)
+
 	//FIXME -- create mapper
-	basketItems := make([]views.BasketItemViewModel, 0, cartCount)
 	productIds := make([]string, 0, cartCount)
-	for _, basketProduct := range cart.Products {
-		productIds = append(productIds, basketProduct.ProductID)
+	for productID := range cart.Products {
+		productIds = append(productIds, productID)
 	}
-
-	products, _ := h.productServices.ProductsByIDs(productIds)
-
-	for _, product := range products {
-		basketItems = append(basketItems, views.NewBasketItemViewModel(product, cart.Products[product.ID].Count))
+	products, err := h.productServices.ProductsByIDs(c.Context(), productIds)
+	//FIXME?
+	if err != nil {
+		return c.Redirect("/")
 	}
-	basketViewModel := views.NewBasketViewModel(basketItems, navBarViewModel)
+	basketViewModel := views.MapDomainCartDomainProductsToBasketViewModel(products, cart.Products, navBarViewModel)
 
 	return renderFragmentOrView(c, views.Basket(basketViewModel), views.BasketFragment)
 }
@@ -255,22 +255,15 @@ func (h handlers) updateBasket(c *fiber.Ctx) error {
 	if err != nil {
 		return renderFragmentOrView(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
 	}
-	//FIXME -- create mapper
-	basketItems := make([]views.BasketItemViewModel, 0, len(cart.Products))
 	productIds := make([]string, 0, len(cart.Products))
-	for _, basketProduct := range cart.Products {
-		productIds = append(productIds, basketProduct.ProductID)
+	for productID := range cart.Products {
+		productIds = append(productIds, productID)
 	}
-	products, err := h.productServices.ProductsByIDs(productIds)
+	products, err := h.productServices.ProductsByIDs(c.Context(), productIds)
 	if err != nil {
 		return renderFragmentOrView(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
 	}
-
-	for _, product := range products {
-		basketItems = append(basketItems, views.NewBasketItemViewModel(product, cart.Products[product.ID].Count))
-	}
-
-	basketViewModel.Align(basketItems, components.NavBarViewModel{})
+	basketViewModel = views.MapDomainCartDomainProductsToBasketViewModel(products, cart.Products, components.NavBarViewModel{})
 
 	return renderFragmentOrRedirect(c, views.Basket(basketViewModel), "/basket", views.BasketItemFragment(basketViewModel.ChangeCountID))
 }
