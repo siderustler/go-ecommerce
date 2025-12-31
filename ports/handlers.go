@@ -215,7 +215,6 @@ func (h handlers) getBasket(c *fiber.Ctx) error {
 		return c.Redirect("/")
 	}
 	cartCount := len(cart.Products)
-	fmt.Printf("%+v", cartCount)
 	navBarViewModel.Align(cartCount)
 
 	//FIXME -- create mapper
