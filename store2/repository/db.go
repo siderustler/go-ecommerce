@@ -74,6 +74,21 @@ func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
 	return &repository{db: db}, nil
 }
 
+// CartCount implements store.Repository.
+func (r repository) CartCount(ctx context.Context, userID string) (int, error) {
+	row := r.db.QueryRowContext(
+		ctx,
+		`SELECT COUNT(bp.id) FROM basket_products AS bp JOIN baskets AS b ON bp.id = b.id WHERE b.customer_id = $1`,
+		userID,
+	)
+	var count int
+	err := row.Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("retrieving basket count: %w", err)
+	}
+	return count, nil
+}
+
 // CreateCheckout implements store.Repository.
 func (r repository) CreateCheckout(
 	ctx context.Context,

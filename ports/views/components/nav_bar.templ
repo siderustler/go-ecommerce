@@ -1,7 +1,5 @@
 package components
 
-import "github.com/siderustler/go-ecommerce/store2/domain"
-
 type NavBarViewModel struct {
 	Search      string `query:"search" url:"search,omitempty"`
 	basketCount int
@@ -17,8 +15,8 @@ func NewNavBarViewModel(search string, basketCount int) NavBarViewModel {
 	}
 }
 
-func (n *NavBarViewModel) Align(cart store_domain.Cart) {
-	n.basketCount = len(cart.Products)
+func (n *NavBarViewModel) Align(cartCount int) {
+	n.basketCount = cartCount
 }
 
 type basketCountFragment struct{}
