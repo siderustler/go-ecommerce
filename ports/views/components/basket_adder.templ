@@ -1,5 +1,7 @@
 package components
 
+import "strings"
+
 templ BasketAdder(id string, productID string, incDecRequestPath string, count int) {
 	<div id={ id } class="flex justify-center gap-6 md:gap-4 min-h-14 md:flex-col">
 		@BasketCounter(id, GET, productID, incDecRequestPath, count)
@@ -31,9 +33,12 @@ var (
 	GET  method = "get"
 )
 
-templ BasketCounter(id string, method method, productID string, counterPath string, count int) {
-	{{ indicator := "indicator-" + id }}
-	<div id={ indicator } class="flex gap-6 justify-center px-3 py-2 border-2 border-secondary-300 rounded-lg relative" hx-indicator={ "#" + indicator }>
+templ BasketCounter(id string, method method, productID string, counterPath string, count int, requestIndicators ...string) {
+	{{
+		indicator := "indicator-" + id
+		hxIndicators := strings.Join(append(requestIndicators, "#"+indicator), ",")
+	}}
+	<div id={ indicator } class="flex gap-6 justify-center px-3 py-2 border-2 border-secondary-300 rounded-lg relative" hx-indicator={ hxIndicators }>
 		<img src="/public/icons/spinner.svg" width="24px" height="24px" alt="Loading..." class="htmx-indicator absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"/>
 		{{ hxTarget := "#" + id }}
 		<form

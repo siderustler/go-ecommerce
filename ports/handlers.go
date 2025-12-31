@@ -3,6 +3,7 @@ package ports
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/go-querystring/query"
@@ -237,9 +238,10 @@ func (h handlers) getBasket(c *fiber.Ctx) error {
 
 func (h handlers) updateBasket(c *fiber.Ctx) error {
 	var basketViewModel views.BasketViewModel
+	var navBarViewModel components.NavBarViewModel
 	_ = c.BodyParser(&basketViewModel)
 	userID := c.Cookies("session")
-
+	<-time.After(time.Second)
 	var err error
 	if basketViewModel.IncBasket {
 		err = h.storeServices.AddProductToCart(c.Context(), userID, store_domain.NewCartProduct(basketViewModel.ChangeCountID, 1))
@@ -263,12 +265,12 @@ func (h handlers) updateBasket(c *fiber.Ctx) error {
 	}
 	products, err := h.productServices.ProductsByIDs(c.Context(), productIds)
 	if err != nil {
-
 		return renderFragmentOrView(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
 	}
-	basketViewModel.Align(products, cart.Products, components.NavBarViewModel{})
+	navBarViewModel.Align(len(cart.Products))
+	basketViewModel.Align(products, cart.Products, navBarViewModel)
 
-	return renderFragmentOrRedirect(c, views.Basket(basketViewModel), "/basket", views.BasketItemFragment(basketViewModel.ChangeCountID))
+	return renderFragmentOrRedirect(c, views.Basket(basketViewModel), "/basket", views.BasketItemFragment(basketViewModel.ChangeCountID), views.BasketSummaryFragment)
 }
 
 func (h handlers) addItemToBasket(c *fiber.Ctx) error {

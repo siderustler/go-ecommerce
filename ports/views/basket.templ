@@ -45,9 +45,11 @@ type BasketViewModel struct {
 }
 
 type basketFragment struct{}
+type basketSummaryFragment struct{}
 
 var BasketFragment basketFragment = basketFragment{}
 var BasketItemFragment func(itemID string) string = func(itemID string) string { return "basket-" + itemID }
+var BasketSummaryFragment basketSummaryFragment = basketSummaryFragment{}
 
 templ Basket(viewModel BasketViewModel) {
 	@layout() {
@@ -64,7 +66,9 @@ templ Basket(viewModel BasketViewModel) {
 							@basketProductItem(item)
 						}
 					</div>
-					@basketSummary(viewModel.items)
+					@templ.Fragment(BasketSummaryFragment) {
+						@basketSummary(viewModel.items)
+					}
 				</div>
 			</div>
 		}
@@ -97,7 +101,7 @@ templ basketProductItem(item BasketItemViewModel) {
 		@templ.Fragment(id) {
 			<div id={ id }>
 				@components.InfoStyled("Dostosuj ilość", "text-center") {
-					@components.BasketCounter(id, components.POST, item.product.ID, "/basket/update", item.count)
+					@components.BasketCounter(id, components.POST, item.product.ID, "/basket/update", item.count, "#part-price", "#full-price")
 				}
 			</div>
 		}
@@ -112,11 +116,12 @@ templ basketSummary(items []BasketItemViewModel) {
 		}
 		fullPrice = partPrice
 	}}
-	<div class="flex flex-1 flex-col gap-6 px-4 pb-6 pt-4 md:px-6 md:py-6 lg:px-8 lg:py-8 shadow-md rounded-xl border-2 border-grey-300">
+	<div id="summary" hx-swap-oob="true" class="flex flex-1 flex-col gap-6 px-4 pb-6 pt-4 md:px-6 md:py-6 lg:px-8 lg:py-8 shadow-md rounded-xl border-2 border-grey-300">
+		<img src="/public/icons/spinner.svg" width="24px" height="24px" alt="Loading..." class="htmx-indicator absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"/>
 		@components.InfoHeader("/public/icons/shop-summary.svg", "podsumowanie ikona", "Podsumowanie")
-		@summaryItem("Suma częściowa", fmt.Sprintf("%.2f zł", partPrice))
-		@summaryItem("Koszt wysyłki", "Bezpłatna")
-		@summaryItem("Suma całkowita", fmt.Sprintf("%.2f zł", fullPrice))
+		@summaryItem("part-price", "Suma częściowa", fmt.Sprintf("%.2f zł", partPrice))
+		@summaryItem("shipping-cost", "Koszt wysyłki", "Bezpłatna")
+		@summaryItem("full-price", "Suma całkowita", fmt.Sprintf("%.2f zł", fullPrice))
 		<a
 			class="flex justify-center items-center gap-1 md:gap-2 lg:gap-4 bg-primary-300 text-primary-900 rounded-xl px-5 lg:px-6 py-3 md:rounded-xl"
 			type="submit"
@@ -137,9 +142,12 @@ templ basketSummary(items []BasketItemViewModel) {
 	</div>
 }
 
-templ summaryItem(title, description string) {
+templ summaryItem(indicatorID, title, description string) {
 	<div class="flex flex-col sm:flex-row items-center px-6 py-4 md:px-8 md:py-6 bg-grey-100 shadow-md rounded-lg sm:justify-between lg:justify-around 2xl:justify-between">
 		<h3 class="text-primary-900 md:text-xl">{ title }</h3>
-		<p class="text-primary-900 text-xl md:text-2xl font-bold">{ description }</p>
+		<p id={ indicatorID } class="text-primary-900 text-xl md:text-2xl font-bold htmx-request:invisible relative">
+			<img src="/public/icons/spinner.svg" width="24px" height="24px" alt="Loading..." class="htmx-indicator absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"/>
+			{ description }
+		</p>
 	</div>
 }
