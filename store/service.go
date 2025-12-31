@@ -2,56 +2,55 @@ package store
 
 import (
 	"context"
+
+	store_domain "github.com/siderustler/go-ecommerce/store/domain"
 )
 
-type repository interface {
-	InsertStockItem(ctx context.Context, stockItem StockItem) error
-	StockItem(ctx context.Context, itemID string) (StockItem, error)
-	Checkout(ctx context.Context, checkoutID string) (Checkout, error)
-	BasketByUserID(ctx context.Context, userID string) (Basket, error)
-	BasketModifyTime(ctx context.Context, basketID string) (string, error)
+type Repository interface {
+	InsertStockItem(
+		ctx context.Context,
+		stockItem store_domain.StockItem,
+		product store_domain.Product,
+	) error
+	UpdateStockItem(
+		ctx context.Context,
+		stockItem store_domain.StockItem,
+		updateFn func(stockItem *store_domain.StockItem) error,
+	)
+
+	Cart(
+		ctx context.Context,
+		userID string,
+	) (store_domain.Cart, error)
+	CartCount(
+		ctx context.Context,
+		userID string,
+	) (int, error)
+
+	UpsertCart(
+		ctx context.Context,
+		userID string,
+		item store_domain.CartProduct,
+		upsertFn func(cart *store_domain.Cart, checkout *store_domain.Checkout, stock *store_domain.Stock, stockItem store_domain.StockItem) error,
+	) error
 
 	CreateCheckout(
 		ctx context.Context,
-		checkout Checkout,
-		onUpdateFn func(stock Stock) (updatedStock Stock, err error),
+		userID string,
+		insertFn func(cart *store_domain.Cart, stock *store_domain.Stock) (store_domain.Checkout, error),
 	) error
 
 	UpdateCheckout(
 		ctx context.Context,
-		checkout Checkout,
-		onUpdateFn func(stock Stock) (updatedStock Stock, err error),
-	) error
-
-	UpsertReservations(
-		ctx context.Context,
-		basketID string,
-		productIDs []string,
-		reservationTime string,
-		upsertFn func(
-			stockItem StockItem,
-			actualReservation Reservation,
-		) (updatedReservation Reservation, updatedStockItem StockItem, err error),
-	) error
-
-	UpdateStockItem(
-		ctx context.Context,
-		itemID string,
-		updateFn func(item StockItem) (updatedItem StockItem, err error),
-	) error
-
-	UpdateBasket(
-		ctx context.Context,
-		userID string,
-		item BasketProduct,
-		onUpdate func(stockItem StockItem) error,
+		checkoutID string,
+		updateFn func(checkout *store_domain.Checkout, stock *store_domain.Stock) error,
 	) error
 }
 
 type Services struct {
-	repository repository
+	repository Repository
 }
 
-func NewServices(repository repository) *Services {
+func NewServices(repository Repository) *Services {
 	return &Services{repository: repository}
 }

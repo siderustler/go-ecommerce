@@ -11,8 +11,8 @@ import (
 	"github.com/siderustler/go-ecommerce/ports/views"
 	"github.com/siderustler/go-ecommerce/ports/views/components"
 	"github.com/siderustler/go-ecommerce/product"
-	store "github.com/siderustler/go-ecommerce/store2"
-	store_domain "github.com/siderustler/go-ecommerce/store2/domain"
+	"github.com/siderustler/go-ecommerce/store"
+	store_domain "github.com/siderustler/go-ecommerce/store/domain"
 	"github.com/stripe/stripe-go/v83"
 	"github.com/stripe/stripe-go/v83/checkout/session"
 )

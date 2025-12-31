@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	store_domain "github.com/siderustler/go-ecommerce/store2/domain"
+	store_domain "github.com/siderustler/go-ecommerce/store/domain"
 )
 
 func (s Services) CreateCheckout(ctx context.Context, userID string) error {

@@ -7,7 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/siderustler/go-ecommerce/customer"
 	"github.com/siderustler/go-ecommerce/product"
-	store "github.com/siderustler/go-ecommerce/store2"
+	store "github.com/siderustler/go-ecommerce/store"
 )
 
 type httpServer struct {

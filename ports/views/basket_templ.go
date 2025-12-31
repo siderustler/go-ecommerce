@@ -11,7 +11,7 @@ import templruntime "github.com/a-h/templ/runtime"
 import "github.com/siderustler/go-ecommerce/ports/views/components"
 import "fmt"
 import "github.com/siderustler/go-ecommerce/product"
-import "github.com/siderustler/go-ecommerce/store2/domain"
+import "github.com/siderustler/go-ecommerce/store/domain"
 
 type BasketItemViewModel struct {
 	product product.Product

@@ -14,8 +14,8 @@ import (
 	"github.com/siderustler/go-ecommerce/ports"
 	"github.com/siderustler/go-ecommerce/product"
 	"github.com/siderustler/go-ecommerce/product/repository"
-	store "github.com/siderustler/go-ecommerce/store2"
-	store_repository "github.com/siderustler/go-ecommerce/store2/repository"
+	"github.com/siderustler/go-ecommerce/store"
+	store_repository "github.com/siderustler/go-ecommerce/store/repository"
 	"github.com/stripe/stripe-go/v83"
 )
 

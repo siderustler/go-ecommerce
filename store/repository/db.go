@@ -1,416 +1,381 @@
-package repository
+package store_repository
 
-// import (
-// 	"context"
-// 	"database/sql"
-// 	"fmt"
-// 	"time"
+import (
+	"context"
+	"database/sql"
+	"fmt"
+	"time"
 
-// 	"github.com/siderustler/go-ecommerce/store"
-// )
+	"github.com/siderustler/go-ecommerce/store"
+	store_domain "github.com/siderustler/go-ecommerce/store/domain"
+)
 
-// type repository struct {
-// 	db *sql.DB
-// }
+type repository struct {
+	db *sql.DB
+}
 
-// func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
-// 	_, err := db.ExecContext(ctx,
-// 		`CREATE TABLE IF NOT EXISTS baskets (
-// 			id UUID PRIMARY KEY,
-// 			customer_id UUID NOT NULL REFERENCES customers(customer_id),
-// 			last_modified_at TIMESTAMP NOT NULL,
-// 		)`,
-// 	)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("creating baskets table: %w", err)
-// 	}
-// 	_, err = db.ExecContext(ctx,
-// 		`CREATE TABLE IF NOT EXISTS basket_products (
-// 			id UUID NOT NULL REFERENCES baskets(id),
-// 			product_id UUID NOT NULL REFERENCES products(id),
-// 			count INT NOT NULL,
-// 			PRIMARY KEY(id, product_id)
-// 		)`,
-// 	)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("creating basket_products table: %w", err)
-// 	}
-// 	_, err = db.ExecContext(ctx,
-// 		`CREATE TABLE IF NOT EXISTS stock (
-// 			product_id UUID NOT NULL REFERENCES products(id),
-// 			available_amount INT DEFAULT 0,
-// 			reserved_amount INT DEFAULT 0
-// 		)`,
-// 	)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("creating stock table: %w", err)
-// 	}
-// 	_, err = db.ExecContext(ctx,
-// 		`CREATE TABLE IF NOT EXISTS stock_reservations (
-// 			checkout_id UUID PRIMARY KEY REFERENCES checkouts(id),
-// 			product_id UUID REFERENCES products(id),
-// 			amount INT DEFAULT 0,
-// 			reserved_at TIMESTAMP NOT NULL
-// 		)`,
-// 	)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("creating stock_reservations table: %w", err)
-// 	}
-// 	_, err = db.ExecContext(ctx,
-// 		`CREATE TABLE IF NOT EXISTS checkouts (
-// 			id UUID PRIMARY KEY,
-// 			basket_id UUID NOT NULL REFERENCES baskets(id),
-// 			created_at TIMESTAMP NOT NULL,
-// 			status TEXT CHECK (status IN ('INVALIDATED', 'PENDING', 'FINALIZED'))
-// 		)`,
-// 	)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("creating checkouts table: %w", err)
-// 	}
-// 	return &repository{db: db}, nil
-// }
+var _ store.Repository = repository{}
 
-// func (r repository) InsertStockItem(ctx context.Context, stockItem store.StockItem) error {
-// 	_, err := r.db.ExecContext(ctx,
-// 		`INSERT INTO stock (product_id, available_amount, reserved_amount) VALUES ($1,$2,$3)`,
-// 		stockItem.ProductID, stockItem.AvailableAmount, stockItem.ReservedAmount,
-// 	)
-// 	if err != nil {
-// 		return fmt.Errorf("updating stock: %w", err)
-// 	}
-// 	return nil
-// }
+func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
+	_, err := db.ExecContext(ctx,
+		`CREATE TABLE IF NOT EXISTS baskets (
+			id UUID PRIMARY KEY,
+			customer_id UUID NOT NULL REFERENCES customers(customer_id),
+			last_modified_at TIMESTAMP NOT NULL,
+			status TEXT CHECK (status IN ('ACTIVE', 'INACTIVE'))
+		)`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("creating baskets table: %w", err)
+	}
+	_, err = db.ExecContext(ctx,
+		`CREATE TABLE IF NOT EXISTS checkouts (
+			id UUID PRIMARY KEY,
+			basket_id UUID NOT NULL REFERENCES baskets(id),
+			created_at TIMESTAMP NOT NULL,
+			status TEXT CHECK (status IN ('INVALIDATED', 'PENDING', 'FINALIZED'))
+		)`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("creating checkouts table: %w", err)
+	}
+	_, err = db.ExecContext(ctx,
+		`CREATE TABLE IF NOT EXISTS basket_products (
+			id UUID NOT NULL REFERENCES baskets(id),
+			product_id UUID NOT NULL REFERENCES products(id),
+			count INT NOT NULL,
+			PRIMARY KEY(id, product_id)
+		)`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("creating basket_products table: %w", err)
+	}
+	_, err = db.ExecContext(ctx,
+		`CREATE TABLE IF NOT EXISTS stock (
+			product_id UUID NOT NULL REFERENCES products(id),
+			available_amount INT DEFAULT 0,
+			reserved_amount INT DEFAULT 0
+		)`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("creating stock table: %w", err)
+	}
+	_, err = db.ExecContext(ctx,
+		`CREATE TABLE IF NOT EXISTS stock_reservations (
+			checkout_id UUID PRIMARY KEY REFERENCES checkouts(id),
+			product_id UUID REFERENCES products(id),
+			amount INT DEFAULT 0,
+			reserved_at TIMESTAMP NOT NULL
+		)`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("creating stock_reservations table: %w", err)
+	}
+	return &repository{db: db}, nil
+}
 
-// func (r repository) StockItem(ctx context.Context, itemID string) (store.StockItem, error) {
-// 	row := r.db.QueryRowContext(ctx, "SELECT product_id, available_amount, reserved_amount FROM stock WHERE product_id = $1", itemID)
-// 	var stockItem store.StockItem
+// Cart implements store.Repository.
+func (r repository) Cart(ctx context.Context, userID string) (store_domain.Cart, error) {
+	rows, err := r.db.QueryContext(
+		ctx,
+		`SELECT b.id, b.customer_id, b.last_modified_at, b.status, bp.product_id, bp.count FROM baskets AS b 
+		JOIN basket_products AS bp ON bp.id = b.id WHERE b.customer_id = $1`,
+		userID,
+	)
+	if err != nil {
+		return store_domain.Cart{}, fmt.Errorf("retrieving cart: %w", err)
+	}
+	defer rows.Close()
+	cart := store_domain.Cart{Products: make(map[string]store_domain.CartProduct)}
+	for rows.Next() {
+		var cartProduct store_domain.CartProduct
+		err := rows.Scan(&cart.ID, &cart.CustomerID, &cart.LastModifiedAt, &cart.Status, &cartProduct.ProductID, &cartProduct.Count)
+		if err != nil {
+			return store_domain.Cart{}, fmt.Errorf("scanning cart: %w", err)
+		}
+		cart.Products[cartProduct.ProductID] = cartProduct
+	}
+	return cart, nil
+}
 
-// 	err := row.Scan(&stockItem.ProductID, &stockItem.AvailableAmount, &stockItem.ReservedAmount)
-// 	if err != nil {
-// 		return store.StockItem{}, fmt.Errorf("scanning row: %w", err)
-// 	}
-// 	return stockItem, nil
-// }
+// CartCount implements store.Repository.
+func (r repository) CartCount(ctx context.Context, userID string) (int, error) {
+	row := r.db.QueryRowContext(
+		ctx,
+		`SELECT COUNT(bp.id) FROM basket_products AS bp JOIN baskets AS b ON bp.id = b.id WHERE b.customer_id = $1`,
+		userID,
+	)
+	var count int
+	err := row.Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("retrieving basket count: %w", err)
+	}
+	return count, nil
+}
 
-// func (r repository) CreateCheckout(
-// 	ctx context.Context,
-// 	checkout store.Checkout,
-// 	onUpdateFn func(stock store.Stock) (updatedStock store.Stock, err error),
-// ) error {
-// 	return RunInTx(ctx, r.db, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
-// 		_, err := tx.ExecContext(ctx,
-// 			`INSERT INTO checkouts (id, basket_id, created_at, status) VALUES ($1, $2, $3, $4)`,
-// 			checkout.ID, checkout.BasketID, checkout.CreatedAt, checkout.Status,
-// 		)
-// 		if err != nil {
-// 			return fmt.Errorf("inserting to checkouts: %w", err)
-// 		}
-// 		stock := make(store.Stock, len(checkout.BasketProducts))
-// 		for _, basketProduct := range checkout.BasketProducts {
-// 			_, err = tx.ExecContext(ctx,
-// 				`INSERT INTO stock_reservations (checkout_id, product_id, amount, reserved_at) VALUES ($1, $2, $3, $4)`,
-// 				checkout.ID, basketProduct.ProductID, basketProduct.ProductID, reservation.ReservedAt,
-// 			)
-// 			if err != nil {
-// 				return fmt.Errorf("inserting stock reservations: %w", err)
-// 			}
-// 			row := tx.QueryRowContext(ctx,
-// 				`SELECT product_id, available_amount, reserved_amount FROM stock WHERE product_id = $1 FOR UPDATE`,
-// 				reservation.ProductID,
-// 			)
-// 			var stockItem store.StockItem
-// 			err = row.Scan(&stockItem.ProductID, &stockItem.AvailableAmount, &stockItem.ReservedAmount)
-// 			if err != nil {
-// 				return fmt.Errorf("scanning stock item: %w", err)
-// 			}
-// 			stock[store.ProductID(stockItem.ProductID)] = stockItem
-// 		}
-// 		updatedStock, err := onUpdateFn(stock)
-// 		if err != nil {
-// 			return fmt.Errorf("on stock update: %w", err)
-// 		}
-// 		for _, stockItem := range updatedStock {
-// 			_, err = tx.ExecContext(ctx,
-// 				`UPDATE stock SET available_amount = $1, reserved_amount = $2 WHERE product_id = $3`,
-// 				stockItem.AvailableAmount, stockItem.ReservedAmount, stockItem.ProductID,
-// 			)
-// 			if err != nil {
-// 				return fmt.Errorf("updating stock: %w", err)
-// 			}
-// 		}
-// 		return nil
-// 	})
-// }
+// CreateCheckout implements store.Repository.
+func (r repository) CreateCheckout(
+	ctx context.Context,
+	userID string,
+	insertFn func(cart *store_domain.Cart, stock *store_domain.Stock) (store_domain.Checkout, error),
+) error {
+	return RunInTx(ctx, r.db, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
+		rows, err := tx.QueryContext(
+			ctx,
+			`SELECT b.id, b.customer_id, b.last_modified_at, b.status, bp.product_id, bp.count
+			FROM baskets AS b
+			JOIN basket_products AS bp ON b.id = bp.id
+			WHERE b.status = $1 AND b.customer_id = $2 FOR UPDATE OF b`,
+			store_domain.CartActive, userID,
+		)
+		if err != nil {
+			return fmt.Errorf("retrieving user basket: %w", err)
+		}
+		defer rows.Close()
+		cart := store_domain.Cart{Products: make(map[string]store_domain.CartProduct)}
+		var cartProductIds []string
+		for rows.Next() {
+			var cartProduct store_domain.CartProduct
+			err := rows.Scan(&cart.ID, &cart.CustomerID, &cart.LastModifiedAt, &cart.Status, &cartProduct.ProductID, &cartProduct.Count)
+			if err != nil {
+				return fmt.Errorf("scanning baskets: %w", err)
+			}
+			cart.Products[cartProduct.ProductID] = cartProduct
+			cartProductIds = append(cartProductIds, cartProduct.ProductID)
+		}
+		stock := store_domain.Stock{Items: make(map[string]store_domain.StockItem, len(cart.Products))}
+		if !cart.IsZero() {
+			rows, err = tx.QueryContext(
+				ctx,
+				`SELECT product_id, available_amount, reserved_amount 
+				FROM stock WHERE product_id ANY ($1) FOR UPDATE`,
+				cartProductIds,
+			)
+			if err != nil {
+				return fmt.Errorf("retrieving stock: %w", err)
+			}
+			defer rows.Close()
+			var stockItem store_domain.StockItem
+			err := rows.Scan(&stockItem.ProductID, &stockItem.AvailableAmount, &stockItem.ReservedAmount)
+			if err != nil {
+				return fmt.Errorf("scanning stock item: %w", err)
+			}
+			stock.Items[stockItem.ProductID] = stockItem
+		}
+		checkout, err := insertFn(&cart, &stock)
+		if err != nil {
+			return fmt.Errorf("insertfn domain checkout: %w", err)
+		}
+		_, err = tx.ExecContext(
+			ctx,
+			`INSERT INTO checkouts (id, basket_id, created_at, status) VALUES ($1,$2,$3,$4)`,
+			checkout.ID, cart.ID, checkout.CreatedAt, checkout.Status,
+		)
+		if err != nil {
+			return fmt.Errorf("inserting checkout to repository: %w", err)
+		}
+		_, err = tx.ExecContext(
+			ctx,
+			`UPDATE baskets SET last_modified_at = $2, status = $3 
+			WHERE id = $1 AND status = $4`,
+			cart.ID, cart.LastModifiedAt, cart.Status, store_domain.CartActive,
+		)
+		if err != nil {
+			return fmt.Errorf("updating baskets: %w", err)
+		}
+		reservationTime := time.Now().UTC().Format(time.RFC3339)
+		//FIXME -- single statement
+		for productID, product := range checkout.Items {
+			_, err = tx.ExecContext(
+				ctx,
+				`INSERT INTO stock_reservations (checkout_id, product_id, amount, reserved_at) 
+				VALUES ($1,$2,$3,$4)`,
+				checkout.ID, productID, product.Count, reservationTime,
+			)
+			if err != nil {
+				return fmt.Errorf("inserting reservation: %w", err)
+			}
+			stockItem := stock.Items[productID]
+			_, err = tx.ExecContext(
+				ctx,
+				`UPDATE stock SET available_amount = $1, reserved_amount = $2 WHERE product_id = $3`,
+				stockItem.AvailableAmount, stockItem.ReservedAmount, productID,
+			)
+			if err != nil {
+				return fmt.Errorf("updating stock: %w", err)
+			}
+		}
 
-// func (r repository) UpdateCheckout(
-// 	ctx context.Context,
-// 	checkout store.Checkout,
-// 	onUpdateFn func(stock store.Stock) (updatedStock store.Stock, err error),
-// ) error {
-// 	return RunInTx(ctx, r.db, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
-// 		_, err := tx.ExecContext(ctx,
-// 			`UPDATE checkouts SET status = $1 WHERE checkout_id = $2`,
-// 			checkout.Status, checkout.ID,
-// 		)
-// 		if err != nil {
-// 			return fmt.Errorf("updating checkouts status: %w", err)
-// 		}
-// 		stock := make(store.Stock, len(checkout.Reservations))
-// 		for _, reservation := range checkout.Reservations {
-// 			row := tx.QueryRowContext(ctx,
-// 				`SELECT product_id, available_amount, reserved_amount FROM stock WHERE product_id = $1 FOR UPDATE`,
-// 				reservation.ProductID,
-// 			)
-// 			var stockItem store.StockItem
-// 			err = row.Scan(&stockItem.ProductID, &stockItem.AvailableAmount, &stockItem.ReservedAmount)
-// 			if err != nil {
-// 				return fmt.Errorf("scanning stock item: %w", err)
-// 			}
-// 		}
-// 		updatedStock, err := onUpdateFn(stock)
-// 		if err != nil {
-// 			return fmt.Errorf("on stock invalidate: %w", err)
-// 		}
-// 		for _, stockItem := range updatedStock {
-// 			_, err = tx.ExecContext(ctx,
-// 				`UPDATE stock SET available_amount = $1, reserved_amount = $2 WHERE product_id = $3`,
-// 				stockItem.AvailableAmount, stockItem.ReservedAmount, stockItem.ProductID,
-// 			)
-// 			if err != nil {
-// 				return fmt.Errorf("updating stock: %w", err)
-// 			}
-// 		}
-// 		return nil
-// 	})
-// }
+		return nil
+	})
+}
 
-// func upsertReservation(
-// 	ctx context.Context,
-// 	exec *sql.Tx,
-// 	basketID string,
-// 	productID string,
-// 	upsertFn func(
-// 		stockItem store.StockItem,
-// 		actualReservation store.Reservation,
-// 	) (updatedReservation store.Reservation, updatedStockItem store.StockItem, err error),
-// ) error {
-// 	row := exec.QueryRowContext(ctx, "SELECT product_id, available_amount, reserved_amount FROM stock WHERE product_id = $1 FOR UPDATE", productID)
-// 	var stockItem store.StockItem
+// InsertStockItem implements store.Repository.
+func (r repository) InsertStockItem(ctx context.Context, stockItem store_domain.StockItem, product store_domain.Product) error {
+	panic("unimplemented")
+}
 
-// 	err := row.Scan(&stockItem.ProductID, &stockItem.AvailableAmount, &stockItem.ReservedAmount)
-// 	if err != nil {
-// 		return fmt.Errorf("scanning stock row: %w", err)
-// 	}
+// UpdateCheckout implements store.Repository.
+func (r repository) UpdateCheckout(ctx context.Context, checkoutID string, updateFn func(checkout *store_domain.Checkout, stock *store_domain.Stock) error) error {
+	panic("unimplemented")
+}
 
-// 	row = exec.QueryRowContext(ctx, "SELECT amount, reserved_at FROM stock_reservations WHERE basket_id = $1 AND product_id = $2")
-// 	actualReservation := store.Reservation{ProductID: productID}
-// 	err = row.Scan(&actualReservation.Amount, &actualReservation.ReservedAt)
-// 	if err != nil {
-// 		return fmt.Errorf("scanning stock_reservations row: %w", err)
-// 	}
-// 	reservation, updatedStockItem, err := upsertFn(stockItem, actualReservation)
-// 	if err != nil {
-// 		return fmt.Errorf("upserting domain reservation: %w", err)
-// 	}
-// 	_, err = exec.ExecContext(
-// 		ctx,
-// 		`INSERT INTO stock_reservations (basket_id, product_id, amount, reserved_at) VALUES ($1, $2, $3, $4)
-// 			 ON CONFLICT DO UPDATE SET amount = $3, reserved_at = $4`,
-// 		basketID, reservation.ProductID, reservation.Amount, reservation.ReservedAt,
-// 	)
-// 	if err != nil {
-// 		return fmt.Errorf("upserting repo reservation: %w", err)
-// 	}
-// 	_, err = exec.ExecContext(ctx,
-// 		"UPDATE stock SET available_amount = $2, reserved_amount = $3 WHERE product_id = $1",
-// 		productID,
-// 		updatedStockItem.AvailableAmount,
-// 		updatedStockItem.ReservedAmount,
-// 	)
-// 	if err != nil {
-// 		return fmt.Errorf("update repo stock item: %w", err)
-// 	}
-// 	return nil
-// }
+// UpdateStockItem implements store.Repository.
+func (r repository) UpdateStockItem(ctx context.Context, stockItem store_domain.StockItem, updateFn func(stockItem *store_domain.StockItem) error) {
+	panic("unimplemented")
+}
 
-// func (r repository) Checkout(ctx context.Context, checkoutID string) (store.Checkout, error) {
-// 	row := r.db.QueryRowContext(ctx, "SELECT checkout_id, created_at FROM checkouts WHERE checkout_id = $1", checkoutID)
+// UpsertCart implements store.Repository.
+func (r repository) UpsertCart(ctx context.Context, userID string, item store_domain.CartProduct, upsertFn func(cart *store_domain.Cart, checkout *store_domain.Checkout, stock *store_domain.Stock, stockItem store_domain.StockItem) error) error {
+	return RunInTx(ctx, r.db, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
+		rows, err := tx.QueryContext(
+			ctx,
+			`SELECT b.id, b.customer_id, b.last_modified_at, b.status, bp.product_id, bp.count
+			FROM baskets AS b
+			JOIN basket_products AS bp ON b.id = bp.id
+			WHERE b.status = $1 AND b.customer_id = $2`,
+			store_domain.CartActive, userID,
+		)
+		if err != nil && err != sql.ErrNoRows {
+			return fmt.Errorf("retrieving user basket: %w", err)
+		}
+		defer rows.Close()
+		cart := store_domain.Cart{Products: make(map[string]store_domain.CartProduct)}
+		for rows.Next() {
+			var cartProduct store_domain.CartProduct
+			err := rows.Scan(&cart.ID, &cart.CustomerID, &cart.LastModifiedAt, &cart.Status, &cartProduct.ProductID, &cartProduct.Count)
+			if err != nil {
+				return fmt.Errorf("scanning baskets: %w", err)
+			}
+			cart.Products[cartProduct.ProductID] = cartProduct
+		}
+		row := tx.QueryRowContext(
+			ctx,
+			`SELECT product_id, available_amount, reserved_amount 
+			 FROM stock WHERE product_id = $1`,
+			item.ProductID,
+		)
 
-// 	var checkout store.Checkout
-// 	err := row.Scan(&checkout.ID, &checkout.CreatedAt)
-// 	if err != nil {
-// 		return store.Checkout{}, fmt.Errorf("scanning checkout row: %w", err)
-// 	}
-// 	return checkout, nil
-// }
+		var stockItem store_domain.StockItem
+		err = row.Scan(&stockItem.ProductID, &stockItem.AvailableAmount, &stockItem.ReservedAmount)
+		if err != nil && err != sql.ErrNoRows {
+			return fmt.Errorf("scanning stock item: %w", err)
+		}
 
-// func (r repository) BasketByUserID(ctx context.Context, userID string) (store.Basket, error) {
-// 	row := r.db.QueryRowContext(ctx, "SELECT basket_id FROM baskets WHERE customer_id = $1", userID)
+		var checkout store_domain.Checkout
+		var stock store_domain.Stock
+		var checkoutProductIds []string
+		if !cart.IsZero() {
+			checkout = store_domain.Checkout{Items: make(map[string]store_domain.CartProduct, len(cart.Products))}
+			checkout.UserID = userID
+			rows, err = tx.QueryContext(
+				ctx,
+				`SELECT c.id, c.created_at, c.status, sr.product_id, sr.count FROM checkouts AS c 
+				JOIN stock_reservations AS sr ON c.id = sr.checkout_id
+				WHERE c.status = $1 AND c.basket_id = $2 GROUP BY c.id, sr.product_id`,
+				store_domain.CheckoutPending, cart.ID,
+			)
+			if err != nil && err != sql.ErrNoRows {
+				return fmt.Errorf("retrieving checkout: %w", err)
+			}
+			defer rows.Close()
+			checkoutProductIds = make([]string, 0, len(cart.Products))
+			for rows.Next() {
+				var cartProduct store_domain.CartProduct
+				err = rows.Scan(
+					&checkout.ID,
+					&checkout.CreatedAt,
+					&checkout.Status,
+					&cartProduct.ProductID,
+					&cartProduct.Count,
+				)
+				if err != nil {
+					return fmt.Errorf("scanning checkout and stock: %w", err)
+				}
+				checkout.Items[cartProduct.ProductID] = cartProduct
+				checkoutProductIds = append(checkoutProductIds, cartProduct.ProductID)
+			}
+		}
+		if !checkout.IsZero() {
+			rows, err = tx.QueryContext(
+				ctx,
+				`SELECT product_id, available_amount, reserved_amount FROM stock WHERE product_id = ANY($1) FOR UPDATE`,
+				checkoutProductIds,
+			)
+			if err != nil {
+				return fmt.Errorf("retrieving stock and resrevations: %w", err)
+			}
+			defer rows.Close()
+			stock = store_domain.Stock{Items: make(map[string]store_domain.StockItem, len(checkoutProductIds))}
+			for rows.Next() {
+				var stockItem store_domain.StockItem
 
-// 	var basketID string
-// 	err := row.Scan(&basketID)
-// 	if err != nil {
-// 		return store.Basket{}, fmt.Errorf("scanning basketID: %w", err)
-// 	}
-// 	rows, err := r.db.QueryContext(ctx, `
-// 		SELECT b.id, b.customer_id, b.last_modified_at, bp.count, bp.product_id FROM baskets AS b
-// 		JOIN basket_products AS bp ON bp.id = b.id WHERE b.id = $1`,
-// 		basketID,
-// 	)
-// 	if err != nil {
-// 		return store.Basket{}, fmt.Errorf("retrieving basket: %w", err)
-// 	}
-// 	defer rows.Close()
+				err := rows.Scan(&stockItem.ProductID, &stockItem.AvailableAmount, &stockItem.ReservedAmount)
+				if err != nil {
+					return fmt.Errorf("scanning stock: %w", err)
+				}
+				stock.Items[stockItem.ProductID] = stockItem
+			}
+		}
+		err = upsertFn(&cart, &checkout, &stock, stockItem)
+		if err != nil {
+			return fmt.Errorf("upserting domain fn: %w", err)
+		}
+		_, err = tx.ExecContext(
+			ctx,
+			`INSERT INTO baskets (id, customer_id, last_modified_at, status) VALUES ($1, $2, $3, $4)
+			ON CONFLICT (id) DO UPDATE SET last_modified_at = $3, status = $4`,
+			cart.ID, cart.CustomerID, cart.LastModifiedAt, cart.Status,
+		)
+		if err != nil {
+			return fmt.Errorf("upserting onto baskets: %w", err)
+		}
+		productToUpdate := cart.Products[item.ProductID]
+		_, err = tx.ExecContext(
+			ctx,
+			`INSERT INTO basket_products (id, product_id, count) VALUES ($1,$2,$3) 
+			ON CONFLICT (id,product_id) DO UPDATE SET count = $3`,
+			cart.ID, productToUpdate.ProductID, productToUpdate.Count,
+		)
+		if err != nil {
+			return fmt.Errorf("updating basket products: %w", err)
+		}
+		if !checkout.IsZero() {
+			_, err = tx.ExecContext(
+				ctx,
+				`UPDATE checkouts SET status = $1 WHERE id = $2`,
+				checkout.Status, checkout.ID,
+			)
+			if err != nil {
+				return fmt.Errorf("updating checkout %s: %w", checkout.ID, err)
+			}
+			for productID, stockItem := range stock.Items {
+				_, err = tx.ExecContext(
+					ctx,
+					`UPDATE stock SET available_amount = $1, reserved_amount = $2 WHERE product_id = $3`,
+					stockItem.AvailableAmount, stockItem.ReservedAmount, productID,
+				)
+				if err != nil {
+					return fmt.Errorf("updating stock item %s: %w", productID, err)
+				}
+			}
+		}
+		return nil
+	})
+}
 
-// 	var basket store.Basket
-// 	for rows.Next() {
-// 		var product store.BasketProduct
-// 		err := rows.Scan(&basket.ID, &basket.CustomerID, &basket.LastModifiedAt, &product.Count, &product.ProductID)
-// 		if err != nil {
-// 			return store.Basket{}, fmt.Errorf("scanning basket: %w", err)
-// 		}
+func RunInTx(ctx context.Context, db *sql.DB, opts *sql.TxOptions, txFunc func(tx *sql.Tx) error) (err error) {
+	tx, err := db.BeginTx(ctx, nil)
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		} else {
+			err = tx.Commit()
+		}
+	}()
+	if err != nil {
+		return fmt.Errorf("starting transaction: %w", err)
+	}
 
-// 		basket.Products[store.ProductID(product.ProductID)] = product
-// 	}
-
-// 	return basket, nil
-// }
-
-// func (r repository) BasketModifyTime(ctx context.Context, basketID string) (string, error) {
-// 	row := r.db.QueryRowContext(ctx, "SELECT last_modified_at FROM baskets WHERE id = $1", basketID)
-
-// 	var time string
-// 	err := row.Scan(&time)
-// 	if err != nil {
-// 		return "", fmt.Errorf("scanning basket modify time: %w", err)
-// 	}
-// 	return time, nil
-// }
-
-// func (r repository) UpsertReservations(
-// 	ctx context.Context,
-// 	basketID string,
-// 	productIDs []string,
-// 	reservationTime string,
-// 	upsertFn func(
-// 		stockItem store.StockItem,
-// 		actualReservation store.Reservation,
-// 	) (updatedReservation store.Reservation, updatedStockItem store.StockItem, err error),
-// ) error {
-// 	return RunInTx(ctx, r.db, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
-// 		for _, productID := range productIDs {
-// 			err := upsertReservation(ctx, tx, basketID, productID, upsertFn)
-// 			if err != nil {
-// 				return fmt.Errorf("updating reservation for productID %s: %w", productID, err)
-// 			}
-// 		}
-// 		_, err := tx.ExecContext(ctx,
-// 			`INSERT INTO checkouts (checkout_id, created_at) VALUES ($1, $2)
-// 			 ON CONFLICT DO UPDATE SET created_at = $2 WHERE checkout_id = $1`,
-// 			basketID, reservationTime,
-// 		)
-// 		if err != nil {
-// 			return fmt.Errorf("upserting checkouts: %w", err)
-// 		}
-// 		return nil
-// 	})
-// }
-
-// func (r repository) UpdateStockItem(
-// 	ctx context.Context,
-// 	itemID string,
-// 	updateFn func(item store.StockItem) (updatedItem store.StockItem, err error),
-// ) error {
-// 	return RunInTx(ctx, r.db, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
-// 		row := tx.QueryRowContext(ctx, "SELECT product_id, available_amount, reserved_amount FROM stock WHERE product_id = $1 FOR UPDATE", itemID)
-// 		var stockItem store.StockItem
-
-// 		err := row.Scan(&stockItem.ProductID, &stockItem.AvailableAmount, &stockItem.ReservedAmount)
-// 		if err != nil {
-// 			return fmt.Errorf("scanning row: %w", err)
-// 		}
-// 		updatedItem, err := updateFn(stockItem)
-// 		if err != nil {
-// 			return fmt.Errorf("update domain stock item: %w", err)
-// 		}
-// 		_, err = tx.ExecContext(ctx,
-// 			"UPDATE stock SET available_amount = $2, reserved_amount = $3 WHERE product_id = $1",
-// 			itemID,
-// 			updatedItem.AvailableAmount,
-// 			updatedItem.ReservedAmount,
-// 		)
-// 		if err != nil {
-// 			return fmt.Errorf("update repo stock item: %w", err)
-// 		}
-
-// 		return nil
-// 	})
-// }
-
-// func (r repository) UpdateBasket(
-// 	ctx context.Context,
-// 	customerID string,
-// 	basketProduct store.BasketProduct,
-// 	onUpdateFn func(stockItem store.StockItem) error,
-// ) error {
-// 	return RunInTx(ctx, r.db, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
-// 		//FIXME abstract it with function and interface which will allow db and tx operations
-// 		row := tx.QueryRowContext(ctx, `SELECT id, customer_id FROM baskets WHERE customer_id = $1`)
-
-// 		var basketID, customerID string
-// 		err := row.Scan(basketID, customerID)
-// 		if err != nil {
-// 			return fmt.Errorf("retrieving basket: %w", err)
-// 		}
-
-// 		//FIXME abstract it with function and interface which will allow db and tx operations
-// 		row = r.db.QueryRowContext(ctx, "SELECT product_id, available_amount, reserved_amount FROM stock WHERE product_id = $1", basketProduct.ProductID)
-// 		var stockItem store.StockItem
-
-// 		err = row.Scan(&stockItem.ProductID, &stockItem.AvailableAmount, &stockItem.ReservedAmount)
-// 		if err != nil {
-// 			return fmt.Errorf("retrieving stock item: %w", err)
-// 		}
-// 		err = onUpdateFn(stockItem)
-// 		if err != nil {
-// 			return fmt.Errorf("on domain update stock item: %w", err)
-// 		}
-// 		_, err = tx.ExecContext(ctx,
-// 			`INSERT INTO baskets (id, customer_id, last_modified_at) VALUES ($1, $2, $3)
-// 			ON CONFLICT DO NOTHING`,
-// 			basketID, customerID, time.Now().UTC().Format(time.RFC3339),
-// 		)
-// 		if err != nil {
-// 			return fmt.Errorf("updating basket: %w", err)
-// 		}
-// 		_, err = tx.ExecContext(ctx,
-// 			`INSERT INTO basket_products
-// 				(id, product_id, count)
-// 				VALUES ($1, $2, $3)
-// 				ON CONFLICT DO
-// 				UPDATE SET product_id = $2, count = $3 WHERE id = $1`,
-// 			basketID, basketProduct.ProductID, basketProduct.Count,
-// 		)
-// 		if err != nil {
-// 			return fmt.Errorf("updating basket products: %w", err)
-// 		}
-
-// 		return nil
-// 	})
-// }
-
-// func RunInTx(ctx context.Context, db *sql.DB, opts *sql.TxOptions, txFunc func(tx *sql.Tx) error) (err error) {
-// 	tx, err := db.BeginTx(ctx, nil)
-// 	defer func() {
-// 		if err != nil {
-// 			_ = tx.Rollback()
-// 		} else {
-// 			err = tx.Commit()
-// 		}
-// 	}()
-// 	if err != nil {
-// 		return fmt.Errorf("starting transaction: %w", err)
-// 	}
-
-// 	return txFunc(tx)
-// }
+	return txFunc(tx)
+}

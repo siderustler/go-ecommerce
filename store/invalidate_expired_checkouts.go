@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	store_domain "github.com/siderustler/go-ecommerce/store2/domain"
+	store_domain "github.com/siderustler/go-ecommerce/store/domain"
 )
 
 func (s Services) InvalidateExpiredCheckout(ctx context.Context, checkoutID string) error {
