@@ -31,7 +31,7 @@ func (m middleware) anonymoUser(c *fiber.Ctx) error {
 			customer.ShippingAddress{ID: uuid.NewString()},
 		))
 		if err != nil {
-			fmt.Errorf("creating customer: %+v", err)
+			fmt.Printf("creating customer: %+v", err)
 			return nil
 		}
 		c.Cookie(&fiber.Cookie{Name: "session", Value: userID})
