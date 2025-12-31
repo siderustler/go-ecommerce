@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strconv"
-	"strings"
 	"time"
 
 	store "github.com/siderustler/go-ecommerce/store2"
@@ -95,7 +93,8 @@ func (r repository) CreateCheckout(
 			return fmt.Errorf("retrieving user basket: %w", err)
 		}
 		defer rows.Close()
-		var cart store_domain.Cart
+		cart := store_domain.Cart{Products: make(map[string]store_domain.CartProduct)}
+		var cartProductIds []string
 		for rows.Next() {
 			var cartProduct store_domain.CartProduct
 			err := rows.Scan(&cart.ID, &cart.CustomerID, &cart.LastModifiedAt, &cart.Status, &cartProduct.ProductID, &cartProduct.Count)
@@ -103,19 +102,15 @@ func (r repository) CreateCheckout(
 				return fmt.Errorf("scanning baskets: %w", err)
 			}
 			cart.Products[cartProduct.ProductID] = cartProduct
+			cartProductIds = append(cartProductIds, cartProduct.ProductID)
 		}
-		productsInCart := len(cart.Products)
-		stock := store_domain.Stock{Items: make(map[string]store_domain.StockItem, productsInCart)}
-		if productsInCart > 0 {
-			placeholders := make([]string, 0, productsInCart)
-			for i := 1; i <= productsInCart; i++ {
-				placeholders = append(placeholders, "$"+strconv.Itoa(i))
-			}
+		stock := store_domain.Stock{Items: make(map[string]store_domain.StockItem, len(cart.Products))}
+		if !cart.IsZero() {
 			rows, err = tx.QueryContext(
 				ctx,
 				`SELECT product_id, available_amount, reserved_amount 
-				FROM stock WHERE product_id IN (%s) FOR UPDATE`,
-				strings.Join(placeholders, ","),
+				FROM stock WHERE product_id ANY ($1) FOR UPDATE`,
+				cartProductIds,
 			)
 			if err != nil {
 				return fmt.Errorf("retrieving stock: %w", err)
@@ -263,15 +258,11 @@ func (r repository) UpsertCart(ctx context.Context, userID string, item store_do
 			}
 		}
 		if !checkout.IsZero() {
-			placeholders := make([]string, 0, len(cart.Products))
-			for i := 1; i <= len(cart.Products); i++ {
-				placeholders = append(placeholders, "$"+strconv.Itoa(i))
-			}
-			stmt := fmt.Sprintf(
-				`SELECT product_id, available_amount, reserved_amount FROM stock WHERE product_id IN (%s) FOR UPDATE`,
-				strings.Join(placeholders, ","),
+			rows, err = tx.QueryContext(
+				ctx,
+				`SELECT product_id, available_amount, reserved_amount FROM stock WHERE product_id ANY($1) FOR UPDATE`,
+				checkoutProductIds,
 			)
-			rows, err = tx.QueryContext(ctx, stmt, strings.Join(checkoutProductIds, ","))
 			if err != nil {
 				return fmt.Errorf("retrieving stock and resrevations: %w", err)
 			}
