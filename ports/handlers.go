@@ -204,8 +204,9 @@ func (h handlers) getDashboard(c *fiber.Ctx) error {
 }
 
 func (h handlers) getBasket(c *fiber.Ctx) error {
-	var navBarViewModel components.NavBarViewModel
 	//FIXME retrieving search value in navbar while js is not enabled
+	var navBarViewModel components.NavBarViewModel
+	var basketViewModel views.BasketViewModel
 
 	userID := c.Cookies("session")
 	cart, err := h.storeServices.Cart(c.Context(), userID)
@@ -226,7 +227,7 @@ func (h handlers) getBasket(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Redirect("/")
 	}
-	basketViewModel := views.MapDomainCartDomainProductsToBasketViewModel(products, cart.Products, navBarViewModel)
+	basketViewModel.Align(products, cart.Products, navBarViewModel)
 
 	return renderFragmentOrView(c, views.Basket(basketViewModel), views.BasketFragment)
 }
@@ -238,15 +239,13 @@ func (h handlers) updateBasket(c *fiber.Ctx) error {
 
 	var err error
 	if basketViewModel.IncBasket {
-		count := basketViewModel.Count + 1
-		err = h.storeServices.AddProductToCart(c.Context(), userID, store_domain.NewCartProduct(basketViewModel.ChangeCountID, count))
+		err = h.storeServices.AddProductToCart(c.Context(), userID, store_domain.NewCartProduct(basketViewModel.ChangeCountID, 1))
 		if err != nil {
 			return renderFragmentOrView(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
 		}
 	}
 	if basketViewModel.DecBasket {
-		count := basketViewModel.Count - 1
-		err = h.storeServices.RemoveProductFromCart(c.Context(), userID, store_domain.NewCartProduct(basketViewModel.ChangeCountID, count))
+		err = h.storeServices.RemoveProductFromCart(c.Context(), userID, store_domain.NewCartProduct(basketViewModel.ChangeCountID, 1))
 		if err != nil {
 			return renderFragmentOrView(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
 		}
@@ -261,9 +260,10 @@ func (h handlers) updateBasket(c *fiber.Ctx) error {
 	}
 	products, err := h.productServices.ProductsByIDs(c.Context(), productIds)
 	if err != nil {
+
 		return renderFragmentOrView(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
 	}
-	basketViewModel = views.MapDomainCartDomainProductsToBasketViewModel(products, cart.Products, components.NavBarViewModel{})
+	basketViewModel.Align(products, cart.Products, components.NavBarViewModel{})
 
 	return renderFragmentOrRedirect(c, views.Basket(basketViewModel), "/basket", views.BasketItemFragment(basketViewModel.ChangeCountID))
 }

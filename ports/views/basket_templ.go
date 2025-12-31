@@ -18,11 +18,9 @@ type BasketItemViewModel struct {
 	count   int
 }
 
-func MapDomainCartDomainProductsToBasketViewModel(
-	products []product.Product,
+func (b *BasketViewModel) Align(products []product.Product,
 	cartProducts map[string]store_domain.CartProduct,
-	navBarViewModel components.NavBarViewModel,
-) BasketViewModel {
+	navBarViewModel components.NavBarViewModel) {
 	items := make([]BasketItemViewModel, 0, len(cartProducts))
 	for _, product := range products {
 		cartProduct, exists := cartProducts[product.ID]
@@ -31,10 +29,7 @@ func MapDomainCartDomainProductsToBasketViewModel(
 		}
 		items = append(items, newBasketItemViewModel(product, cartProduct.Count))
 	}
-	return BasketViewModel{
-		items:           items,
-		navBarViewModel: navBarViewModel,
-	}
+	b.items = items
 }
 
 func newBasketItemViewModel(product product.Product, count int) BasketItemViewModel {
@@ -123,7 +118,7 @@ func Basket(viewModel BasketViewModel) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"flex flex-col 2xl:flex-row gap-8 md:gap-12 lg:gap-8\"><div class=\"flex flex-2 flex-col gap-6 md:gap-8\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"flex flex-col 2xl:flex-row gap-8 md:gap-12 lg:gap-8\"><div class=\"flex flex-2 flex-col gap-6 md:gap-8 items-center justify-center\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -225,14 +220,14 @@ func basketProductItem(item BasketItemViewModel) templ.Component {
 			templ_7745c5c3_Var5 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<div class=\"flex flex-col md:flex-row md:items-center p-4 md:p-8 lg:p-12 gap-4 md:gap-8 lg:gap-12 shadow-md border border-grey-300 rounded-xl min-w-fit bg-grey-100\"><img src=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<div class=\"flex flex-col md:flex-row md:items-center px-8 md:px-12 py-12 lg:py-16 gap-4 md:gap-8 lg:gap-12 shadow-md border border-grey-300 rounded-xl bg-grey-100 sm:max-w-2/3 md:max-w-fit\"><img src=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(item.product.Image)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 88, Col: 31}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 83, Col: 31}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -245,13 +240,13 @@ func basketProductItem(item BasketItemViewModel) templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(item.product.Name + " ilustracja")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 88, Col: 73}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 83, Col: 73}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" width=\"195px\" height=\"195px\" class=\"rounded-2xl shadow-sm\"><div class=\"flex flex-col gap-6 py-4 max-w-full md:max-w-1/4 2xl:max-w-full\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" width=\"195px\" height=\"195px\" class=\"rounded-2xl shadow-sm mx-auto md:mx-0\"><div class=\"flex flex-col gap-6 py-4 max-w-full md:max-w-1/4 2xl:max-w-full\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -274,7 +269,7 @@ func basketProductItem(item BasketItemViewModel) templ.Component {
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(item.product.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 91, Col: 60}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 86, Col: 60}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -313,9 +308,9 @@ func basketProductItem(item BasketItemViewModel) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var11 string
-				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(item.product.Price)
+				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.2f zł", item.product.Price))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 97, Col: 44}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 92, Col: 69}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 				if templ_7745c5c3_Err != nil {
@@ -356,7 +351,7 @@ func basketProductItem(item BasketItemViewModel) templ.Component {
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(id)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 103, Col: 15}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 98, Col: 15}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {
@@ -429,7 +424,7 @@ func basketSummary(items []BasketItemViewModel) templ.Component {
 		ctx = templ.ClearChildren(ctx)
 		var partPrice, fullPrice float32
 		for _, item := range items {
-			partPrice += item.product.Price
+			partPrice += item.product.Price * float32(item.count)
 		}
 		fullPrice = partPrice
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<div class=\"flex flex-1 flex-col gap-6 px-4 pb-6 pt-4 md:px-6 md:py-6 lg:px-8 lg:py-8 shadow-md rounded-xl border-2 border-grey-300\">")
@@ -459,7 +454,7 @@ func basketSummary(items []BasketItemViewModel) templ.Component {
 		var templ_7745c5c3_Var16 templ.SafeURL
 		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinURLErrs("/basket/customer/billing")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 128, Col: 36}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 123, Col: 36}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
@@ -501,7 +496,7 @@ func summaryItem(title, description string) templ.Component {
 		var templ_7745c5c3_Var18 string
 		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 147, Col: 49}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 142, Col: 49}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 		if templ_7745c5c3_Err != nil {
@@ -514,7 +509,7 @@ func summaryItem(title, description string) templ.Component {
 		var templ_7745c5c3_Var19 string
 		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(description)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 148, Col: 73}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 143, Col: 73}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 		if templ_7745c5c3_Err != nil {

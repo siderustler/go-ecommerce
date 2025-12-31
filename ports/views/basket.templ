@@ -10,11 +10,9 @@ type BasketItemViewModel struct {
 	count   int
 }
 
-func MapDomainCartDomainProductsToBasketViewModel(
-	products []product.Product,
+func (b *BasketViewModel) Align(products []product.Product,
 	cartProducts map[string]store_domain.CartProduct,
-	navBarViewModel components.NavBarViewModel,
-) BasketViewModel {
+	navBarViewModel components.NavBarViewModel) {
 	items := make([]BasketItemViewModel, 0, len(cartProducts))
 	for _, product := range products {
 		cartProduct, exists := cartProducts[product.ID]
@@ -23,10 +21,7 @@ func MapDomainCartDomainProductsToBasketViewModel(
 		}
 		items = append(items, newBasketItemViewModel(product, cartProduct.Count))
 	}
-	return BasketViewModel{
-		items:           items,
-		navBarViewModel: navBarViewModel,
-	}
+	b.items = items
 }
 
 func newBasketItemViewModel(product product.Product, count int) BasketItemViewModel {
@@ -61,7 +56,7 @@ templ Basket(viewModel BasketViewModel) {
 			<div id="products" class="flex flex-col gap-5 md:gap-6 lg:gap-8 shadow-md rounded-3xl bg-grey-200 px-4 py-3 md:px-8 md:py-6 lg:px-16 lg:py-12 border border-grey-300">
 				@components.InfoHeader("/public/icons/shop-basket.svg", "koszyk ikona", "Koszyk")
 				<div class="flex flex-col 2xl:flex-row gap-8 md:gap-12 lg:gap-8">
-					<div class="flex flex-2 flex-col gap-6 md:gap-8">
+					<div class="flex flex-2 flex-col gap-6 md:gap-8 items-center justify-center">
 						if len(viewModel.items) == 0 {
 							@emptyBasket()
 						}
@@ -84,8 +79,8 @@ templ emptyBasket() {
 }
 
 templ basketProductItem(item BasketItemViewModel) {
-	<div class="flex flex-col md:flex-row md:items-center p-4 md:p-8 lg:p-12 gap-4 md:gap-8 lg:gap-12 shadow-md border border-grey-300 rounded-xl min-w-fit bg-grey-100">
-		<img src={ item.product.Image } alt={ item.product.Name + " ilustracja" } width="195px" height="195px" class="rounded-2xl shadow-sm"/>
+	<div class="flex flex-col md:flex-row md:items-center px-8 md:px-12 py-12 lg:py-16 gap-4 md:gap-8 lg:gap-12 shadow-md border border-grey-300 rounded-xl bg-grey-100 sm:max-w-2/3 md:max-w-fit">
+		<img src={ item.product.Image } alt={ item.product.Name + " ilustracja" } width="195px" height="195px" class="rounded-2xl shadow-sm mx-auto md:mx-0"/>
 		<div class="flex flex-col gap-6 py-4 max-w-full md:max-w-1/4 2xl:max-w-full">
 			@components.Info("Nazwa produktu") {
 				<h2 class="text-xl text-primary-900">{ item.product.Name }</h2>
@@ -94,7 +89,7 @@ templ basketProductItem(item BasketItemViewModel) {
 				@promotionPrice(item.product.PriceBefore, item.product.Price)
 			} else {
 				@components.Info("Cena") {
-					<p class="text-xl">{ item.product.Price }</p>
+					<p class="text-xl">{ fmt.Sprintf("%.2f zł", item.product.Price) }</p>
 				}
 			}
 		</div>
@@ -113,7 +108,7 @@ templ basketSummary(items []BasketItemViewModel) {
 	{{
 		var partPrice, fullPrice float32
 		for _, item := range items {
-			partPrice += item.product.Price
+			partPrice += item.product.Price * float32(item.count)
 		}
 		fullPrice = partPrice
 	}}
