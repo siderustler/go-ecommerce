@@ -5,13 +5,16 @@ package views
 
 //lint:file-ignore SA4006 This context is only used if a nested component is present.
 
-import "github.com/a-h/templ"
-import templruntime "github.com/a-h/templ/runtime"
+import (
+	"fmt"
 
-import "github.com/siderustler/go-ecommerce/ports/views/components"
-import "fmt"
-import "github.com/siderustler/go-ecommerce/product"
-import "github.com/siderustler/go-ecommerce/store2/domain"
+	"github.com/a-h/templ"
+	templruntime "github.com/a-h/templ/runtime"
+	"github.com/siderustler/go-ecommerce/ports/views/components"
+	"github.com/siderustler/go-ecommerce/product"
+
+	store_domain "github.com/siderustler/go-ecommerce/store2/domain"
+)
 
 type BasketItemViewModel struct {
 	product product.Product
@@ -20,7 +23,8 @@ type BasketItemViewModel struct {
 
 func (b *BasketViewModel) Align(products []product.Product,
 	cartProducts map[string]store_domain.CartProduct,
-	navBarViewModel components.NavBarViewModel) {
+	navBarViewModel components.NavBarViewModel,
+) {
 	items := make([]BasketItemViewModel, 0, len(cartProducts))
 	for _, product := range products {
 		cartProduct, exists := cartProducts[product.ID]
@@ -30,6 +34,7 @@ func (b *BasketViewModel) Align(products []product.Product,
 		items = append(items, newBasketItemViewModel(product, cartProduct.Count))
 	}
 	b.items = items
+	b.navBarViewModel = navBarViewModel
 }
 
 func newBasketItemViewModel(product product.Product, count int) BasketItemViewModel {
