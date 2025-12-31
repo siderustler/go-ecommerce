@@ -22,6 +22,7 @@ func (b *BasketViewModel) Align(products []product.Product,
 		items = append(items, newBasketItemViewModel(product, cartProduct.Count))
 	}
 	b.items = items
+	b.navBarViewModel = navBarViewModel
 }
 
 func newBasketItemViewModel(product product.Product, count int) BasketItemViewModel {

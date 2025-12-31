@@ -3,7 +3,6 @@ package ports
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/go-querystring/query"
@@ -216,8 +215,7 @@ func (h handlers) getBasket(c *fiber.Ctx) error {
 		return c.Redirect("/")
 	}
 	cartCount := len(cart.Products)
-
-	fmt.Printf("basket count: %+v", cartCount)
+	fmt.Printf("%+v", cartCount)
 	navBarViewModel.Align(cartCount)
 
 	//FIXME -- create mapper
@@ -232,7 +230,6 @@ func (h handlers) getBasket(c *fiber.Ctx) error {
 	}
 	basketViewModel.Align(products, cart.Products, navBarViewModel)
 
-	fmt.Printf("basket count: %+v", basketViewModel)
 	return renderFragmentOrView(c, views.Basket(basketViewModel), views.BasketFragment)
 }
 
@@ -241,7 +238,6 @@ func (h handlers) updateBasket(c *fiber.Ctx) error {
 	var navBarViewModel components.NavBarViewModel
 	_ = c.BodyParser(&basketViewModel)
 	userID := c.Cookies("session")
-	<-time.After(time.Second)
 	var err error
 	if basketViewModel.IncBasket {
 		err = h.storeServices.AddProductToCart(c.Context(), userID, store_domain.NewCartProduct(basketViewModel.ChangeCountID, 1))
@@ -275,7 +271,6 @@ func (h handlers) updateBasket(c *fiber.Ctx) error {
 
 func (h handlers) addItemToBasket(c *fiber.Ctx) error {
 	userID := c.Cookies("session")
-	fmt.Printf("SUERID %+v", userID)
 	var basketAdd struct {
 		Count     int    `form:"count"`
 		ProductID string `form:"productID"`
