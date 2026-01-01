@@ -5,18 +5,19 @@ package views
 
 //lint:file-ignore SA4006 This context is only used if a nested component is present.
 
-import "github.com/a-h/templ"
-import templruntime "github.com/a-h/templ/runtime"
+import (
+	"strconv"
+
+	"github.com/a-h/templ"
+	templruntime "github.com/a-h/templ/runtime"
+	"github.com/siderustler/go-ecommerce/ports/views/components"
+	"github.com/siderustler/go-ecommerce/product"
+)
 
 /*
 	koszyk na dashboardzie powinien byc wqyciagany na podsstawie sesji
 	dodanie / usuniecie itemu do koszyka usuwa item i aktualizuje liczbe rzeczy w koszyku na widoku
 */
-
-import "strconv"
-import "math"
-import "github.com/siderustler/go-ecommerce/ports/views/components"
-import "github.com/siderustler/go-ecommerce/product"
 
 type dashboardViewModel struct {
 	products            []product.Product
@@ -33,29 +34,29 @@ type dashboardSelectorFragment struct{}
 var PromotedProductSelectorFragment = promotedProductSelectorFragment{}
 var DashboardSelectorFragment = dashboardSelectorFragment{}
 
-func maxPromotionPages(allProducts int, productsPerPage int) int {
-	return int(math.Ceil(float64(allProducts / productsPerPage)))
-}
-
-func NewDashboardViewModel(products []product.Product, selectedProduct, displayedPromotions int, navBarViewModel components.NavBarViewModel) dashboardViewModel {
-	isSelectedProductOutOfBounds := selectedProduct < 0 || selectedProduct > len(products)-1
+func NewDashboardViewModel(
+	products []product.Product,
+	slide int,
+	displayedPromotions int,
+	promoCount int,
+	maxPromosPerPage int,
+	navBarViewModel components.NavBarViewModel,
+) dashboardViewModel {
+	isSelectedProductOutOfBounds := slide < 0 || slide > len(products)-1
 	if isSelectedProductOutOfBounds {
-		selectedProduct = 0
+		slide = 0
 	}
 
-	maxProductsPerPage := 3
-	maxPromotions := maxPromotionPages(len(products), maxProductsPerPage)
-
-	isDisplayedPromotionsOutOfBounds := displayedPromotions < 0 || displayedPromotions > maxPromotions
+	maxPromotions := (promoCount + maxPromosPerPage - 1) / maxPromosPerPage
+	isDisplayedPromotionsOutOfBounds := displayedPromotions < 1 || displayedPromotions > maxPromotions
 	if isDisplayedPromotionsOutOfBounds {
-		displayedPromotions = 0
+		displayedPromotions = 1
 	}
 	return dashboardViewModel{
 		products:            products,
-		selectedProduct:     selectedProduct,
+		selectedProduct:     slide,
 		displayedPromotions: displayedPromotions,
 		maxPromotions:       maxPromotions,
-		maxProductsPerPage:  maxProductsPerPage,
 		navBarViewModel:     navBarViewModel,
 	}
 }
@@ -145,9 +146,17 @@ func Dashboard(dashboardViewModel dashboardViewModel) templ.Component {
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = promotedProductsSection(dashboardViewModel).Render(ctx, templ_7745c5c3_Buffer)
-						if templ_7745c5c3_Err != nil {
-							return templ_7745c5c3_Err
+						promotionsExists := len(dashboardViewModel.products) > 0
+						if !promotionsExists {
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div>nei ma promocji FIXME</div>")
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
+						} else {
+							templ_7745c5c3_Err = promotedProductsSection(dashboardViewModel).Render(ctx, templ_7745c5c3_Buffer)
+							if templ_7745c5c3_Err != nil {
+								return templ_7745c5c3_Err
+							}
 						}
 						return nil
 					})
@@ -177,7 +186,7 @@ func Dashboard(dashboardViewModel dashboardViewModel) templ.Component {
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, " ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, " ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -191,7 +200,7 @@ func Dashboard(dashboardViewModel dashboardViewModel) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -232,46 +241,46 @@ func dashHeading(content, icon, iconAlt string) templ.Component {
 			templ_7745c5c3_Var7 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"rounded-xl px-8 py-6 shadow-lg bg-primary-100 absolute -top-20 left-1/2 -translate-x-1/2 border border-primary-300\"><div class=\"flex items-center justify-center gap-3 md:gap-4 lg:gap-6 py-3 lg:py-4 px-3 md:px-4 border-b-primary-200 border-b-2\"><img src=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"rounded-xl px-8 py-6 shadow-lg bg-primary-100 absolute -top-20 left-1/2 -translate-x-1/2 border border-primary-300\"><div class=\"flex items-center justify-center gap-3 md:gap-4 lg:gap-6 py-3 lg:py-4 px-3 md:px-4 border-b-primary-200 border-b-2\"><img src=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(icon)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 78, Col: 18}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 82, Col: 18}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\" alt=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" alt=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(iconAlt)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 78, Col: 34}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 82, Col: 34}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" width=\"32px\" height=\"32px\"><h2 class=\"text-primary-900 text-xl\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" width=\"32px\" height=\"32px\"><h2 class=\"text-primary-900 text-xl\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(content)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 79, Col: 49}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 83, Col: 49}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</h2></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</h2></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -300,20 +309,20 @@ func dashSection(section string) templ.Component {
 			templ_7745c5c3_Var11 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<section class=\"p-4 md:p-6 lg:p-8 min-w-full\"><div id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<section class=\"p-4 md:p-6 lg:p-8 min-w-full\"><div id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(section)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 86, Col: 19}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 90, Col: 19}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" class=\"flex flex-col gap-4 md:gap-6 lg:gap-8 px-6 py-10 md:px-8 md:py-12 rounded-2xl shadow-lg bg-grey-200 relative border border-grey-300\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\" class=\"flex flex-col gap-4 md:gap-6 lg:gap-8 px-6 py-10 md:px-8 md:py-12 rounded-2xl shadow-lg bg-grey-200 relative border border-grey-300\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -321,7 +330,7 @@ func dashSection(section string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</div></section>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</div></section>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -350,7 +359,7 @@ func promotedProductsSection(dashboardViewModel dashboardViewModel) templ.Compon
 			templ_7745c5c3_Var13 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<div class=\"lg:hidden flex flex-col gap-2 items-center\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<div class=\"lg:hidden flex flex-col gap-2 items-center\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -359,7 +368,7 @@ func promotedProductsSection(dashboardViewModel dashboardViewModel) templ.Compon
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<div class=\"flex gap-6 p-6 justify-center items-center\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<div class=\"flex gap-6 p-6 justify-center items-center\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -380,73 +389,70 @@ func promotedProductsSection(dashboardViewModel dashboardViewModel) templ.Compon
 		} else {
 			slider = append(slider, actual-1, actual, actual+1)
 		}
-		for i := 0; i < len(slider); i++ {
+		for i := 1; i < len(slider); i++ {
 			path := "/?slide=" + strconv.Itoa(slider[i])
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var14 templ.SafeURL
 			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinURLErrs(path)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 119, Col: 16}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 123, Col: 16}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if slider[i] == actual {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, " class=\"bg-primary-700 w-2 h-2 rounded-full shadow-xl\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, " class=\"bg-primary-700 w-2 h-2 rounded-full shadow-xl\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, " class=\"bg-primary-500 w-1.5 h-1.5 rounded-full shadow-xl\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, " class=\"bg-primary-500 w-1.5 h-1.5 rounded-full shadow-xl\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, " hx-get=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, " hx-get=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(path)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 125, Col: 18}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 129, Col: 18}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\" hx-target=\"#promotions\" hx-swap=\"innerHTML swap:0.01s settle:0.01s\" hx-push-url=\"true\"></a>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\" hx-target=\"#promotions\" hx-swap=\"innerHTML swap:0.01s settle:0.01s\" hx-push-url=\"true\"></a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</div></div><div class=\"hidden lg:flex items-center justify-center gap-4 lg:gap-6 xl:gap-12\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</div></div><div class=\"hidden lg:flex items-center justify-center gap-4 lg:gap-6 xl:gap-12\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		backPage, nextPage := dashboardViewModel.displayedPromotions-1, dashboardViewModel.displayedPromotions+1
-		if backPage < 0 {
+		if backPage < 1 {
 			backPage = dashboardViewModel.maxPromotions
 		}
 		if nextPage > dashboardViewModel.maxPromotions {
-			nextPage = 0
+			nextPage = 1
 		}
 		templ_7745c5c3_Err = paginatorItem("/?promotions="+strconv.Itoa(backPage), back, "#promotions", "innerHTML", true, "absolute top-1/2 left-2 shadow-lg z-2").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		actualPage := dashboardViewModel.displayedPromotions
-		start := actualPage * dashboardViewModel.maxProductsPerPage
-		for i := start; i < start+dashboardViewModel.maxProductsPerPage && i < len(dashboardViewModel.products); i++ {
-			product := dashboardViewModel.products[i]
+		for _, product := range dashboardViewModel.products {
 			templ_7745c5c3_Err = promoProduct(product).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -456,7 +462,7 @@ func promotedProductsSection(dashboardViewModel dashboardViewModel) templ.Compon
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -486,72 +492,72 @@ func promoProduct(product product.Product) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		productPath := "/products/details/" + product.ID
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<div class=\"flex flex-col gap-6 lg:gap-8 p-6 md:p-8 items-center justify-center rounded-xl border-primary-300 border-2 shadow-lg bg-grey-100 max-w-sm relative\"><img src=\"/public/icons/product-sale.svg\" alt=\"produkt w promocji ikona\" height=\"48px\" width=\"48px\" class=\"absolute -top-3 -left-2\"> <a href=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<div class=\"flex flex-col gap-6 lg:gap-8 p-6 md:p-8 items-center justify-center rounded-xl border-primary-300 border-2 shadow-lg bg-grey-100 max-w-sm relative\"><img src=\"/public/icons/product-sale.svg\" alt=\"produkt w promocji ikona\" height=\"48px\" width=\"48px\" class=\"absolute -top-3 -left-2\"> <a href=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var17 templ.SafeURL
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinURLErrs(productPath)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 161, Col: 21}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 160, Col: 21}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\" hx-get=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\" hx-get=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var18 string
 		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(productPath)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 162, Col: 23}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 161, Col: 23}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\" hx-target=\"#products\" hx-swap=\"outerHTML\" class=\"flex flex-col gap-4 items-center justify-center\" hx-push-url=\"true\"><img alt=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\" hx-target=\"#products\" hx-swap=\"outerHTML\" class=\"flex flex-col gap-4 items-center justify-center\" hx-push-url=\"true\"><img alt=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var19 string
 		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(product.Name + " image")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 169, Col: 33}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 168, Col: 33}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\" src=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\" src=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var20 string
 		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(product.Image)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 170, Col: 23}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 169, Col: 23}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\" class=\"rounded-2xl shadow-xl htmx-swapping:opacity-0 transition-opacity duration-200 htmx-settling:opacity-100 w-full h-full\"><div class=\"flex flex-col gap-2\"><img alt=\"product name\" src=\"/public/icons/product-name.svg\" width=\"24px\" height=\"24px\"><p class=\"pl-4 pr-2 text-primary-800 text-lg\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\" class=\"rounded-2xl shadow-xl htmx-swapping:opacity-0 transition-opacity duration-200 htmx-settling:opacity-100 w-full h-full\"><div class=\"flex flex-col gap-2\"><img alt=\"product name\" src=\"/public/icons/product-name.svg\" width=\"24px\" height=\"24px\"><p class=\"pl-4 pr-2 text-primary-800 text-lg\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var21 string
 		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(product.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 180, Col: 64}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 179, Col: 64}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</p></div></a>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</p></div></a>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -559,20 +565,20 @@ func promoProduct(product product.Product) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<form action=\"/basket/add\" method=\"post\" hx-post=\"/basket/add\" hx-target=\"#basket-counter\" hx-swap=\"outerHTML\" class=\"w-full\"><input name=\"count\" value=\"1\" hidden> <input name=\"productID\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<form action=\"/basket/add\" method=\"post\" hx-post=\"/basket/add\" class=\"w-full\"><input name=\"count\" value=\"1\" hidden> <input name=\"productID\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var22 string
 		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(product.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 192, Col: 22}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 191, Col: 22}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "\" hidden> <input name=\"redirect\" value=\"/\" hidden> <button class=\"flex justify-center items-center gap-1 md:gap-2 lg:gap-4 bg-primary-300 p-3 md:px-5 lg:px-6 md:py-3 lg:py-4 rounded-xl w-full\"><img src=\"/public/icons/shop-cart.svg\" alt=\"dodaj do koszyka ikona\" width=\"24px\" height=\"24px\"> <span class=\"text-primary-900 text-sm\">Dodaj do koszyka</span></button></form></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "\" hidden> <input name=\"redirect\" value=\"/\" hidden> <button class=\"flex justify-center items-center gap-1 md:gap-2 lg:gap-4 bg-primary-300 p-3 md:px-5 lg:px-6 md:py-3 lg:py-4 rounded-xl w-full\"><img src=\"/public/icons/shop-cart.svg\" alt=\"dodaj do koszyka ikona\" width=\"24px\" height=\"24px\"> <span class=\"text-primary-900 text-sm\">Dodaj do koszyka</span></button></form></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -601,33 +607,33 @@ func promotionPrice(priceBefore, actualPrice float32) templ.Component {
 			templ_7745c5c3_Var23 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "<div class=\"flex flex-col xl:flex-row gap-4 md:justify-around px-4 w-full\"><div class=\"flex gap-2 flex-col\"><p class=\"text-error-700 text-sm\">Cena przed:</p><p class=\"flex gap-2 md:gap-3\"><img alt=\"price before promotion\" src=\"/public/icons/promo-price-before.svg\" width=\"24px\" height=\"24px\"> <span class=\"text-error-800 line-through text-lg\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<div class=\"flex flex-col xl:flex-row gap-4 md:justify-around px-4 w-full\"><div class=\"flex gap-2 flex-col\"><p class=\"text-error-700 text-sm\">Cena przed:</p><p class=\"flex gap-2 md:gap-3\"><img alt=\"price before promotion\" src=\"/public/icons/promo-price-before.svg\" width=\"24px\" height=\"24px\"> <span class=\"text-error-800 line-through text-lg\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var24 string
 		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(priceBefore)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 221, Col: 67}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 220, Col: 67}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "</span></p></div><div class=\"flex gap-2 flex-col\"><p class=\"text-primary-700 text-sm\">Aktualna cena:</p><p class=\"flex gap-2 md:gap-3\"><img alt=\"price with promotion\" src=\"/public/icons/promo-price-after.svg\" width=\"24px\" height=\"24px\"> <span class=\"text-primary-800 text-lg\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "</span></p></div><div class=\"flex gap-2 flex-col\"><p class=\"text-primary-700 text-sm\">Aktualna cena:</p><p class=\"flex gap-2 md:gap-3\"><img alt=\"price with promotion\" src=\"/public/icons/promo-price-after.svg\" width=\"24px\" height=\"24px\"> <span class=\"text-primary-800 text-lg\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var25 string
 		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(actualPrice)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 228, Col: 56}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/dashboard.templ`, Line: 227, Col: 56}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "</span></p></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "</span></p></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -656,7 +662,7 @@ func categoriesSection() templ.Component {
 			templ_7745c5c3_Var26 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<div class=\"flex items-center gap-4 md:gap-8 lg:gap-12 flex-wrap justify-center\"><a class=\"p-3 bg-grey-100 shadow-lg rounded-xl flex flex-col items-center justify-center w-40 min-h-36 text-center hover:bg-primary-200 border border-grey-300 hover:border-primary-300\" href=\"/products/1?machines=true\" hx-get=\"/products/1?machines=true\" hx-target=\"#products\" hx-swap=\"outerHTML\" hx-push-url=\"true\"><img alt=\"maszyny budowlane ikona\" src=\"/public/icons/machines.svg\" width=\"24px\" height=\"24px\"><p class=\"p-2 text-tertiary-900\">Maszyny budowlane</p></a> <a class=\"p-3 bg-grey-100 shadow-lg rounded-xl flex flex-col items-center justify-center w-40 min-h-36 text-center hover:bg-primary-200 border border-grey-300 hover:border-primary-300\" href=\"/products/1?gardening=true\" hx-get=\"/products/1?gardening=true\" hx-target=\"#products\" hx-swap=\"outerHTML\" hx-push-url=\"true\"><img alt=\"sprzęt ogrodniczy ikona\" src=\"/public/icons/gardening.svg\" width=\"24px\" height=\"24px\"><p class=\"p-2 text-tertiary-900\">Sprzęt ogrodniczy</p></a> <a class=\"p-3 bg-grey-100 shadow-lg rounded-xl flex flex-col items-center justify-center w-40 min-h-36 text-center hover:bg-primary-200 border border-grey-300 hover:border-primary-300\" href=\"/products/1?parts=true\" hx-get=\"/products/1?parts=true\" hx-target=\"#products\" hx-swap=\"outerHTML\" hx-push-url=\"true\"><img alt=\"części i eksploatacja ikona\" src=\"/public/icons/parts.svg\" width=\"24px\" height=\"24px\"><p class=\"p-2 text-tertiary-900\">Części i eksploatacja</p></a> <a class=\"p-3 bg-grey-100 shadow-lg rounded-xl flex flex-col items-center justify-center w-40 min-h-36 text-center hover:bg-primary-200 border border-grey-300 hover:border-primary-300\" href=\"/products/1?electro=true\" hx-get=\"/products/1?electro=true\" hx-target=\"#products\" hx-swap=\"outerHTML\" hx-push-url=\"true\"><img alt=\"elektro narzędzia ikona\" src=\"/public/icons/power-supply.svg\" width=\"24px\" height=\"24px\"><p class=\"p-2 text-tertiary-900\">Elektro narzędzia</p></a> <a class=\"p-3 bg-grey-100 shadow-lg rounded-xl flex flex-col items-center justify-center w-40 min-h-36 text-center hover:bg-primary-200 border border-grey-300 hover:border-primary-300\" href=\"/products/1?electroMachines=true\" hx-get=\"/products/1?electroMachines=true\" hx-target=\"#products\" hx-swap=\"outerHTML\" hx-push-url=\"true\"><img alt=\"części i eksploatacja ikona\" src=\"/public/icons/electric-machines.svg\" width=\"24px\" height=\"24px\"><p class=\"p-2 text-tertiary-900\">Maszyny i urządzenia zasilające</p></a></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<div class=\"flex items-center gap-4 md:gap-8 lg:gap-12 flex-wrap justify-center\"><a class=\"p-3 bg-grey-100 shadow-lg rounded-xl flex flex-col items-center justify-center w-40 min-h-36 text-center hover:bg-primary-200 border border-grey-300 hover:border-primary-300\" href=\"/products/1?machines=true\" hx-get=\"/products/1?machines=true\" hx-target=\"#products\" hx-swap=\"outerHTML\" hx-push-url=\"true\"><img alt=\"maszyny budowlane ikona\" src=\"/public/icons/machines.svg\" width=\"24px\" height=\"24px\"><p class=\"p-2 text-tertiary-900\">Maszyny budowlane</p></a> <a class=\"p-3 bg-grey-100 shadow-lg rounded-xl flex flex-col items-center justify-center w-40 min-h-36 text-center hover:bg-primary-200 border border-grey-300 hover:border-primary-300\" href=\"/products/1?gardening=true\" hx-get=\"/products/1?gardening=true\" hx-target=\"#products\" hx-swap=\"outerHTML\" hx-push-url=\"true\"><img alt=\"sprzęt ogrodniczy ikona\" src=\"/public/icons/gardening.svg\" width=\"24px\" height=\"24px\"><p class=\"p-2 text-tertiary-900\">Sprzęt ogrodniczy</p></a> <a class=\"p-3 bg-grey-100 shadow-lg rounded-xl flex flex-col items-center justify-center w-40 min-h-36 text-center hover:bg-primary-200 border border-grey-300 hover:border-primary-300\" href=\"/products/1?parts=true\" hx-get=\"/products/1?parts=true\" hx-target=\"#products\" hx-swap=\"outerHTML\" hx-push-url=\"true\"><img alt=\"części i eksploatacja ikona\" src=\"/public/icons/parts.svg\" width=\"24px\" height=\"24px\"><p class=\"p-2 text-tertiary-900\">Części i eksploatacja</p></a> <a class=\"p-3 bg-grey-100 shadow-lg rounded-xl flex flex-col items-center justify-center w-40 min-h-36 text-center hover:bg-primary-200 border border-grey-300 hover:border-primary-300\" href=\"/products/1?electro=true\" hx-get=\"/products/1?electro=true\" hx-target=\"#products\" hx-swap=\"outerHTML\" hx-push-url=\"true\"><img alt=\"elektro narzędzia ikona\" src=\"/public/icons/power-supply.svg\" width=\"24px\" height=\"24px\"><p class=\"p-2 text-tertiary-900\">Elektro narzędzia</p></a> <a class=\"p-3 bg-grey-100 shadow-lg rounded-xl flex flex-col items-center justify-center w-40 min-h-36 text-center hover:bg-primary-200 border border-grey-300 hover:border-primary-300\" href=\"/products/1?electroMachines=true\" hx-get=\"/products/1?electroMachines=true\" hx-target=\"#products\" hx-swap=\"outerHTML\" hx-push-url=\"true\"><img alt=\"części i eksploatacja ikona\" src=\"/public/icons/electric-machines.svg\" width=\"24px\" height=\"24px\"><p class=\"p-2 text-tertiary-900\">Maszyny i urządzenia zasilające</p></a></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

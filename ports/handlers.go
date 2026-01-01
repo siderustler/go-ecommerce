@@ -178,29 +178,29 @@ func (h handlers) filterProductsPriceValidate(c *fiber.Ctx) error {
 }
 
 func (h handlers) getDashboard(c *fiber.Ctx) error {
-	slide := c.QueryInt("slide", 0)
-	promotionPage := c.QueryInt("promotions", 0)
+	slide := c.QueryInt("slide", 1)
+	promotionPage := c.QueryInt("promotions", 1)
 	userID := c.Cookies("session")
-	promos, err := h.productServices.GetPromotions(c.Context())
+	maxPromosPerPage := 3
+	promos, promoCount, err := h.productServices.Promotions(c.Context(), promotionPage, maxPromosPerPage)
 	//FIXME
 	if err != nil {
 		fmt.Printf("retrieving promotions: %v", err)
-		return c.Redirect("/")
 	}
 
-	cart, err := h.storeServices.Cart(c.Context(), userID)
+	cartCount, err := h.storeServices.CartCount(c.Context(), userID)
 	//FIXME
 	if err != nil {
-		return c.Redirect("/")
 	}
-	navBarViewModel := components.NewNavBarViewModel("", len(cart.Products))
+	navBarViewModel := components.NewNavBarViewModel("", cartCount)
 
 	isPromotionRequest := c.Query("promotions") != ""
-	if isPromotionRequest {
-		return renderFragmentOrView(c, views.Dashboard(views.NewDashboardViewModel(promos, slide, promotionPage, navBarViewModel)), views.PromotedProductSelectorFragment)
+	isSliderRequest := c.Query("slide") != ""
+	if isPromotionRequest || isSliderRequest {
+		return renderFragmentOrView(c, views.Dashboard(views.NewDashboardViewModel(promos, slide, promotionPage, promoCount, maxPromosPerPage, navBarViewModel)), views.PromotedProductSelectorFragment)
 	}
 
-	return renderFragmentOrView(c, views.Dashboard(views.NewDashboardViewModel(promos, slide, promotionPage, navBarViewModel)), views.DashboardSelectorFragment)
+	return renderFragmentOrView(c, views.Dashboard(views.NewDashboardViewModel(promos, slide, promotionPage, promoCount, maxPromosPerPage, navBarViewModel)), views.DashboardSelectorFragment)
 }
 
 func (h handlers) getBasket(c *fiber.Ctx) error {

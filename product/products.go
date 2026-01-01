@@ -11,3 +11,12 @@ func (s Services) Products(ctx context.Context, page int, filter Filter) ([]Prod
 func (s Services) ProductsByIDs(ctx context.Context, ids []string) ([]Product, error) {
 	return s.repository.ProductsByIDs(ctx, ids)
 }
+
+func (s Services) Promotions(ctx context.Context, page, pageSize int) (promos []Product, promoCount int, err error) {
+	if page < 1 {
+		page = 1
+	}
+	offset := (page - 1) * pageSize
+	limit := pageSize
+	return s.repository.Promotions(ctx, offset, limit)
+}

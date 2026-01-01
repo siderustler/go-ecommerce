@@ -31,7 +31,7 @@ func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
 			main_image TEXT NOT NULL,
 			price REAL NOT NULL,
 			category_id INT NOT NULL REFERENCES product_categories(id),
-			price_before REAL
+			price_before REAL DEFAULT 0
 		)`,
 	)
 	if err != nil {
@@ -128,6 +128,32 @@ func (r repository) ProductsByIDs(ctx context.Context, ids []string) ([]product.
 	}
 	return products, nil
 }
+
+func (r repository) Promotions(ctx context.Context, offset, limit int) (promos []product.Product, promoCount int, err error) {
+	rows, err := r.db.QueryContext(
+		ctx,
+		"SELECT id, name, main_image, price, price_before FROM products WHERE price_before > 0 LIMIT $1 OFFSET $2",
+		limit, offset,
+	)
+	if err != nil {
+		return nil, 0, fmt.Errorf("retrieving promotions: %w", err)
+	}
+	for rows.Next() {
+		var product product.Product
+		err := rows.Scan(&product.ID, &product.Name, &product.Image, &product.Price, &product.PriceBefore)
+		if err != nil {
+			return nil, 0, fmt.Errorf("scanning product: %w", err)
+		}
+		promos = append(promos, product)
+	}
+	row := r.db.QueryRowContext(ctx, "SELECT COUNT(id) FROM products")
+	err = row.Scan(&promoCount)
+	if err != nil {
+		return nil, 0, fmt.Errorf("scanning promo count: %w", err)
+	}
+	return promos, promoCount, nil
+}
+
 func RunInTx(ctx context.Context, db *sql.DB, opts *sql.TxOptions, txFunc func(tx *sql.Tx) error) (err error) {
 	tx, err := db.BeginTx(ctx, nil)
 	defer func() {

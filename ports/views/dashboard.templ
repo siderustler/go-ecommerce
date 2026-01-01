@@ -6,7 +6,7 @@ package views
 */
 
 import "strconv"
-import "math"
+
 import "github.com/siderustler/go-ecommerce/ports/views/components"
 import "github.com/siderustler/go-ecommerce/product"
 
@@ -25,29 +25,28 @@ type dashboardSelectorFragment struct{}
 var PromotedProductSelectorFragment = promotedProductSelectorFragment{}
 var DashboardSelectorFragment = dashboardSelectorFragment{}
 
-func maxPromotionPages(allProducts int, productsPerPage int) int {
-	return int(math.Ceil(float64(allProducts / productsPerPage)))
-}
-
-func NewDashboardViewModel(products []product.Product, selectedProduct, displayedPromotions int, navBarViewModel components.NavBarViewModel) dashboardViewModel {
-	isSelectedProductOutOfBounds := selectedProduct < 0 || selectedProduct > len(products)-1
+func NewDashboardViewModel(
+	products []product.Product,
+	slide int,
+	displayedPromotions int,
+	promoCount int,
+	maxPromosPerPage int,
+	navBarViewModel components.NavBarViewModel,
+) dashboardViewModel {
+	isSelectedProductOutOfBounds := slide < 0 || slide > len(products)-1
 	if isSelectedProductOutOfBounds {
-		selectedProduct = 0
+		slide = 0
 	}
-
-	maxProductsPerPage := 3
-	maxPromotions := maxPromotionPages(len(products), maxProductsPerPage)
-
-	isDisplayedPromotionsOutOfBounds := displayedPromotions < 0 || displayedPromotions > maxPromotions
+	maxPromotions := promoCount/maxPromosPerPage + 1
+	isDisplayedPromotionsOutOfBounds := displayedPromotions < 1 || displayedPromotions > maxPromotions
 	if isDisplayedPromotionsOutOfBounds {
-		displayedPromotions = 0
+		displayedPromotions = 1
 	}
 	return dashboardViewModel{
 		products:            products,
-		selectedProduct:     selectedProduct,
+		selectedProduct:     slide,
 		displayedPromotions: displayedPromotions,
 		maxPromotions:       maxPromotions,
-		maxProductsPerPage:  maxProductsPerPage,
 		navBarViewModel:     navBarViewModel,
 	}
 }
@@ -60,7 +59,12 @@ templ Dashboard(dashboardViewModel dashboardViewModel) {
 				@dashSection("promotions") {
 					@templ.Fragment(PromotedProductSelectorFragment) {
 						@dashHeading("Promocje", "/public/icons/promotion-section.svg", "promocje ikona")
-						@promotedProductsSection(dashboardViewModel)
+						{{ promotionsExists := len(dashboardViewModel.products) > 0 }}
+						if !promotionsExists {
+							<div>nei ma promocji FIXME</div>
+						} else {
+							@promotedProductsSection(dashboardViewModel)
+						}
 					}
 				}
 				@dashSection("categories") {
@@ -113,7 +117,7 @@ templ promotedProductsSection(dashboardViewModel dashboardViewModel) {
 					slider = append(slider, actual-1, actual, actual+1)
 				}
 			}}
-			for i:=0; i<len(slider); i++ {
+			for i:=1; i<len(slider); i++ {
 				{{ path := "/?slide=" + strconv.Itoa(slider[i]) }}
 				<a
 					href={ path }
@@ -133,20 +137,15 @@ templ promotedProductsSection(dashboardViewModel dashboardViewModel) {
 	<div class="hidden lg:flex items-center justify-center gap-4 lg:gap-6 xl:gap-12">
 		{{
 			backPage, nextPage := dashboardViewModel.displayedPromotions-1, dashboardViewModel.displayedPromotions+1
-			if backPage < 0 {
+			if backPage < 1 {
 				backPage = dashboardViewModel.maxPromotions
 			}
 			if nextPage > dashboardViewModel.maxPromotions {
-				nextPage = 0
+				nextPage = 1
 			}
 		}}
 		@paginatorItem("/?promotions="+strconv.Itoa(backPage), back, "#promotions", "innerHTML", true, "absolute top-1/2 left-2 shadow-lg z-2")
-		{{
-			actualPage := dashboardViewModel.displayedPromotions
-			start := actualPage * dashboardViewModel.maxProductsPerPage
-		}}
-		for i := start; i<start+dashboardViewModel.maxProductsPerPage && i<len(dashboardViewModel.products); i++ {
-			{{ product := dashboardViewModel.products[i] }}
+		for _, product := range dashboardViewModel.products {
 			@promoProduct(product)
 		}
 		@paginatorItem("/?promotions="+strconv.Itoa(nextPage), forward, "#promotions", "innerHTML", true, "absolute top-1/2 right-2 shadow-lg z-2")
@@ -181,7 +180,7 @@ templ promoProduct(product product.Product) {
 			</div>
 		</a>
 		@promotionPrice(product.PriceBefore, product.Price)
-		<form action="/basket/add" method="post" hx-post="/basket/add" hx-target="#basket-counter" hx-swap="outerHTML" class="w-full">
+		<form action="/basket/add" method="post" hx-post="/basket/add" class="w-full">
 			<input
 				name="count"
 				value="1"

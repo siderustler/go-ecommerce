@@ -11,6 +11,11 @@ type repository interface {
 		ctx context.Context,
 		ids []string,
 	) ([]Product, error)
+	Promotions(
+		ctx context.Context,
+		offset int,
+		limit int,
+	) (promos []Product, promosCount int, err error)
 }
 
 type Services struct {
