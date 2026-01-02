@@ -39,18 +39,21 @@ type BasketViewModel struct {
 	navBarViewModel components.NavBarViewModel
 	items           []BasketItemViewModel
 
-	ChangeCountID string `form:"id"`
-	IncBasket     bool   `form:"inc"`
-	DecBasket     bool   `form:"dec"`
-	Count         int    `form:"count"`
+	ChangeCountID    string `form:"id"`
+	IncBasketItem    bool   `form:"inc"`
+	DecBasketItem    bool   `form:"dec"`
+	RemoveBasketItem bool   `form:"del"`
+	Count            int    `form:"count"`
 }
 
 type basketFragment struct{}
 type basketSummaryFragment struct{}
+type emptyBasketFragment struct{}
 
 var BasketFragment basketFragment = basketFragment{}
 var BasketItemFragment func(itemID string) string = func(itemID string) string { return "basket-" + itemID }
 var BasketSummaryFragment basketSummaryFragment = basketSummaryFragment{}
+var EmptyBasketFragment emptyBasketFragment = emptyBasketFragment{}
 
 templ Basket(viewModel BasketViewModel) {
 	@layout() {
@@ -60,7 +63,9 @@ templ Basket(viewModel BasketViewModel) {
 				@components.InfoHeader("/public/icons/shop-basket.svg", "koszyk ikona", "Koszyk")
 				<div class="flex flex-col 2xl:flex-row gap-8 md:gap-12 lg:gap-8 justify-center">
 					if len(viewModel.items) == 0 {
-						@emptyBasket()
+						@templ.Fragment(EmptyBasketFragment) {
+							@emptyBasket()
+						}
 					} else {
 						<div class="flex flex-2 flex-col gap-6 md:gap-8">
 							for _, item := range viewModel.items {
@@ -85,7 +90,8 @@ templ emptyBasket() {
 }
 
 templ basketProductItem(item BasketItemViewModel) {
-	<div class="flex flex-col md:flex-row md:items-center px-8 md:px-12 py-12 lg:py-16 gap-4 md:gap-8 lg:gap-12 shadow-md border border-grey-300 rounded-xl bg-grey-100 sm:max-w-2/3 md:max-w-fit">
+	{{ id := BasketItemFragment(item.product.ID) }}
+	<div id={ "item-" + id } class="flex flex-col md:flex-row md:items-center px-8 md:px-12 py-12 lg:py-16 gap-4 md:gap-8 lg:gap-12 shadow-md border border-grey-300 rounded-xl bg-grey-100 sm:max-w-2/3 md:max-w-fit">
 		<img src={ item.product.Image } alt={ item.product.Name + " ilustracja" } width="195px" height="195px" class="rounded-2xl shadow-sm mx-auto md:mx-0"/>
 		<div class="flex flex-col gap-6 py-4 max-w-full md:max-w-1/4 2xl:max-w-full">
 			@components.Info("Nazwa produktu") {
@@ -99,11 +105,10 @@ templ basketProductItem(item BasketItemViewModel) {
 				}
 			}
 		</div>
-		{{ id := BasketItemFragment(item.product.ID) }}
 		@templ.Fragment(id) {
 			<div id={ id }>
 				@components.InfoStyled("Dostosuj ilość", "text-center") {
-					@components.BasketCounter(id, components.POST, item.product.ID, "/basket/update", item.count, "#part-price", "#full-price")
+					@components.BasketCounter(id, item.product.ID, item.count, "#part-price", "#full-price")
 				}
 			</div>
 		}

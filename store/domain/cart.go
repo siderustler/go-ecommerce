@@ -59,11 +59,6 @@ func (b *Cart) RemoveProduct(cartProduct CartProduct) error {
 	}
 	b.LastModifiedAt = time.Now().UTC().Format(time.RFC3339)
 	product.Count -= cartProduct.Count
-	isCartProductDeletable := product.Count <= 0
-	if isCartProductDeletable {
-		delete(b.Products, cartProduct.ProductID)
-		return nil
-	}
 	b.Products[cartProduct.ProductID] = product
 	return nil
 }

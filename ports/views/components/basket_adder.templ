@@ -4,7 +4,50 @@ import "strings"
 
 templ BasketAdder(id string, productID string, incDecRequestPath string, count int) {
 	<div id={ id } class="flex justify-center gap-6 md:gap-4 min-h-14 md:flex-col">
-		@BasketCounter(id, GET, productID, incDecRequestPath, count)
+		{{ indicator := "indicator-" + id }}
+		<div id={ indicator } class="flex gap-6 justify-center px-3 py-2 border-2 border-secondary-300 rounded-lg relative" hx-indicator={ "#" + indicator }>
+			<img src="/public/icons/spinner.svg" width="24px" height="24px" alt="Loading..." class="htmx-indicator absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"/>
+			<form
+				method="GET"
+				action={ incDecRequestPath }
+				hx-get={ incDecRequestPath }
+				hx-target={ "#" + id }
+				hx-swap="outerHTML"
+				class="htmx-request:invisible"
+			>
+				<input name="dec" type="checkbox" checked hidden/>
+				<input name="id" value={ productID } hidden/>
+				@IconButton(SecondaryIconButton, IconButtonMinus)
+				<input
+					name="count"
+					value={ count }
+					hidden
+				/>
+			</form>
+			<input
+				name="count"
+				class="border-2 border-secondary-500 text-secondary-900 text-center min-w-12 rounded-lg max-w-12 htmx-request:invisible"
+				value={ count }
+				readonly
+			/>
+			<form
+				method="GET"
+				action={ incDecRequestPath }
+				hx-get={ incDecRequestPath }
+				hx-target={ "#" + id }
+				hx-swap="outerHTML"
+				class="htmx-request:invisible"
+			>
+				<input name="inc" type="checkbox" checked hidden/>
+				<input name="id" value={ productID } hidden/>
+				@IconButton(SecondaryIconButton, IconButtonPlus)
+				<input
+					name="count"
+					value={ count }
+					hidden
+				/>
+			</form>
+		</div>
 		<form action="/basket/add" method="post" hx-post="/basket/add" hx-target="#basket-counter" hx-swap="outerHTML" class="flex items-center justify-center">
 			<input
 				name="count"
@@ -16,46 +59,38 @@ templ BasketAdder(id string, productID string, incDecRequestPath string, count i
 				value={ productID }
 				hidden
 			/>
-			<input
-				name="redirect"
-				value={ incDecRequestPath }
-				hidden
-			/>
 			@IconButton(PrimaryIconButton, IconButtonShop)
 		</form>
 	</div>
 }
 
-type method string
-
-var (
-	POST method = "post"
-	GET  method = "get"
-)
-
-templ BasketCounter(id string, method method, productID string, counterPath string, count int, requestIndicators ...string) {
+templ BasketCounter(id string, productID string, count int, requestIndicators ...string) {
 	{{
 		indicator := "indicator-" + id
 		hxIndicators := strings.Join(append(requestIndicators, "#"+indicator), ",")
 	}}
 	<div id={ indicator } class="flex gap-6 justify-center px-3 py-2 border-2 border-secondary-300 rounded-lg relative" hx-indicator={ hxIndicators }>
 		<img src="/public/icons/spinner.svg" width="24px" height="24px" alt="Loading..." class="htmx-indicator absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"/>
-		{{ hxTarget := "#" + id }}
 		<form
-			method={ method }
-			action={ counterPath }
-			if method == GET {
-				hx-get={ counterPath }
+			method="POST"
+			action="/basket/update"
+			hx-post="/basket/update"
+			if count > 1 {
+				hx-target={ "#" + id }
 			} else {
-				hx-post={ counterPath }
+				hx-target={ "#" + "item-" + id }
 			}
-			hx-target={ hxTarget }
 			hx-swap="outerHTML"
 			class="htmx-request:invisible"
 		>
-			<input name="dec" type="checkbox" checked hidden/>
 			<input name="id" value={ productID } hidden/>
-			@IconButton(SecondaryIconButton, IconButtonMinus)
+			if count > 1 {
+				<input name="dec" type="checkbox" checked hidden/>
+				@IconButton(SecondaryIconButton, IconButtonMinus)
+			} else {
+				<input name="del" type="checkbox" checked hidden/>
+				@IconButton(SecondaryIconButton, IconButtonTrash)
+			}
 			<input
 				name="count"
 				value={ count }
@@ -69,14 +104,10 @@ templ BasketCounter(id string, method method, productID string, counterPath stri
 			readonly
 		/>
 		<form
-			method={ method }
-			action={ counterPath }
-			if method == GET {
-				hx-get={ counterPath }
-			} else {
-				hx-post={ counterPath }
-			}
-			hx-target={ hxTarget }
+			method="POST"
+			action="/basket/update"
+			hx-post="/basket/update"
+			hx-target={ "#" + id }
 			hx-swap="outerHTML"
 			class="htmx-request:invisible"
 		>

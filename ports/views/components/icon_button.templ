@@ -13,6 +13,7 @@ const (
 	IconButtonPlus icon = iota
 	IconButtonMinus
 	IconButtonShop
+	IconButtonTrash
 )
 
 templ IconButton(buttonType buttonType, icon icon) {
@@ -31,6 +32,9 @@ templ IconButton(buttonType buttonType, icon icon) {
 		case IconButtonShop:
 			iconPath = "/public/icons/shop-cart.svg"
 			iconAlt = "shop cart icon"
+		case IconButtonTrash:
+			iconPath = "/public/icons/trash-sign.svg"
+			iconAlt = "trash icon"
 		}
 
 		switch buttonType {

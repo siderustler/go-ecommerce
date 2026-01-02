@@ -52,7 +52,7 @@ templ NavBar(viewModel NavBarViewModel) {
 					{ item.name }
 					if item.name == "Koszyk" {
 						@templ.Fragment(BasketCountFragment) {
-							<p id="basket-counter" class="absolute left-5 -top-3 px-1.5 py-px text-xs rounded-full border-2 border-secondary-200 text-secondary-900 bg-secondary-100">
+							<p id="basket-counter" hx-swap-oob="true" class="absolute left-5 -top-3 px-1.5 py-px text-xs rounded-full border-2 border-secondary-200 text-secondary-900 bg-secondary-100">
 								{ viewModel.basketCount }
 							</p>
 						}

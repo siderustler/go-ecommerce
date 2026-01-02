@@ -237,14 +237,15 @@ func (h handlers) updateBasket(c *fiber.Ctx) error {
 	var navBarViewModel components.NavBarViewModel
 	_ = c.BodyParser(&basketViewModel)
 	userID := c.Cookies("session")
+
 	var err error
-	if basketViewModel.IncBasket {
+	if basketViewModel.IncBasketItem {
 		err = h.storeServices.AddProductToCart(c.Context(), userID, store_domain.NewCartProduct(basketViewModel.ChangeCountID, 1))
 		if err != nil {
 			return renderFragmentOrView(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
 		}
 	}
-	if basketViewModel.DecBasket {
+	if basketViewModel.DecBasketItem || basketViewModel.RemoveBasketItem {
 		err = h.storeServices.RemoveProductFromCart(c.Context(), userID, store_domain.NewCartProduct(basketViewModel.ChangeCountID, 1))
 		if err != nil {
 			return renderFragmentOrView(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
@@ -265,6 +266,13 @@ func (h handlers) updateBasket(c *fiber.Ctx) error {
 	navBarViewModel.Align(len(cart.Products))
 	basketViewModel.Align(products, cart.Products, navBarViewModel)
 
+	isCartEmpty := len(cart.Products) < 1
+	if isCartEmpty {
+		return renderFragmentOrView(c, views.Basket(basketViewModel), views.EmptyBasketFragment, views.BasketSummaryFragment, components.BasketCountFragment)
+	}
+	if basketViewModel.RemoveBasketItem {
+		return renderFragmentOrView(c, views.Basket(basketViewModel), views.BasketSummaryFragment, components.BasketCountFragment)
+	}
 	return renderFragmentOrRedirect(c, views.Basket(basketViewModel), "/basket", views.BasketItemFragment(basketViewModel.ChangeCountID), views.BasketSummaryFragment)
 }
 

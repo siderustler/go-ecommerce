@@ -5,19 +5,18 @@ package views
 
 //lint:file-ignore SA4006 This context is only used if a nested component is present.
 
-import (
-	"strconv"
-
-	"github.com/a-h/templ"
-	templruntime "github.com/a-h/templ/runtime"
-	"github.com/siderustler/go-ecommerce/ports/views/components"
-	"github.com/siderustler/go-ecommerce/product"
-)
+import "github.com/a-h/templ"
+import templruntime "github.com/a-h/templ/runtime"
 
 /*
 	koszyk na dashboardzie powinien byc wqyciagany na podsstawie sesji
 	dodanie / usuniecie itemu do koszyka usuwa item i aktualizuje liczbe rzeczy w koszyku na widoku
 */
+
+import "strconv"
+
+import "github.com/siderustler/go-ecommerce/ports/views/components"
+import "github.com/siderustler/go-ecommerce/product"
 
 type dashboardViewModel struct {
 	products            []product.Product
@@ -46,8 +45,7 @@ func NewDashboardViewModel(
 	if isSelectedProductOutOfBounds {
 		slide = 0
 	}
-
-	maxPromotions := (promoCount + maxPromosPerPage - 1) / maxPromosPerPage
+	maxPromotions := promoCount/maxPromosPerPage + 1
 	isDisplayedPromotionsOutOfBounds := displayedPromotions < 1 || displayedPromotions > maxPromotions
 	if isDisplayedPromotionsOutOfBounds {
 		displayedPromotions = 1

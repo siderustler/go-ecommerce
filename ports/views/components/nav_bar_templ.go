@@ -177,7 +177,7 @@ func NavBar(viewModel NavBarViewModel) templ.Component {
 						}()
 					}
 					ctx = templ.InitializeContext(ctx)
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<p id=\"basket-counter\" class=\"absolute left-5 -top-3 px-1.5 py-px text-xs rounded-full border-2 border-secondary-200 text-secondary-900 bg-secondary-100\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<p id=\"basket-counter\" hx-swap-oob=\"true\" class=\"absolute left-5 -top-3 px-1.5 py-px text-xs rounded-full border-2 border-secondary-200 text-secondary-900 bg-secondary-100\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}

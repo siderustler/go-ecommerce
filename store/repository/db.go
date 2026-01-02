@@ -79,7 +79,7 @@ func (r repository) Cart(ctx context.Context, userID string) (store_domain.Cart,
 	rows, err := r.db.QueryContext(
 		ctx,
 		`SELECT b.id, b.customer_id, b.last_modified_at, b.status, bp.product_id, bp.count FROM baskets AS b 
-		JOIN basket_products AS bp ON bp.id = b.id WHERE b.customer_id = $1`,
+		JOIN basket_products AS bp ON bp.id = b.id WHERE b.customer_id = $1 AND bp.count > 0`,
 		userID,
 	)
 	if err != nil {
@@ -102,7 +102,7 @@ func (r repository) Cart(ctx context.Context, userID string) (store_domain.Cart,
 func (r repository) CartCount(ctx context.Context, userID string) (int, error) {
 	row := r.db.QueryRowContext(
 		ctx,
-		`SELECT COUNT(bp.id) FROM basket_products AS bp JOIN baskets AS b ON bp.id = b.id WHERE b.customer_id = $1`,
+		`SELECT COUNT(bp.id) FROM basket_products AS bp JOIN baskets AS b ON bp.id = b.id WHERE b.customer_id = $1 AND bp.count > 0`,
 		userID,
 	)
 	var count int
@@ -125,7 +125,7 @@ func (r repository) CreateCheckout(
 			`SELECT b.id, b.customer_id, b.last_modified_at, b.status, bp.product_id, bp.count
 			FROM baskets AS b
 			JOIN basket_products AS bp ON b.id = bp.id
-			WHERE b.status = $1 AND b.customer_id = $2 FOR UPDATE OF b`,
+			WHERE b.status = $1 AND b.customer_id = $2 AND bp.count > 0 FOR UPDATE OF b`,
 			store_domain.CartActive, userID,
 		)
 		if err != nil {

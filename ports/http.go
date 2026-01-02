@@ -63,6 +63,15 @@ func renderFragmentOrView(c *fiber.Ctx, component templ.Component, fragments ...
 	}
 	return component.Render(c.Context(), c.Response().BodyWriter())
 }
+
+func renderNilOrView(c *fiber.Ctx, component templ.Component, fragments ...any) error {
+	c.Set("Content-Type", "text/html")
+	if isHTMXRequest(c) {
+		return nil
+	}
+	return component.Render(c.Context(), c.Response().BodyWriter())
+}
+
 func renderFragmentOrRedirect(c *fiber.Ctx, component templ.Component, redirect string, fragments ...any) error {
 	c.Set("Content-Type", "text/html")
 	if len(fragments) > 0 && isHTMXRequest(c) {

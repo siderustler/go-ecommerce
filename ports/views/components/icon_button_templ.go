@@ -21,6 +21,7 @@ const (
 	IconButtonPlus icon = iota
 	IconButtonMinus
 	IconButtonShop
+	IconButtonTrash
 )
 
 func IconButton(buttonType buttonType, icon icon) templ.Component {
@@ -58,6 +59,9 @@ func IconButton(buttonType buttonType, icon icon) templ.Component {
 		case IconButtonShop:
 			iconPath = "/public/icons/shop-cart.svg"
 			iconAlt = "shop cart icon"
+		case IconButtonTrash:
+			iconPath = "/public/icons/trash-sign.svg"
+			iconAlt = "trash icon"
 		}
 
 		switch buttonType {
@@ -91,7 +95,7 @@ func IconButton(buttonType buttonType, icon icon) templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(iconPath)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/icon_button.templ`, Line: 48, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/icon_button.templ`, Line: 52, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -104,7 +108,7 @@ func IconButton(buttonType buttonType, icon icon) templ.Component {
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(iconAlt)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/icon_button.templ`, Line: 49, Col: 16}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/components/icon_button.templ`, Line: 53, Col: 16}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
