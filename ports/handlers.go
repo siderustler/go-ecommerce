@@ -264,7 +264,6 @@ func (h handlers) updateBasket(c *fiber.Ctx) error {
 	}
 	navBarViewModel.Align(len(cart.Products))
 	basketViewModel.Align(products, cart.Products, navBarViewModel)
-
 	isCartEmpty := len(cart.Products) < 1
 	if isCartEmpty {
 		return renderFragmentOrView(c, views.Basket(basketViewModel), views.EmptyBasketFragment, views.BasketSummaryFragment, components.BasketCountFragment)
