@@ -1,6 +1,9 @@
 package store_domain
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 type StockItem struct {
 	ProductID       string
@@ -31,7 +34,7 @@ func (s *StockItem) ReserveItem(reserveAmount int) error {
 
 func (s *StockItem) ReleaseItemReservation(reserveAmount int) error {
 	if s.ReservedAmount < reserveAmount {
-		return errors.New("requested amount to reserve is greater than actual reserved amount")
+		return fmt.Errorf("requested amount to reserve is greater than actual reserved amount: actual: %d, request to reserve: %d", s.ReservedAmount, reserveAmount)
 	}
 	s.AvailableAmount += reserveAmount
 	s.ReservedAmount -= reserveAmount

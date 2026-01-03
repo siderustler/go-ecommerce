@@ -10,7 +10,7 @@ type repository interface {
 	ProductsByIDs(
 		ctx context.Context,
 		ids []string,
-	) ([]Product, error)
+	) (map[string]Product, error)
 	Promotions(
 		ctx context.Context,
 		offset int,

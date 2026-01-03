@@ -85,6 +85,13 @@ func NewProduct(id, name, image string, price float32) Product {
 	}
 }
 
+func (p Product) ProductPrice() float32 {
+	if p.PriceBefore != 0 {
+		return p.PriceBefore
+	}
+	return p.Price
+}
+
 func NewPromoProduct(id, name, image string, priceBefore float32, price float32) Product {
 	return Product{
 		ID:          id,

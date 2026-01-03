@@ -18,12 +18,12 @@ type BasketItemViewModel struct {
 	count   int
 }
 
-func (b *BasketViewModel) Align(products []product.Product,
+func (b *BasketViewModel) Align(products map[string]product.Product,
 	cartProducts map[string]store_domain.CartProduct,
 	navBarViewModel components.NavBarViewModel) {
 	items := make([]BasketItemViewModel, 0, len(cartProducts))
-	for _, product := range products {
-		cartProduct, exists := cartProducts[product.ID]
+	for productID, product := range products {
+		cartProduct, exists := cartProducts[productID]
 		if !exists {
 			continue
 		}

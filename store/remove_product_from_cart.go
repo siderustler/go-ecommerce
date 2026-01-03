@@ -43,6 +43,7 @@ func (s Services) RemoveProductFromCart(ctx context.Context, userID string, cart
 				if err != nil {
 					return fmt.Errorf("releasing item reservation: %w", err)
 				}
+				stock.Items[productID] = stockItem
 			}
 			return nil
 		})

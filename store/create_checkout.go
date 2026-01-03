@@ -10,8 +10,9 @@ import (
 	store_domain "github.com/siderustler/go-ecommerce/store/domain"
 )
 
-func (s Services) CreateCheckout(ctx context.Context, userID string) error {
-	return s.repository.CreateCheckout(
+func (s Services) CreateCheckout(ctx context.Context, userID string) (store_domain.Checkout, error) {
+	var checkout store_domain.Checkout
+	err := s.repository.CreateCheckout(
 		ctx,
 		userID,
 		func(cart *store_domain.Cart, stock *store_domain.Stock) (store_domain.Checkout, error) {
@@ -27,14 +28,20 @@ func (s Services) CreateCheckout(ctx context.Context, userID string) error {
 				if err != nil {
 					return store_domain.Checkout{}, fmt.Errorf("reserving item in stock: %w", err)
 				}
+				stock.Items[productID] = stockItem
 			}
-			return store_domain.NewCheckout(
+			checkout = store_domain.NewCheckout(
 				uuid.NewString(),
 				userID,
 				cart.Products,
 				time.Now().UTC().Format(time.RFC3339),
 				store_domain.CheckoutPending,
-			), nil
+			)
+			return checkout, nil
 		},
 	)
+	if err != nil {
+		return store_domain.Checkout{}, fmt.Errorf("creating checkout: %w", err)
+	}
+	return checkout, nil
 }

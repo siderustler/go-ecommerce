@@ -8,7 +8,7 @@ func (s Services) Products(ctx context.Context, page int, filter Filter) ([]Prod
 	return s.repository.Products(ctx, filter)
 }
 
-func (s Services) ProductsByIDs(ctx context.Context, ids []string) ([]Product, error) {
+func (s Services) ProductsByIDs(ctx context.Context, ids []string) (map[string]Product, error) {
 	return s.repository.ProductsByIDs(ctx, ids)
 }
 

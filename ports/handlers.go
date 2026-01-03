@@ -13,8 +13,7 @@ import (
 	"github.com/siderustler/go-ecommerce/product"
 	"github.com/siderustler/go-ecommerce/store"
 	store_domain "github.com/siderustler/go-ecommerce/store/domain"
-	"github.com/stripe/stripe-go/v83"
-	"github.com/stripe/stripe-go/v83/checkout/session"
+	"github.com/stripe/stripe-go/v84/checkout/session"
 )
 
 type handlers struct {
@@ -287,12 +286,15 @@ func (h handlers) addItemToBasket(c *fiber.Ctx) error {
 
 	err := h.storeServices.AddProductToCart(c.Context(), userID, store_domain.NewCartProduct(basketAdd.ProductID, basketAdd.Count))
 	if err != nil {
-		//FIXME
+		//FIXME\
+		fmt.Printf("ERR: %+v", err)
 		return c.Redirect(basketAdd.Redirect)
 	}
 	cartCount, err := h.storeServices.CartCount(c.Context(), userID)
 	if err != nil {
 		//FIXME
+		fmt.Printf("ERR: %+v", err)
+
 		return c.Redirect(basketAdd.Redirect)
 	}
 
@@ -303,7 +305,7 @@ func (h handlers) getBillingInfo(c *fiber.Ctx) error {
 	var billingInfoViewModel views.BillingInfoViewModel
 	var navBarViewModel components.NavBarViewModel
 	//FIXME retrieving search value in navbar while js is not enabled (use form or a tag and messy query?)
-	userID := c.Cookies("userID")
+	userID := c.Cookies("session")
 
 	cartCount, err := h.storeServices.CartCount(c.Context(), userID)
 	//FIXME?
@@ -320,7 +322,7 @@ func (h handlers) postBillingInfo(c *fiber.Ctx) error {
 	var billingInfoViewModel views.BillingInfoViewModel
 	var navBarViewModel components.NavBarViewModel
 	//FIXME retrieving search value in navbar while js is not enabled (use form or a tag and messy query?)
-	userID := c.Cookies("userID")
+	userID := c.Cookies("session")
 	_ = c.BodyParser(&billingInfoViewModel)
 
 	cartCount, err := h.storeServices.CartCount(c.Context(), userID)
@@ -336,7 +338,7 @@ func (h handlers) postBillingInfo(c *fiber.Ctx) error {
 		billingInfoViewModel.MapDomainErrorToViewModelError(err)
 		return renderFragmentOrView(c, views.BillingInfo(billingInfoViewModel), views.BillingInfoFragment)
 	}
-
+	customer.ID = userID
 	err = h.customerServices.CreateCustomer(c.Context(), customer)
 	if err != nil {
 		fmt.Printf("ERROR")
@@ -345,7 +347,6 @@ func (h handlers) postBillingInfo(c *fiber.Ctx) error {
 		fmt.Printf("error occured creating customer: %+v", err)
 		return renderFragmentOrView(c, views.BillingInfo(billingInfoViewModel), views.BillingInfoFragment)
 	}
-	c.Cookie(&fiber.Cookie{Name: "userID", Value: customer.ID})
 	if !billingInfoViewModel.UseBillingAddressAsShipping {
 		var shippingInfoViewModel views.ShippingInfoViewModel
 		shippingInfoViewModel.Align(navBarViewModel)
@@ -357,14 +358,14 @@ func (h handlers) postBillingInfo(c *fiber.Ctx) error {
 	paymentUrl := "/basket/checkout"
 	c.Append("Hx-Push-Url", paymentUrl)
 
-	return renderFragmentOrRedirect(c, views.Checkout(views.NewCheckoutViewModel(false)), paymentUrl, views.CheckoutFragment)
+	return renderFragmentOrRedirect(c, views.CheckoutStart(navBarViewModel), paymentUrl, views.CheckoutFragment)
 }
 
 func (h handlers) getShippingInfo(c *fiber.Ctx) error {
 	var shippingInfoViewModel views.ShippingInfoViewModel
 	var navBarViewModel components.NavBarViewModel
 	//FIXME retrieving search value in navbar while js is not enabled (use form or a tag and messy query?)
-	userID := c.Cookies("userID")
+	userID := c.Cookies("session")
 
 	cartCount, err := h.storeServices.CartCount(c.Context(), userID)
 	//FIXME?
@@ -380,7 +381,7 @@ func (h handlers) getShippingInfo(c *fiber.Ctx) error {
 func (h handlers) postShippingInfo(c *fiber.Ctx) error {
 	var navBarViewModel components.NavBarViewModel
 	var shippingInfoViewModel views.ShippingInfoViewModel
-	id := c.Cookies("userID")
+	id := c.Cookies("session")
 	//FIXME retrieving search value in navbar while js is not enabled (use form or a tag and messy query?)
 	_ = c.BodyParser(&shippingInfoViewModel)
 
@@ -406,49 +407,75 @@ func (h handlers) postShippingInfo(c *fiber.Ctx) error {
 	paymentUrl := "/basket/checkout"
 	c.Append("Hx-Push-Url", paymentUrl)
 
-	return renderFragmentOrRedirect(c, views.Checkout(views.NewCheckoutViewModel(false)), paymentUrl, views.CheckoutFragment)
+	return renderFragmentOrRedirect(c, views.CheckoutStart(navBarViewModel), paymentUrl, views.CheckoutFragment)
 }
 
-func (h handlers) getCheckout(c *fiber.Ctx) error {
+func (h handlers) getCheckoutStart(c *fiber.Ctx) error {
+	var navBarViewModel components.NavBarViewModel
+	userID := c.Cookies("session")
+	cartCount, err := h.storeServices.CartCount(c.Context(), userID)
+	if err != nil {
+		return c.Redirect("/basket")
+	}
+	navBarViewModel.Align(cartCount)
+
+	return renderFragmentOrView(c, views.CheckoutStart(navBarViewModel), views.CheckoutFragment)
+}
+
+func (h handlers) getCheckoutFinalized(c *fiber.Ctx) error {
+	var navBarViewModel components.NavBarViewModel
+	userID := c.Cookies("session")
+	cartCount, err := h.storeServices.CartCount(c.Context(), userID)
+	if err != nil {
+		return c.Redirect("/basket")
+	}
+	navBarViewModel.Align(cartCount)
+
 	checkoutSession := c.Query("session_id")
-
 	s, err := session.Get(checkoutSession, nil)
-	checkoutFinalized := err == nil && s.Status == "complete"
-	checkoutViewModel := views.NewCheckoutViewModel(checkoutFinalized)
+	if err != nil {
+		//FIXME
+	}
+	if s.Status == "open" {
+		return c.Redirect("/basket/checkout")
+	}
+	checkoutPaidSuccessfully := s.Status == "complete"
+	checkoutViewModel := views.NewCheckoutViewModel(checkoutPaidSuccessfully, navBarViewModel)
 
-	return renderFragmentOrView(c, views.Checkout(checkoutViewModel), views.CheckoutFragment)
+	return renderFragmentOrView(c, views.CheckoutFinalized(checkoutViewModel), views.CheckoutFragment)
 }
 
 func (h handlers) createCheckout(c *fiber.Ctx) error {
 	//move it to services
-	params := &stripe.CheckoutSessionParams{
-		Mode:      stripe.String(string(stripe.CheckoutSessionModePayment)),
-		UIMode:    stripe.String("embedded"),
-		ReturnURL: stripe.String("http://localhost:8080/basket/checkout?session_id={CHECKOUT_SESSION_ID}"),
-		LineItems: []*stripe.CheckoutSessionLineItemParams{
-			{
-				PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
-					Currency: stripe.String("usd"),
-					ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
-						Name: stripe.String("T-shirt"),
-					},
-					UnitAmount: stripe.Int64(2000),
-				},
-				Quantity: stripe.Int64(1),
-			},
-		},
+	userID := c.Cookies("session")
+	checkout, err := h.storeServices.CreateCheckout(c.Context(), userID)
+	type errStruct struct {
+		Err string `json:"error"`
 	}
-
-	s, err := session.New(params)
-
 	if err != nil {
-		return err
+		fmt.Printf("error is :%+v", err)
+		return c.JSON(errStruct{Err: fmt.Sprintf("error creating cehckout: %v", err.Error())})
 	}
+	productIds := make([]string, 0, len(checkout.Items))
+	for itemID := range checkout.Items {
+		productIds = append(productIds, itemID)
+	}
+	products, err := h.productServices.ProductsByIDs(c.Context(), productIds)
+	if err != nil {
+		fmt.Printf("error is :%+v", err)
 
+		return c.JSON(errStruct{Err: fmt.Sprintf("error retrieving products for checkout creation: %v", err.Error())})
+	}
+	sess, err := h.storeServices.CreateStripeCheckout(c.Context(), checkout.ID, checkout.Items, products)
+	if err != nil {
+		fmt.Printf("error is :%+v", err)
+
+		return c.JSON(errStruct{Err: fmt.Sprintf("error creating stripe checkout: %v", err.Error())})
+	}
 	data := struct {
 		ClientSecret string `json:"clientSecret"`
 	}{
-		ClientSecret: s.ClientSecret,
+		ClientSecret: sess.ClientSecret,
 	}
 
 	return c.JSON(data)

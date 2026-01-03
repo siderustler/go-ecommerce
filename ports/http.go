@@ -39,7 +39,8 @@ func NewHttpServer(
 	anonymoUserGrp.Get("/basket", h.handlers.getBasket)
 	anonymoUserGrp.Get("/basket/customer/billing", h.handlers.getBillingInfo)
 	anonymoUserGrp.Get("/basket/customer/shipping", h.handlers.getShippingInfo)
-	anonymoUserGrp.Get("/basket/checkout", h.handlers.getCheckout)
+	anonymoUserGrp.Get("/basket/checkout", h.handlers.getCheckoutStart)
+	anonymoUserGrp.Get("/basket/checkout/finalize", h.handlers.getCheckoutFinalized)
 
 	anonymoUserGrp.Post("/filter/products/validate/price", h.handlers.filterProductsPriceValidate)
 	anonymoUserGrp.Post("/basket/update", h.handlers.updateBasket)

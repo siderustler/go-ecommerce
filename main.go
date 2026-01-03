@@ -16,7 +16,7 @@ import (
 	"github.com/siderustler/go-ecommerce/product/repository"
 	"github.com/siderustler/go-ecommerce/store"
 	store_repository "github.com/siderustler/go-ecommerce/store/repository"
-	"github.com/stripe/stripe-go/v83"
+	"github.com/stripe/stripe-go/v84"
 )
 
 func main() {

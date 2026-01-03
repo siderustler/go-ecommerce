@@ -31,6 +31,7 @@ func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
 	_, err = db.ExecContext(ctx,
 		`CREATE TABLE IF NOT EXISTS checkouts (
 			id UUID PRIMARY KEY,
+			customer_id UUID NOT NULL REFERENCES customers(customer_id),
 			basket_id UUID NOT NULL REFERENCES baskets(id),
 			created_at TIMESTAMP NOT NULL,
 			status TEXT CHECK (status IN ('INVALIDATED', 'PENDING', 'FINALIZED'))
@@ -52,7 +53,7 @@ func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
 	}
 	_, err = db.ExecContext(ctx,
 		`CREATE TABLE IF NOT EXISTS stock (
-			product_id UUID NOT NULL REFERENCES products(id),
+			product_id UUID PRIMARY KEY NOT NULL REFERENCES products(id),
 			available_amount INT DEFAULT 0,
 			reserved_amount INT DEFAULT 0
 		)`,
@@ -67,6 +68,12 @@ func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
 			amount INT DEFAULT 0,
 			reserved_at TIMESTAMP NOT NULL
 		)`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("creating stock_reservations table: %w", err)
+	}
+	_, err = db.ExecContext(ctx,
+		`INSERT INTO stock (product_id, available_amount, reserved_amount) SELECT id, 9999,0 FROM products ON CONFLICT (product_id) DO NOTHING`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("creating stock_reservations table: %w", err)
@@ -120,6 +127,12 @@ func (r repository) CreateCheckout(
 	insertFn func(cart *store_domain.Cart, stock *store_domain.Stock) (store_domain.Checkout, error),
 ) error {
 	return RunInTx(ctx, r.db, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
+		var exists int
+		row := tx.QueryRowContext(ctx, `SELECT 1 FROM checkouts WHERE status = $1 AND customer_id = $2`, store_domain.CheckoutPending, userID)
+		_ = row.Scan(&exists)
+		if exists == 1 {
+			return nil
+		}
 		rows, err := tx.QueryContext(
 			ctx,
 			`SELECT b.id, b.customer_id, b.last_modified_at, b.status, bp.product_id, bp.count
@@ -148,19 +161,21 @@ func (r repository) CreateCheckout(
 			rows, err = tx.QueryContext(
 				ctx,
 				`SELECT product_id, available_amount, reserved_amount 
-				FROM stock WHERE product_id ANY ($1) FOR UPDATE`,
+				FROM stock WHERE product_id = ANY ($1) FOR UPDATE`,
 				cartProductIds,
 			)
 			if err != nil {
 				return fmt.Errorf("retrieving stock: %w", err)
 			}
 			defer rows.Close()
-			var stockItem store_domain.StockItem
-			err := rows.Scan(&stockItem.ProductID, &stockItem.AvailableAmount, &stockItem.ReservedAmount)
-			if err != nil {
-				return fmt.Errorf("scanning stock item: %w", err)
+			for rows.Next() {
+				var stockItem store_domain.StockItem
+				err := rows.Scan(&stockItem.ProductID, &stockItem.AvailableAmount, &stockItem.ReservedAmount)
+				if err != nil {
+					return fmt.Errorf("scanning stock item: %w", err)
+				}
+				stock.Items[stockItem.ProductID] = stockItem
 			}
-			stock.Items[stockItem.ProductID] = stockItem
 		}
 		checkout, err := insertFn(&cart, &stock)
 		if err != nil {
@@ -168,8 +183,8 @@ func (r repository) CreateCheckout(
 		}
 		_, err = tx.ExecContext(
 			ctx,
-			`INSERT INTO checkouts (id, basket_id, created_at, status) VALUES ($1,$2,$3,$4)`,
-			checkout.ID, cart.ID, checkout.CreatedAt, checkout.Status,
+			`INSERT INTO checkouts (id, customer_id, basket_id, created_at, status) VALUES ($1,$2,$3,$4,$5)`,
+			checkout.ID, checkout.UserID, cart.ID, checkout.CreatedAt, checkout.Status,
 		)
 		if err != nil {
 			return fmt.Errorf("inserting checkout to repository: %w", err)
@@ -267,12 +282,11 @@ func (r repository) UpsertCart(ctx context.Context, userID string, item store_do
 		var checkoutProductIds []string
 		if !cart.IsZero() {
 			checkout = store_domain.Checkout{Items: make(map[string]store_domain.CartProduct, len(cart.Products))}
-			checkout.UserID = userID
 			rows, err = tx.QueryContext(
 				ctx,
-				`SELECT c.id, c.created_at, c.status, sr.product_id, sr.count FROM checkouts AS c 
+				`SELECT c.id, c.customer_id, c.created_at, c.status, sr.product_id, sr.amount FROM checkouts AS c 
 				JOIN stock_reservations AS sr ON c.id = sr.checkout_id
-				WHERE c.status = $1 AND c.basket_id = $2 GROUP BY c.id, sr.product_id`,
+				WHERE c.status = $1 AND c.basket_id = $2 GROUP BY c.id, sr.product_id, sr.amount`,
 				store_domain.CheckoutPending, cart.ID,
 			)
 			if err != nil && err != sql.ErrNoRows {
@@ -281,19 +295,20 @@ func (r repository) UpsertCart(ctx context.Context, userID string, item store_do
 			defer rows.Close()
 			checkoutProductIds = make([]string, 0, len(cart.Products))
 			for rows.Next() {
-				var cartProduct store_domain.CartProduct
+				var checkoutProduct store_domain.CartProduct
 				err = rows.Scan(
 					&checkout.ID,
+					&checkout.UserID,
 					&checkout.CreatedAt,
 					&checkout.Status,
-					&cartProduct.ProductID,
-					&cartProduct.Count,
+					&checkoutProduct.ProductID,
+					&checkoutProduct.Count,
 				)
 				if err != nil {
 					return fmt.Errorf("scanning checkout and stock: %w", err)
 				}
-				checkout.Items[cartProduct.ProductID] = cartProduct
-				checkoutProductIds = append(checkoutProductIds, cartProduct.ProductID)
+				checkout.Items[checkoutProduct.ProductID] = checkoutProduct
+				checkoutProductIds = append(checkoutProductIds, checkoutProduct.ProductID)
 			}
 		}
 		if !checkout.IsZero() {

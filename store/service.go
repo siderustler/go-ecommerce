@@ -42,7 +42,7 @@ type Repository interface {
 
 	UpdateCheckout(
 		ctx context.Context,
-		checkoutID string,
+		userID string,
 		updateFn func(checkout *store_domain.Checkout, stock *store_domain.Stock) error,
 	) error
 }

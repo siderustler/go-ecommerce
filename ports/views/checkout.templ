@@ -1,31 +1,46 @@
 package views
 
+import "github.com/siderustler/go-ecommerce/ports/views/components"
+
 type checkoutFragment struct{}
 
 var CheckoutFragment = checkoutFragment{}
 
 type CheckoutViewModel struct {
-	Finalized bool
+	Finalized       bool
+	navBarViewModel components.NavBarViewModel
 }
 
-func NewCheckoutViewModel(finalized bool) CheckoutViewModel {
-	return CheckoutViewModel{Finalized: finalized}
+func NewCheckoutViewModel(finalized bool, navBarViewModel components.NavBarViewModel) CheckoutViewModel {
+	return CheckoutViewModel{Finalized: finalized, navBarViewModel: navBarViewModel}
 }
 
 var stripeOnceHandle = templ.NewOnceHandle()
 
-templ Checkout(checkoutViewModel CheckoutViewModel) {
+templ CheckoutStart(navBarViewModel components.NavBarViewModel) {
 	@layout() {
+		@components.NavBar(navBarViewModel)
 		@templ.Fragment(CheckoutFragment) {
 			<section id="products">
-				if !checkoutViewModel.Finalized {
-					<div id="checkout"></div>
-					@stripeOnceHandle.Once() {
-						<script src="https://js.stripe.com/clover/stripe.js"></script>
-						<script src="/public/payment.js"></script>
-					}
-				} else {
+				<div id="checkout"></div>
+				@stripeOnceHandle.Once() {
+					<script src="https://js.stripe.com/clover/stripe.js"></script>
+					<script src="/public/payment.js"></script>
+				}
+			</section>
+		}
+	}
+}
+
+templ CheckoutFinalized(checkoutViewModel CheckoutViewModel) {
+	@layout() {
+		@components.NavBar(checkoutViewModel.navBarViewModel)
+		@templ.Fragment(CheckoutFragment) {
+			<section id="products">
+				if checkoutViewModel.Finalized {
 					<div>FINALIZED</div>
+				} else {
+					<div>CANCELED</div>
 				}
 			</section>
 		}
