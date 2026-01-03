@@ -15,7 +15,7 @@ func (s Services) RemoveProductFromCart(ctx context.Context, userID string, cart
 		userID,
 		cartProduct,
 		func(cart *store_domain.Cart, checkout *store_domain.Checkout, stock *store_domain.Stock, stockItem store_domain.StockItem) error {
-			if stockItem.IsAvailable() {
+			if !stockItem.IsAvailable() {
 				return errors.New("item is not available in stock")
 			}
 			if cart.IsZero() {
