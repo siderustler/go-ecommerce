@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-querystring/query"
 	"github.com/google/uuid"
 	"github.com/siderustler/go-ecommerce/customer"
+	"github.com/siderustler/go-ecommerce/ports/auth"
 	"github.com/siderustler/go-ecommerce/ports/views"
 	"github.com/siderustler/go-ecommerce/ports/views/components"
 	"github.com/siderustler/go-ecommerce/product"
@@ -28,7 +29,11 @@ func (h handlers) getProductsRedirect(c *fiber.Ctx) error {
 
 func (h handlers) getProducts(c *fiber.Ctx) error {
 	page, _ := c.ParamsInt("page")
-	userID := c.Cookies("session")
+	claims, err := auth.ClaimsFromContext(c.UserContext())
+	if err != nil {
+		fmt.Printf("retrieving claims from context: %v", err)
+		return nil
+	}
 
 	var filterViewModel views.FilterViewModel
 	_ = c.QueryParser(&filterViewModel)
@@ -47,7 +52,7 @@ func (h handlers) getProducts(c *fiber.Ctx) error {
 		return nil
 	}
 
-	cartCount, err := h.storeServices.CartCount(c.Context(), userID)
+	cartCount, err := h.storeServices.CartCount(c.Context(), claims.UserID)
 	//FIXME
 	if err != nil {
 		return nil
@@ -84,7 +89,11 @@ func (h handlers) getProducts(c *fiber.Ctx) error {
 func (h handlers) getProductDetails(c *fiber.Ctx) error {
 	var productDetailViewModel views.ProductDetailViewModel
 	var navBarViewModel components.NavBarViewModel
-	userID := c.Cookies("session")
+	claims, err := auth.ClaimsFromContext(c.UserContext())
+	if err != nil {
+		fmt.Printf("retrieving claims from context: %v", err)
+		return nil
+	}
 
 	_ = c.QueryParser(&productDetailViewModel)
 	_ = c.QueryParser(&navBarViewModel)
@@ -96,7 +105,7 @@ func (h handlers) getProductDetails(c *fiber.Ctx) error {
 		return c.Redirect("/products/1")
 	}
 
-	cartCount, err := h.storeServices.CartCount(c.Context(), userID)
+	cartCount, err := h.storeServices.CartCount(c.Context(), claims.UserID)
 	//FIXME
 	if err != nil {
 		return c.Redirect("/products/1")
@@ -179,7 +188,11 @@ func (h handlers) filterProductsPriceValidate(c *fiber.Ctx) error {
 func (h handlers) getDashboard(c *fiber.Ctx) error {
 	slide := c.QueryInt("slide", 1)
 	promotionPage := c.QueryInt("promotions", 1)
-	userID := c.Cookies("session")
+	claims, err := auth.ClaimsFromContext(c.UserContext())
+	if err != nil {
+		fmt.Printf("retrieving claims from context: %v", err)
+		return nil
+	}
 	maxPromosPerPage := 3
 	promos, promoCount, err := h.productServices.Promotions(c.Context(), promotionPage, maxPromosPerPage)
 	//FIXME
@@ -187,7 +200,7 @@ func (h handlers) getDashboard(c *fiber.Ctx) error {
 		fmt.Printf("retrieving promotions: %v", err)
 	}
 
-	cartCount, err := h.storeServices.CartCount(c.Context(), userID)
+	cartCount, err := h.storeServices.CartCount(c.Context(), claims.UserID)
 	//FIXME
 	if err != nil {
 	}
@@ -207,8 +220,12 @@ func (h handlers) getBasket(c *fiber.Ctx) error {
 	var navBarViewModel components.NavBarViewModel
 	var basketViewModel views.BasketViewModel
 
-	userID := c.Cookies("session")
-	cart, err := h.storeServices.Cart(c.Context(), userID)
+	claims, err := auth.ClaimsFromContext(c.UserContext())
+	if err != nil {
+		fmt.Printf("retrieving claims from context: %v", err)
+		return nil
+	}
+	cart, err := h.storeServices.Cart(c.Context(), claims.UserID)
 	//FIXME?
 	if err != nil {
 		return c.Redirect("/")
@@ -235,22 +252,25 @@ func (h handlers) updateBasket(c *fiber.Ctx) error {
 	var basketViewModel views.BasketViewModel
 	var navBarViewModel components.NavBarViewModel
 	_ = c.BodyParser(&basketViewModel)
-	userID := c.Cookies("session")
+	claims, err := auth.ClaimsFromContext(c.UserContext())
+	if err != nil {
+		fmt.Printf("retrieving claims from context: %v", err)
+		return nil
+	}
 
-	var err error
 	if basketViewModel.IncBasketItem {
-		err = h.storeServices.AddProductToCart(c.Context(), userID, store_domain.NewCartProduct(basketViewModel.ChangeCountID, 1))
+		err = h.storeServices.AddProductToCart(c.Context(), claims.UserID, store_domain.NewCartProduct(basketViewModel.ChangeCountID, 1))
 		if err != nil {
 			return renderFragmentOrView(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
 		}
 	}
 	if basketViewModel.DecBasketItem || basketViewModel.RemoveBasketItem {
-		err = h.storeServices.RemoveProductFromCart(c.Context(), userID, store_domain.NewCartProduct(basketViewModel.ChangeCountID, 1))
+		err = h.storeServices.RemoveProductFromCart(c.Context(), claims.UserID, store_domain.NewCartProduct(basketViewModel.ChangeCountID, 1))
 		if err != nil {
 			return renderFragmentOrView(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
 		}
 	}
-	cart, err := h.storeServices.Cart(c.Context(), userID)
+	cart, err := h.storeServices.Cart(c.Context(), claims.UserID)
 	if err != nil {
 		return renderFragmentOrView(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
 	}
@@ -275,7 +295,11 @@ func (h handlers) updateBasket(c *fiber.Ctx) error {
 }
 
 func (h handlers) addItemToBasket(c *fiber.Ctx) error {
-	userID := c.Cookies("session")
+	claims, err := auth.ClaimsFromContext(c.UserContext())
+	if err != nil {
+		fmt.Printf("retrieving claims from context: %v", err)
+		return nil
+	}
 	var basketAdd struct {
 		Count     int    `form:"count"`
 		ProductID string `form:"productID"`
@@ -283,13 +307,13 @@ func (h handlers) addItemToBasket(c *fiber.Ctx) error {
 	}
 	_ = c.BodyParser(&basketAdd)
 
-	err := h.storeServices.AddProductToCart(c.Context(), userID, store_domain.NewCartProduct(basketAdd.ProductID, basketAdd.Count))
+	err = h.storeServices.AddProductToCart(c.Context(), claims.UserID, store_domain.NewCartProduct(basketAdd.ProductID, basketAdd.Count))
 	if err != nil {
 		//FIXME\
 		fmt.Printf("ERR: %+v", err)
 		return c.Redirect(basketAdd.Redirect)
 	}
-	cartCount, err := h.storeServices.CartCount(c.Context(), userID)
+	cartCount, err := h.storeServices.CartCount(c.Context(), claims.UserID)
 	if err != nil {
 		//FIXME
 		fmt.Printf("ERR: %+v", err)
@@ -304,9 +328,13 @@ func (h handlers) getBillingInfo(c *fiber.Ctx) error {
 	var billingInfoViewModel views.BillingInfoViewModel
 	var navBarViewModel components.NavBarViewModel
 	//FIXME retrieving search value in navbar while js is not enabled (use form or a tag and messy query?)
-	userID := c.Cookies("session")
+	claims, err := auth.ClaimsFromContext(c.UserContext())
+	if err != nil {
+		fmt.Printf("retrieving claims from context: %v", err)
+		return nil
+	}
 
-	cartCount, err := h.storeServices.CartCount(c.Context(), userID)
+	cartCount, err := h.storeServices.CartCount(c.Context(), claims.UserID)
 	//FIXME?
 	if err != nil {
 		return c.Redirect("/")
@@ -321,10 +349,14 @@ func (h handlers) postBillingInfo(c *fiber.Ctx) error {
 	var billingInfoViewModel views.BillingInfoViewModel
 	var navBarViewModel components.NavBarViewModel
 	//FIXME retrieving search value in navbar while js is not enabled (use form or a tag and messy query?)
-	userID := c.Cookies("session")
+	claims, err := auth.ClaimsFromContext(c.UserContext())
+	if err != nil {
+		fmt.Printf("retrieving claims from context: %v", err)
+		return nil
+	}
 	_ = c.BodyParser(&billingInfoViewModel)
 
-	cartCount, err := h.storeServices.CartCount(c.Context(), userID)
+	cartCount, err := h.storeServices.CartCount(c.Context(), claims.UserID)
 	//FIXME?
 	if err != nil {
 		return c.Redirect("/")
@@ -337,7 +369,7 @@ func (h handlers) postBillingInfo(c *fiber.Ctx) error {
 		billingInfoViewModel.MapDomainErrorToViewModelError(err)
 		return renderFragmentOrView(c, views.BillingInfo(billingInfoViewModel), views.BillingInfoFragment)
 	}
-	customer.ID = userID
+	customer.ID = claims.UserID
 	err = h.customerServices.CreateCustomer(c.Context(), customer)
 	if err != nil {
 		fmt.Printf("ERROR")
@@ -364,9 +396,13 @@ func (h handlers) getShippingInfo(c *fiber.Ctx) error {
 	var shippingInfoViewModel views.ShippingInfoViewModel
 	var navBarViewModel components.NavBarViewModel
 	//FIXME retrieving search value in navbar while js is not enabled (use form or a tag and messy query?)
-	userID := c.Cookies("session")
+	claims, err := auth.ClaimsFromContext(c.UserContext())
+	if err != nil {
+		fmt.Printf("retrieving claims from context: %v", err)
+		return nil
+	}
 
-	cartCount, err := h.storeServices.CartCount(c.Context(), userID)
+	cartCount, err := h.storeServices.CartCount(c.Context(), claims.UserID)
 	//FIXME?
 	if err != nil {
 		return c.Redirect("/")
@@ -411,8 +447,12 @@ func (h handlers) postShippingInfo(c *fiber.Ctx) error {
 
 func (h handlers) getCheckoutStart(c *fiber.Ctx) error {
 	var navBarViewModel components.NavBarViewModel
-	userID := c.Cookies("session")
-	cartCount, err := h.storeServices.CartCount(c.Context(), userID)
+	claims, err := auth.ClaimsFromContext(c.UserContext())
+	if err != nil {
+		fmt.Printf("retrieving claims from context: %v", err)
+		return nil
+	}
+	cartCount, err := h.storeServices.CartCount(c.Context(), claims.UserID)
 	if err != nil {
 		return c.Redirect("/basket")
 	}
@@ -423,8 +463,12 @@ func (h handlers) getCheckoutStart(c *fiber.Ctx) error {
 
 func (h handlers) getCheckoutFinalized(c *fiber.Ctx) error {
 	var navBarViewModel components.NavBarViewModel
-	userID := c.Cookies("session")
-	cartCount, err := h.storeServices.CartCount(c.Context(), userID)
+	claims, err := auth.ClaimsFromContext(c.UserContext())
+	if err != nil {
+		fmt.Printf("retrieving claims from context: %v", err)
+		return nil
+	}
+	cartCount, err := h.storeServices.CartCount(c.Context(), claims.UserID)
 	if err != nil {
 		return c.Redirect("/basket")
 	}
@@ -446,8 +490,12 @@ func (h handlers) getCheckoutFinalized(c *fiber.Ctx) error {
 
 func (h handlers) createCheckout(c *fiber.Ctx) error {
 	//move it to services
-	userID := c.Cookies("session")
-	checkout, err := h.storeServices.CreateCheckout(c.Context(), userID)
+	claims, err := auth.ClaimsFromContext(c.UserContext())
+	if err != nil {
+		fmt.Printf("retrieving claims from context: %v", err)
+		return nil
+	}
+	checkout, err := h.storeServices.CreateCheckout(c.Context(), claims.UserID)
 	type errStruct struct {
 		Err string `json:"error"`
 	}
