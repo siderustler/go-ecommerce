@@ -1,10 +1,10 @@
 package ports
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/session"
 	"github.com/google/uuid"
 	"github.com/siderustler/go-ecommerce/customer"
 	"github.com/siderustler/go-ecommerce/ports/auth"
@@ -18,39 +18,29 @@ func ignoreCacheStaticFilesInDev(c *fiber.Ctx) error {
 }
 
 type middleware struct {
-	r *customer.Services
+	r             *customer.Services
+	authenticator *auth.Authenticator
+	sessionStore  *session.Store
 }
 
-func (m middleware) anonymoUser(c *fiber.Ctx) error {
-	sessionToken := c.Cookies("session")
-	token, err := auth.ParseJwtToken(sessionToken)
-	isUserAuthorized := err == nil
-	if !isUserAuthorized {
-		fmt.Printf("checking jwt token from session cookie %+v\n", err)
-		userID := uuid.NewString()
-		token = auth.NewJwtToken(userID)
-		rawToken, err := token.Sign()
-		if err != nil {
-			fmt.Printf("\nissuing new jwt token: %v", err)
-			return nil
-		}
-		err = m.r.CreateCustomer(c.Context(), customer.NewCustomer(
-			userID,
-			customer.Credentials{},
-			customer.Billing{ID: uuid.NewString()},
-			customer.ShippingAddress{ID: uuid.NewString()},
-		))
-		if err != nil {
-			fmt.Printf("\ncreating customer: %v", err)
-			return nil
-		}
-		c.Cookie(&fiber.Cookie{Name: "session", Value: rawToken, HTTPOnly: true, SameSite: "Strict"})
-	}
-	ctx, err := token.ClaimsToContext(c.Context())
+func (m middleware) auth(c *fiber.Ctx) error {
+	sess, err := m.sessionStore.Get(c)
 	if err != nil {
-		fmt.Printf("setting claims to context: %v", err)
-		return nil
+		return c.SendString("retrieving store: " + err.Error())
 	}
+	var userID string
+	if sess.Fresh() {
+		userID := uuid.NewString()
+		sess.Set("user_id", userID)
+
+		if err = sess.Save(); err != nil {
+			return c.SendString("saving session: " + err.Error())
+		}
+	} else {
+		userID = sess.Get("user_id").(string)
+	}
+	ctx := auth.UserIDToContext(c.Context(), userID)
+
 	c.SetUserContext(ctx)
 
 	return c.Next()

@@ -41,7 +41,7 @@ func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
 	}
 	_, err = db.ExecContext(ctx,
 		`CREATE TABLE IF NOT EXISTS customers (
-			customer_id UUID PRIMARY KEY,
+			customer_id TEXT PRIMARY KEY,
 			name TEXT,
 			email TEXT,
 			phone TEXT,
@@ -96,23 +96,25 @@ func (r repository) CustomerByID(ctx context.Context, userID string) (customer.C
 
 func (r repository) CreateCustomer(ctx context.Context, customer customer.Customer) error {
 	return RunInTx(ctx, r.db, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
-		_, err := r.db.ExecContext(
-			ctx,
-			`INSERT INTO billings (id, nip_code, company, city, address, postal_code, local) VALUES ($1, $2, $3, $4, $5, $6, $7)
-			 ON CONFLICT (id) DO UPDATE SET nip_code = $2, company = $3, city = $4, address = $5, postal_code = $6, local = $7`,
-			customer.Billing.ID,
-			customer.Billing.NIPCode,
-			customer.Billing.Company,
-			customer.Billing.Address.City,
-			customer.Billing.Address.Address,
-			customer.Billing.Address.PostalCode,
-			customer.Billing.Address.Local,
-		)
-		if err != nil {
-			return fmt.Errorf("creating repo billings: %w", err)
+		if !customer.Billing.IsZero() {
+			_, err := tx.ExecContext(
+				ctx,
+				`INSERT INTO billings (id, nip_code, company, city, address, postal_code, local) VALUES ($1, $2, $3, $4, $5, $6, $7)
+				ON CONFLICT (id) DO UPDATE SET nip_code = $2, company = $3, city = $4, address = $5, postal_code = $6, local = $7`,
+				customer.Billing.ID,
+				customer.Billing.NIPCode,
+				customer.Billing.Company,
+				customer.Billing.Address.City,
+				customer.Billing.Address.Address,
+				customer.Billing.Address.PostalCode,
+				customer.Billing.Address.Local,
+			)
+			if err != nil {
+				return fmt.Errorf("creating repo billings: %w", err)
+			}
 		}
 		if !customer.Shipping.IsZero() {
-			_, err := r.db.ExecContext(
+			_, err := tx.ExecContext(
 				ctx,
 				`INSERT INTO shippings (id, city, address, postal_code, local) VALUES ($1, $2, $3, $4, $5)
 			 ON CONFLICT (id) DO UPDATE SET city = $2, address = $3, postal_code = $4, local = $5`,
@@ -126,7 +128,9 @@ func (r repository) CreateCustomer(ctx context.Context, customer customer.Custom
 				return fmt.Errorf("creating repo shippings: %w", err)
 			}
 		}
-		if !customer.Shipping.IsZero() {
+		//FIXME -- multiple functions (update shipping /billing ) with shallow reference to customer
+		var err error
+		if !customer.Shipping.IsZero() && !customer.Billing.IsZero() {
 			statement := `INSERT INTO customers (customer_id, name, email, phone, billing, shipping) 
 			VALUES ($1, $2, $3, $4, $5, $6) 
 			ON CONFLICT (customer_id) DO UPDATE SET name = $2, email = $3, phone = $4, billing = $5, shipping = $6`
@@ -139,7 +143,7 @@ func (r repository) CreateCustomer(ctx context.Context, customer customer.Custom
 				customer.Billing.ID,
 				customer.Shipping.ID,
 			)
-		} else {
+		} else if !customer.Billing.IsZero() {
 			statement := `INSERT INTO customers (customer_id, name, email, phone, billing) 
 			VALUES ($1, $2, $3, $4, $5) 
 			ON CONFLICT (customer_id) DO UPDATE SET name = $2, email = $3, phone = $4, billing = $5`
@@ -151,6 +155,29 @@ func (r repository) CreateCustomer(ctx context.Context, customer customer.Custom
 				customer.Credentials.Phone,
 				customer.Billing.ID,
 			)
+		} else if !customer.Shipping.IsZero() {
+			statement := `INSERT INTO customers (customer_id, name, email, phone, shipping) 
+			VALUES ($1, $2, $3, $4, $5) 
+			ON CONFLICT (customer_id) DO UPDATE SET name = $2, email = $3, phone = $4, shipping = $5`
+			_, err = tx.ExecContext(ctx,
+				statement,
+				customer.ID,
+				customer.Credentials.Name,
+				customer.Credentials.Email,
+				customer.Credentials.Phone,
+				customer.Shipping.ID,
+			)
+		} else {
+			statement := `INSERT INTO customers (customer_id, name, email, phone)
+			 VALUES ($1,$2,$3,$4)
+			 ON CONFLICT (customer_id) DO UPDATE SET name = $2, email = $3, phone = $4`
+			_, err = tx.ExecContext(ctx,
+				statement,
+				customer.ID,
+				customer.Credentials.Name,
+				customer.Credentials.Email,
+				customer.Credentials.Phone,
+			)
 		}
 		if err != nil {
 			return fmt.Errorf("creating repo customer: %w", err)
@@ -161,7 +188,7 @@ func (r repository) CreateCustomer(ctx context.Context, customer customer.Custom
 
 func (r repository) UpdateShippingAddress(ctx context.Context, userID string, shipping customer.ShippingAddress) error {
 	return RunInTx(ctx, r.db, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
-		_, err := r.db.ExecContext(
+		_, err := tx.ExecContext(
 			ctx,
 			`INSERT INTO shippings (id, city, address, postal_code, local) VALUES ($1, $2, $3, $4, $5)
 			 ON CONFLICT (id) DO UPDATE SET city = $2, address = $3, postal_code = $4, local = $5`,
@@ -175,7 +202,7 @@ func (r repository) UpdateShippingAddress(ctx context.Context, userID string, sh
 			return fmt.Errorf("creating credentials: %w", err)
 		}
 
-		_, err = r.db.ExecContext(
+		_, err = tx.ExecContext(
 			ctx,
 			`UPDATE customers SET shipping = $1 WHERE customer_id = $2`,
 			shipping.ID, userID,

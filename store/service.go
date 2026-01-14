@@ -34,6 +34,19 @@ type Repository interface {
 		upsertFn func(cart *store_domain.Cart, checkout *store_domain.Checkout, stock *store_domain.Stock, stockItem store_domain.StockItem) error,
 	) error
 
+	MergeUserCarts(
+		ctx context.Context,
+		fromUserID string,
+		toUserID string,
+		mergeFn func(
+			fromCart store_domain.Cart,
+			toCart *store_domain.Cart,
+			fromCheckout *store_domain.Checkout,
+			toCheckout *store_domain.Checkout,
+			stock *store_domain.Stock,
+		) error,
+	) error
+
 	CreateCheckout(
 		ctx context.Context,
 		userID string,

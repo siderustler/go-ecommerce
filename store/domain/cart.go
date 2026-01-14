@@ -2,6 +2,7 @@ package store_domain
 
 import (
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -60,6 +61,16 @@ func (b *Cart) RemoveProduct(cartProduct CartProduct) error {
 	b.LastModifiedAt = time.Now().UTC().Format(time.RFC3339)
 	product.Count -= cartProduct.Count
 	b.Products[cartProduct.ProductID] = product
+	return nil
+}
+
+func (b *Cart) MergeCart(cart Cart) error {
+	for _, product := range cart.Products {
+		err := b.AddProduct(product)
+		if err != nil {
+			return fmt.Errorf("adding product to cart: %w", err)
+		}
+	}
 	return nil
 }
 

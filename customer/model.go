@@ -120,6 +120,9 @@ type Customer struct {
 	Shipping    ShippingAddress
 }
 
+func (b Billing) IsZero() bool {
+	return b == Billing{}
+}
 func NewCustomer(id string, credentials Credentials, billing Billing, shipping ShippingAddress) Customer {
 	return Customer{
 		ID:          id,
