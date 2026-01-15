@@ -3,12 +3,12 @@ package ports
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/gob"
 	"fmt"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
@@ -22,20 +22,13 @@ import (
 	"github.com/siderustler/go-ecommerce/store"
 	store_domain "github.com/siderustler/go-ecommerce/store/domain"
 	stripeSession "github.com/stripe/stripe-go/v84/checkout/session"
+	"golang.org/x/oauth2"
 )
 
 type handlers struct {
 	productServices  *product.Services
 	storeServices    *store.Services
 	customerServices *customer.Services
-}
-
-type profile struct {
-	Name string `json:"name"`
-}
-
-func init() {
-	gob.Register(profile{})
 }
 
 func (h handlers) getProductsRedirect(c *fiber.Ctx) error {
@@ -499,7 +492,7 @@ func (h handlers) createCheckout(c *fiber.Ctx) error {
 	return c.JSON(data)
 }
 
-func oauthLoginHandler(oauth *auth.Authenticator, sessionStore *session.Store) func(c *fiber.Ctx) error {
+func oauthLoginHandler(auth *auth.Authenticator, sessionStore *session.Store) func(c *fiber.Ctx) error {
 	generateRandomState := func() (string, error) {
 		b := make([]byte, 32)
 		_, err := rand.Read(b)
@@ -525,7 +518,7 @@ func oauthLoginHandler(oauth *auth.Authenticator, sessionStore *session.Store) f
 		if err != nil {
 			return c.SendString("saving session: " + err.Error())
 		}
-		return c.Redirect(oauth.AuthCodeURL(state), http.StatusTemporaryRedirect)
+		return c.Redirect(auth.AuthCodeURL(state, oauth2.AccessTypeOffline), http.StatusTemporaryRedirect)
 	}
 }
 
@@ -538,7 +531,7 @@ func (h handlers) oauthCallbackHandler(oauth *auth.Authenticator, sessionStore *
 		if c.Query("state") != sess.Get("state") {
 			return c.SendString("Invalid state parameter")
 		}
-		// Exchange an authorization code for a token.
+
 		token, err := oauth.Exchange(c.Context(), c.Query("code"))
 		if err != nil {
 			return c.SendString("Failed to exchange an authorization code for a token.")
@@ -549,22 +542,22 @@ func (h handlers) oauthCallbackHandler(oauth *auth.Authenticator, sessionStore *
 			return c.SendString("Failed to verify ID Token.")
 		}
 
-		var profile profile
+		var profile auth.Profile
 		if err = idToken.Claims(&profile); err != nil {
 			return c.SendString(err.Error())
 		}
 		previousUser := sess.Get("user_id").(string)
-
+		sess.Set("ip", c.IP())
+		sess.Set("profile", profile)
 		sess.Set("access_token", token.AccessToken)
 		sess.Set("refresh_token", token.RefreshToken)
-		sess.Set("profile", profile)
-		sess.Set("user_id", idToken.Subject)
+		sess.Set("expiry", time.Now().Unix()+token.ExpiresIn)
 
 		if err = h.customerServices.CreateCustomer(c.Context(), customer.NewCustomer(
 			idToken.Subject,
 			customer.Credentials{},
-			customer.Billing{ID: uuid.NewString()},
-			customer.ShippingAddress{ID: uuid.NewString()},
+			customer.Billing{},
+			customer.ShippingAddress{},
 		)); err != nil {
 			return c.SendString("creating user: " + err.Error())
 		}
