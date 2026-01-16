@@ -75,21 +75,7 @@ func (m middleware) authSessionVerifier(c *fiber.Ctx) error {
 
 		if err = sess.Save(); err != nil {
 			fmt.Printf("saving session: %v", err.Error())
-			return c.Next()
 		}
 	}
 	return c.Next()
 }
-
-/*
-	Aktualnie user dostaje userID po wejsciu na strone, billing i shipping adres uzupelnia przed zaplata.
-	Chcemy aby user mial mozliwosc pozostania anonimowym userem oraz mial mozliwosc tez zalogowania sie.
-	W przypadku gdy user bedzie zalogowany od razu i nie bedzie mial nic w koszyku nic nie musimy robic.
-	W przypadku gdy user nie bedize zalogowany i nie bbedzie mial nic wkoszyku i sie zaloguje nic nie bedzie trzeba robic.
-	W przypadku gdy user nie ebbdzie zalogowany i doda cos do koszyka trzeba koszyk albo zmergowac albo nadpisac calkowicie.
-	W przypadku gdy user nie bedzie zalogowany a ma juz stworzony checkout trzeba nadpisac jego koszyk (checkut zostanie nadpisany).
-	W przypadku gdy user sie wyloguje, tworzona jest nowa sesja.
-
-	Ilekroc koszyk bedzie mergowany albo nadpisywany, aktualny checkout uzytkownika
-	 trzeba inwalidowac a rezerwacje w stock trzeba zwalniac
-*/
