@@ -407,7 +407,7 @@ func (h handlers) getShippingInfo(c *fiber.Ctx) error {
 func (h handlers) postShippingInfo(c *fiber.Ctx) error {
 	var navBarViewModel components.NavBarViewModel
 	var shippingInfoViewModel views.ShippingInfoViewModel
-	id := c.Cookies("a_session")
+	id := auth.UserIDFromContext(c.UserContext())
 	//FIXME retrieving search value in navbar while js is not enabled (use form or a tag and messy query?)
 	_ = c.BodyParser(&shippingInfoViewModel)
 
