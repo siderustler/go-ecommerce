@@ -507,20 +507,27 @@ func basketSummary(items []BasketItemViewModel) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<a class=\"flex justify-center items-center gap-1 md:gap-2 lg:gap-4 bg-primary-300 text-primary-900 rounded-xl px-5 lg:px-6 py-3 md:rounded-xl\" type=\"submit\" href=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
+		hasItemsInCart := len(items) > 0
+		if hasItemsInCart {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<a class=\"flex justify-center items-center gap-1 md:gap-2 lg:gap-4 bg-primary-300 text-primary-900 rounded-xl px-5 lg:px-6 py-3 md:rounded-xl\" type=\"submit\" href=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var19 templ.SafeURL
+			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinURLErrs("/basket/customer/billing")
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 137, Col: 37}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\" hx-get=\"/basket/customer/billing\" hx-target=\"#products\" hx-swap=\"outerHTML\" hx-push-url=\"true\"><img src=\"/public/icons/additional-info.svg\" alt=\"przejdż dalej ikona\" width=\"24px\" height=\"24px\"> Przejdż do kolejnego etapu</a>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
 		}
-		var templ_7745c5c3_Var19 templ.SafeURL
-		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinURLErrs("/basket/customer/billing")
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 135, Col: 36}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\" hx-get=\"/basket/customer/billing\" hx-target=\"#products\" hx-swap=\"outerHTML\" hx-push-url=\"true\"><img src=\"/public/icons/additional-info.svg\" alt=\"przejdż dalej ikona\" width=\"24px\" height=\"24px\"> Przejdż do kolejnego etapu</a></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -549,46 +556,46 @@ func summaryItem(indicatorID, title, description string) templ.Component {
 			templ_7745c5c3_Var20 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<div class=\"flex flex-col sm:flex-row items-center px-6 py-4 md:px-8 md:py-6 bg-grey-100 shadow-md rounded-lg sm:justify-between lg:justify-around 2xl:justify-between\"><h3 class=\"text-primary-900 md:text-xl\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<div class=\"flex flex-col sm:flex-row items-center px-6 py-4 md:px-8 md:py-6 bg-grey-100 shadow-md rounded-lg sm:justify-between lg:justify-around 2xl:justify-between\"><h3 class=\"text-primary-900 md:text-xl\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var21 string
 		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 154, Col: 49}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 157, Col: 49}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</h3><p id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</h3><p id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var22 string
 		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(indicatorID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 155, Col: 21}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 158, Col: 21}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\" class=\"text-primary-900 text-xl md:text-2xl font-bold htmx-request:invisible relative\"><img src=\"/public/icons/spinner.svg\" width=\"24px\" height=\"24px\" alt=\"Loading...\" class=\"htmx-indicator absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2\"> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\" class=\"text-primary-900 text-xl md:text-2xl font-bold htmx-request:invisible relative\"><img src=\"/public/icons/spinner.svg\" width=\"24px\" height=\"24px\" alt=\"Loading...\" class=\"htmx-indicator absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2\"> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var23 string
 		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(description)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 157, Col: 16}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 160, Col: 16}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</p></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</p></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

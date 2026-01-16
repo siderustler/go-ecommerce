@@ -129,23 +129,26 @@ templ basketSummary(items []BasketItemViewModel) {
 		@summaryItem("part-price", "Suma częściowa", fmt.Sprintf("%.2f zł", partPrice))
 		@summaryItem("shipping-cost", "Koszt wysyłki", "Bezpłatna")
 		@summaryItem("full-price", "Suma całkowita", fmt.Sprintf("%.2f zł", fullPrice))
-		<a
-			class="flex justify-center items-center gap-1 md:gap-2 lg:gap-4 bg-primary-300 text-primary-900 rounded-xl px-5 lg:px-6 py-3 md:rounded-xl"
-			type="submit"
-			href={ "/basket/customer/billing" }
-			hx-get="/basket/customer/billing"
-			hx-target="#products"
-			hx-swap="outerHTML"
-			hx-push-url="true"
-		>
-			<img
-				src="/public/icons/additional-info.svg"
-				alt="przejdż dalej ikona"
-				width="24px"
-				height="24px"
-			/>
-			Przejdż do kolejnego etapu
-		</a>
+		{{ hasItemsInCart := len(items) > 0 }}
+		if hasItemsInCart {
+			<a
+				class="flex justify-center items-center gap-1 md:gap-2 lg:gap-4 bg-primary-300 text-primary-900 rounded-xl px-5 lg:px-6 py-3 md:rounded-xl"
+				type="submit"
+				href={ "/basket/customer/billing" }
+				hx-get="/basket/customer/billing"
+				hx-target="#products"
+				hx-swap="outerHTML"
+				hx-push-url="true"
+			>
+				<img
+					src="/public/icons/additional-info.svg"
+					alt="przejdż dalej ikona"
+					width="24px"
+					height="24px"
+				/>
+				Przejdż do kolejnego etapu
+			</a>
+		}
 	</div>
 }
 
