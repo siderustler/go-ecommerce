@@ -323,9 +323,25 @@ func (h handlers) getBillingInfo(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Redirect("/")
 	}
+	customer, _ := h.customerServices.Customer(c.Context(), userID)
+
 	navBarViewModel.Align(cartCount)
 	billingInfoViewModel.Align(navBarViewModel)
 
+	hasShipping := !customer.Shipping.IsZero()
+	hasBilling := !customer.Billing.IsZero()
+	if hasShipping {
+		checkoutStartUrl := "/basket/checkout"
+		c.Append("Hx-Push-Url", checkoutStartUrl)
+		return renderFragmentOrRedirect(c, views.CheckoutStart(navBarViewModel), checkoutStartUrl, views.CheckoutFragment)
+	}
+	if hasBilling {
+		shippingUrl := "/basket/customer/shipping"
+		var shippingInfoViewModel views.ShippingInfoViewModel
+		shippingInfoViewModel.Align(navBarViewModel)
+		c.Append("Hx-Push-Url", shippingUrl)
+		return renderFragmentOrRedirect(c, views.ShippingInfo(shippingInfoViewModel), shippingUrl, views.ShippingInfoFragment)
+	}
 	return renderFragmentOrView(c, views.BillingInfo(billingInfoViewModel), views.BillingInfoFragment)
 }
 
@@ -343,13 +359,12 @@ func (h handlers) postBillingInfo(c *fiber.Ctx) error {
 	}
 	navBarViewModel.Align(cartCount)
 	billingInfoViewModel.Align(navBarViewModel)
-	customer, err := billingInfoViewModel.ParseToDomainCustomer()
+	customer, err := billingInfoViewModel.ParseToDomainCustomer(userID)
 	if err != nil {
 		fmt.Printf("error occured creating customer: %+v", err)
 		billingInfoViewModel.MapDomainErrorToViewModelError(err)
 		return renderFragmentOrView(c, views.BillingInfo(billingInfoViewModel), views.BillingInfoFragment)
 	}
-	customer.ID = userID
 	err = h.customerServices.CreateCustomer(c.Context(), customer)
 	if err != nil {
 		fmt.Printf("ERROR")

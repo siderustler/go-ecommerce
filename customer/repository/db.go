@@ -60,10 +60,10 @@ func (r repository) CustomerByID(ctx context.Context, userID string) (customer.C
 		ctx,
 		`SELECT 
 		c.customer_id, c.name, c.email, c.phone, 
-		s.id, s.city, s.address, s.local, s.postal_code,
-		b.id, b.city, b.address, b.local, b.postal_code, b.nip_code, b.company
+		COALESCE(s.id::text,'') AS shippingID, COALESCE(s.city::text,'') AS shippingCity, COALESCE(s.address::text,'') AS shippingAddress, COALESCE(s.local::text,'') AS shippingLocal, COALESCE(s.postal_code::text,'') AS shippingPostal,
+		b.id AS billingID, b.city AS billingCity, b.address AS billingAddress, b.local AS billingLocal, b.postal_code AS billingPostal, b.nip_code AS billingNipCode, b.company
 		FROM customers AS c 
-		LEFT JOIN billings AS b ON c.billing = b.id 
+		LEFT JOIN billings AS b ON c.billing = b.id
 		LEFT JOIN shippings AS s ON c.shipping = s.id
 		WHERE c.customer_id = $1`,
 		userID,
@@ -87,9 +87,8 @@ func (r repository) CustomerByID(ctx context.Context, userID string) (customer.C
 		&cust.Billing.NIPCode,
 		&cust.Billing.Company,
 	)
-
 	if err != nil {
-		return customer.Customer{}, fmt.Errorf("scanning customer row: %w", err)
+		return customer.Customer{}, fmt.Errorf("scanning customer row: %w: %v", err)
 	}
 	return cust, nil
 }
