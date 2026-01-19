@@ -50,7 +50,7 @@ func (c *BillingInfoViewModel) Align(navBarViewModel components.NavBarViewModel)
 	c.navBarViewModel = navBarViewModel
 }
 
-func (c BillingInfoViewModel) ParseToDomainCustomer() (customer.Customer, error) {
+func (c BillingInfoViewModel) ParseToDomainCustomer(id string) (customer.Customer, error) {
 	var joinErr error
 	billing, err := customer.NewBilling(
 		uuid.NewString(),
@@ -76,7 +76,7 @@ func (c BillingInfoViewModel) ParseToDomainCustomer() (customer.Customer, error)
 		joinErr = errors.Join(joinErr, err)
 	}
 	return customer.NewCustomer(
-		uuid.NewString(),
+		id,
 		credentials,
 		billing,
 		shipping,

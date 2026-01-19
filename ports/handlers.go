@@ -440,7 +440,11 @@ func (h handlers) getCheckoutStart(c *fiber.Ctx) error {
 	var navBarViewModel components.NavBarViewModel
 	userID := auth.UserIDFromContext(c.UserContext())
 	cartCount, err := h.storeServices.CartCount(c.Context(), userID)
-	if err != nil {
+	if isCartEmpty := cartCount == 0; err != nil || isCartEmpty {
+		return c.Redirect("/basket")
+	}
+	customer, err := h.customerServices.Customer(c.Context(), userID)
+	if err != nil || customer.IsZero() {
 		return c.Redirect("/basket")
 	}
 	navBarViewModel.Align(cartCount)
@@ -450,12 +454,7 @@ func (h handlers) getCheckoutStart(c *fiber.Ctx) error {
 
 func (h handlers) getCheckoutFinalized(c *fiber.Ctx) error {
 	var navBarViewModel components.NavBarViewModel
-	userID := auth.UserIDFromContext(c.UserContext())
-	cartCount, err := h.storeServices.CartCount(c.Context(), userID)
-	if err != nil {
-		return c.Redirect("/basket")
-	}
-	navBarViewModel.Align(cartCount)
+	navBarViewModel.Align(0)
 
 	checkoutSession := c.Query("session_id")
 	s, err := stripeSession.Get(checkoutSession, nil)

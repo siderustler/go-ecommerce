@@ -26,7 +26,7 @@ type address struct {
 }
 
 func (a address) isZero() bool {
-	return a.City == "" && a.Address == "" && a.PostalCode == "" && a.Local == ""
+	return a.City == "" || a.Address == "" || a.PostalCode == "" || a.Local == ""
 }
 
 func newAddress(city, addr, postalCode, local string) (address, error) {
@@ -68,7 +68,7 @@ func NewShippingAddress(id, city, address, postalCode, local string) (ShippingAd
 }
 
 func (s ShippingAddress) IsZero() bool {
-	return s.Address.isZero() && s.ID == ""
+	return s.Address.isZero() || s.ID == ""
 }
 
 type Billing struct {
@@ -124,8 +124,16 @@ type Customer struct {
 	Shipping    ShippingAddress
 }
 
+func (c Customer) IsZero() bool {
+	return c.Billing.IsZero() || c.Shipping.IsZero() || c.Credentials.IsZero()
+}
+
+func (c Credentials) IsZero() bool {
+	return c.Email == "" || c.Name == "" || c.Phone == ""
+}
+
 func (b Billing) IsZero() bool {
-	return b.Address.isZero() && b.Company == "" && b.NIPCode == "" && b.ID == ""
+	return b.Address.isZero() || b.Company == "" || b.NIPCode == "" || b.ID == ""
 }
 
 func NewCustomer(id string, credentials Credentials, billing Billing, shipping ShippingAddress) Customer {

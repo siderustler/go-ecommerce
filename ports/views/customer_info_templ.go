@@ -5,11 +5,11 @@ package views
 
 //lint:file-ignore SA4006 This context is only used if a nested component is present.
 
+import "github.com/a-h/templ"
+import templruntime "github.com/a-h/templ/runtime"
+
 import (
 	"errors"
-
-	"github.com/a-h/templ"
-	templruntime "github.com/a-h/templ/runtime"
 	"github.com/google/uuid"
 	"github.com/siderustler/go-ecommerce/customer"
 	"github.com/siderustler/go-ecommerce/ports/views/components"
@@ -58,7 +58,7 @@ func (c *BillingInfoViewModel) Align(navBarViewModel components.NavBarViewModel)
 	c.navBarViewModel = navBarViewModel
 }
 
-func (c BillingInfoViewModel) ParseToDomainCustomer(userID string) (customer.Customer, error) {
+func (c BillingInfoViewModel) ParseToDomainCustomer(id string) (customer.Customer, error) {
 	var joinErr error
 	billing, err := customer.NewBilling(
 		uuid.NewString(),
@@ -84,7 +84,7 @@ func (c BillingInfoViewModel) ParseToDomainCustomer(userID string) (customer.Cus
 		joinErr = errors.Join(joinErr, err)
 	}
 	return customer.NewCustomer(
-		userID,
+		id,
 		credentials,
 		billing,
 		shipping,
