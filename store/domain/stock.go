@@ -41,6 +41,15 @@ func (s *StockItem) ReleaseItemReservation(reserveAmount int) error {
 	return nil
 }
 
+func (s *StockItem) DecreaseAvailableAmount(count int) error {
+	if s.AvailableAmount < count {
+		return errors.New("requested count is greater than actual available amount")
+	}
+	s.AvailableAmount -= count
+
+	return nil
+}
+
 func (s *StockItem) RemoveItem(count int) error {
 	if s.AvailableAmount < count {
 		return errors.New("requested count is greater than actual available amount")

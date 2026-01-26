@@ -98,7 +98,7 @@ func (r repository) CheckoutProducts(ctx context.Context, checkoutID string) ([]
 func (r repository) CreateOrder(
 	ctx context.Context,
 	order store_domain.Order,
-	createFn func(checkout *store_domain.Checkout, stock *store_domain.Stock) error,
+	createFn func(cart *store_domain.Cart, checkout *store_domain.Checkout, stock *store_domain.Stock) error,
 ) error {
 	return RunInTx(ctx, r.db, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
 		checkout, err := checkoutByID(ctx, tx, order.CheckoutID)
@@ -109,7 +109,11 @@ func (r repository) CreateOrder(
 		if err != nil {
 			return fmt.Errorf("retrieving stock: %w", err)
 		}
-		if err = createFn(&checkout, &stock); err != nil {
+		cart, err := cart(ctx, tx, checkout.UserID)
+		if err != nil {
+			return fmt.Errorf("retrieving cart: %w", err)
+		}
+		if err = createFn(&cart, &checkout, &stock); err != nil {
 			return fmt.Errorf("domain: %w", err)
 		}
 		_, err = tx.ExecContext(
@@ -119,6 +123,10 @@ func (r repository) CreateOrder(
 		)
 		if err != nil {
 			return fmt.Errorf("updating checkout: %w", err)
+		}
+		_, err = tx.ExecContext(ctx, "UPDATE baskets SET status = $1 WHERE id = $2", cart.Status, cart.ID)
+		if err != nil {
+			return fmt.Errorf("updating cart: %w", err)
 		}
 		for itemID, stockItem := range stock.Items {
 			_, err = tx.ExecContext(
@@ -132,6 +140,11 @@ func (r repository) CreateOrder(
 		}
 		return nil
 	})
+}
+
+// CheckoutByUserID implements store.Repository.
+func (r repository) CheckoutByUserID(ctx context.Context, userID string) (store_domain.Checkout, error) {
+	return checkoutByUserID(ctx, r.db, userID)
 }
 
 // MergeUserCarts implements store.Repository.
@@ -416,7 +429,7 @@ func checkoutByID(ctx context.Context, exec executor, id string) (store_domain.C
 		ctx,
 		`SELECT c.id, c.customer_id, c.created_at, c.status, sr.product_id, sr.amount FROM checkouts AS c 
 				JOIN stock_reservations AS sr ON c.id = sr.checkout_id
-				WHERE c.status = $1 AND c.checkout_id = $2 GROUP BY c.id, sr.product_id, sr.amount`,
+				WHERE c.status = $1 AND c.id = $2 GROUP BY c.id, sr.product_id, sr.amount`,
 		store_domain.CheckoutPending, id,
 	)
 	if err != nil {
@@ -449,6 +462,37 @@ func checkoutByBasketID(ctx context.Context, exec executor, basketID string) (st
 				JOIN stock_reservations AS sr ON c.id = sr.checkout_id
 				WHERE c.status = $1 AND c.basket_id = $2 GROUP BY c.id, sr.product_id, sr.amount`,
 		store_domain.CheckoutPending, basketID,
+	)
+	if err != nil {
+		return store_domain.Checkout{}, fmt.Errorf("retrieving checkout: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var checkoutProduct store_domain.CartProduct
+		err = rows.Scan(
+			&checkout.ID,
+			&checkout.UserID,
+			&checkout.CreatedAt,
+			&checkout.Status,
+			&checkoutProduct.ProductID,
+			&checkoutProduct.Count,
+		)
+		if err != nil {
+			return store_domain.Checkout{}, fmt.Errorf("scanning checkout and stock: %w", err)
+		}
+		checkout.Items[checkoutProduct.ProductID] = checkoutProduct
+	}
+	return checkout, nil
+}
+
+func checkoutByUserID(ctx context.Context, exec executor, userID string) (store_domain.Checkout, error) {
+	checkout := store_domain.Checkout{Items: make(map[string]store_domain.CartProduct)}
+	rows, err := exec.QueryContext(
+		ctx,
+		`SELECT c.id, c.customer_id, c.created_at, c.status, sr.product_id, sr.amount FROM checkouts AS c 
+				JOIN stock_reservations AS sr ON c.id = sr.checkout_id
+				WHERE c.status = $1 AND c.customer_id = $2 GROUP BY c.id, sr.product_id, sr.amount`,
+		store_domain.CheckoutPending, userID,
 	)
 	if err != nil {
 		return store_domain.Checkout{}, fmt.Errorf("retrieving checkout: %w", err)

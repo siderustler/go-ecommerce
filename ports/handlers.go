@@ -468,21 +468,28 @@ func (h handlers) getCheckoutFinalized(c *fiber.Ctx) error {
 func (h handlers) createCheckout(c *fiber.Ctx) error {
 	//move it to services
 	userID := auth.UserIDFromContext(c.UserContext())
-	checkout, err := h.storeServices.CreateCheckout(c.Context(), userID)
 	type errStruct struct {
 		Err string `json:"error"`
 	}
+	err := h.storeServices.CreateCheckout(c.Context(), userID)
 	if err != nil {
 		fmt.Printf("error is :%+v", err)
 		return c.Status(http.StatusBadRequest).JSON(errStruct{Err: fmt.Sprintf("error creating cehckout: %v", err.Error())})
 	}
+	checkout, err := h.storeServices.CheckoutByUserID(c.Context(), userID)
+	if err != nil {
+		fmt.Printf("error is CHECKOUTBYSEURID:%+v", err)
+		return c.Status(http.StatusBadRequest).JSON(errStruct{Err: fmt.Sprintf("retrieving checkout: %v", err.Error())})
+	}
 	products, err := h.productServices.ProductsByIDs(c.Context(), slices.Collect(maps.Keys(checkout.Items)))
 	if err != nil {
+		fmt.Printf("error is PROCUCST:%+v", err)
+
 		return c.Status(http.StatusInternalServerError).JSON(errStruct{Err: fmt.Sprintf("error retrieving products for checkout creation: %v", err.Error())})
 	}
 	sess, err := h.storeServices.CreateStripeCheckout(c.Context(), checkout.ID, checkout.Items, products)
 	if err != nil {
-		fmt.Printf("error is :%+v", err)
+		fmt.Printf("error is CSTIRPE CHEKCOUT:%+v", err)
 
 		return c.Status(http.StatusInternalServerError).JSON(errStruct{Err: fmt.Sprintf("error creating stripe checkout: %v", err.Error())})
 	}
@@ -625,6 +632,8 @@ func (h handlers) checkoutStripeWebhook(c *fiber.Ctx) error {
 	}
 	var checkoutSession stripe.CheckoutSession
 	if err := json.Unmarshal(event.Data.Raw, &checkoutSession); err != nil {
+		fmt.Printf("unmarshal checkout: %v", err)
+
 		return c.Status(http.StatusInternalServerError).JSON(errStruct{Err: fmt.Sprintf("unmarshalling checkout session: %v", err)})
 	}
 
@@ -640,6 +649,7 @@ func (h handlers) checkoutStripeWebhook(c *fiber.Ctx) error {
 			),
 		)
 		if err != nil {
+			fmt.Printf(" CREAITNGORDER: %v", err)
 			return c.Status(http.StatusInternalServerError).JSON(errStruct{Err: fmt.Sprintf("creating order: %v", err)})
 		}
 	case stripe.EventTypeCheckoutSessionExpired:
@@ -650,6 +660,7 @@ func (h handlers) checkoutStripeWebhook(c *fiber.Ctx) error {
 		}
 		err := h.storeServices.InvalidateExpiredCheckout(c.Context(), session.ClientReferenceID)
 		if err != nil {
+			fmt.Printf("INVALIDATING EXPIRED CHECKOUT: %v", err)
 			return c.Status(http.StatusInternalServerError).JSON(errStruct{Err: fmt.Sprintf("invalidating checkout: %v", err)})
 		}
 	}

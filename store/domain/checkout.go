@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+var ErrCheckoutInvalidated = errors.New("checkout already invalidated")
+
 type CheckoutStatus string
 
 var (
@@ -60,17 +62,13 @@ func (c Checkout) IsZero() bool {
 }
 
 func (c *Checkout) Invalidate() error {
-	if c.Status == CheckoutFinalized {
-		return errors.New("checkout already finalized")
+	if c.Status == CheckoutInvalidated {
+		return ErrCheckoutInvalidated
 	}
 	c.Status = CheckoutInvalidated
 	return nil
 }
 
-func (c *Checkout) Finalize() error {
-	if c.Status != CheckoutPending {
-		return errors.New("checkout is not available to finalize")
-	}
+func (c *Checkout) Finalize() {
 	c.Status = CheckoutFinalized
-	return nil
 }

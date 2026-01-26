@@ -21,9 +21,9 @@ func (s Services) InvalidateExpiredCheckout(ctx context.Context, checkoutID stri
 				if !exists {
 					continue
 				}
-				err = stockItem.ReleaseItemReservation(checkoutItem.Count)
+				err := stockItem.ReleaseItemReservation(checkoutItem.Count)
 				if err != nil {
-					return fmt.Errorf("releasing item reservation: %w", err)
+					return fmt.Errorf("removing item from stock: %w", err)
 				}
 			}
 			return nil
