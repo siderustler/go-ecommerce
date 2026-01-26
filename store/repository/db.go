@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"maps"
+	"slices"
 	"time"
 
 	"github.com/siderustler/go-ecommerce/store"
@@ -87,6 +89,51 @@ func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
 	return &repository{db: db}, nil
 }
 
+// CheckoutProducts implements store.Repository.
+func (r repository) CheckoutProducts(ctx context.Context, checkoutID string) ([]store_domain.OrderProduct, error) {
+	panic("unimplemented")
+}
+
+// CreateOrder implements store.Repository.
+func (r repository) CreateOrder(
+	ctx context.Context,
+	order store_domain.Order,
+	createFn func(checkout *store_domain.Checkout, stock *store_domain.Stock) error,
+) error {
+	return RunInTx(ctx, r.db, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
+		checkout, err := checkoutByID(ctx, tx, order.CheckoutID)
+		if err != nil {
+			return fmt.Errorf("retrieving checkout by id: %w", err)
+		}
+		stock, err := stockForUpdate(ctx, tx, slices.Collect(maps.Keys(checkout.Items))...)
+		if err != nil {
+			return fmt.Errorf("retrieving stock: %w", err)
+		}
+		if err = createFn(&checkout, &stock); err != nil {
+			return fmt.Errorf("domain: %w", err)
+		}
+		_, err = tx.ExecContext(
+			ctx,
+			`UPDATE checkouts SET status = $1 WHERE id = $2`,
+			checkout.Status, checkout.ID,
+		)
+		if err != nil {
+			return fmt.Errorf("updating checkout: %w", err)
+		}
+		for itemID, stockItem := range stock.Items {
+			_, err = tx.ExecContext(
+				ctx,
+				`UPDATE stock SET available_amount = $1, reserved_amount = $2 WHERE product_id = $3`,
+				stockItem.AvailableAmount, stockItem.ReservedAmount, itemID,
+			)
+			if err != nil {
+				return fmt.Errorf("updating stock: %w", err)
+			}
+		}
+		return nil
+	})
+}
+
 // MergeUserCarts implements store.Repository.
 func (r repository) MergeUserCarts(
 	ctx context.Context,
@@ -109,28 +156,21 @@ func (r repository) MergeUserCarts(
 		if err != nil && err != sql.ErrNoRows {
 			return fmt.Errorf("retrieving to cart: %w", err)
 		}
-		productIds := make([]string, 0, len(toCart.Products))
-		for productID := range toCart.Products {
-			productIds = append(productIds, productID)
-		}
-		for productID := range fromCart.Products {
-			productIds = append(productIds, productID)
-		}
 		var fromCheckout store_domain.Checkout
 		if !fromCart.IsZero() {
-			fromCheckout, err = checkout(ctx, tx, fromCart.ID)
+			fromCheckout, err = checkoutByBasketID(ctx, tx, fromCart.ID)
 			if err != nil && err != sql.ErrNoRows {
 				return fmt.Errorf("retrieving from checkout: %w", err)
 			}
 		}
 		var toCheckout store_domain.Checkout
 		if !toCart.IsZero() {
-			toCheckout, err = checkout(ctx, tx, toCart.ID)
+			toCheckout, err = checkoutByBasketID(ctx, tx, toCart.ID)
 			if err != nil && err != sql.ErrNoRows {
 				return fmt.Errorf("retrieving to checkout: %w", err)
 			}
 		}
-		stock, err := stockForUpdate(ctx, tx, productIds...)
+		stock, err := stockForUpdate(ctx, tx, slices.AppendSeq(slices.Collect(maps.Keys(toCart.Products)), maps.Keys(fromCart.Products))...)
 		if err != nil && err != sql.ErrNoRows {
 			return fmt.Errorf("retrieving stock for update: %w", err)
 		}
@@ -284,10 +324,7 @@ func (r repository) CreateCheckout(
 		if err != nil {
 			return fmt.Errorf("retrieving cart: %w", err)
 		}
-		cartProductIds := make([]string, 0, len(cart.Products))
-		for productID := range cart.Products {
-			cartProductIds = append(cartProductIds, productID)
-		}
+		cartProductIds := slices.Collect(maps.Keys(cart.Products))
 		var stock store_domain.Stock
 		if !cart.IsZero() {
 			stock, err = stockForUpdate(ctx, tx, cartProductIds...)
@@ -373,7 +410,38 @@ func stockItem(ctx context.Context, exec executor, itemID string) (store_domain.
 	return stockItem, nil
 }
 
-func checkout(ctx context.Context, exec executor, basketID string) (store_domain.Checkout, error) {
+func checkoutByID(ctx context.Context, exec executor, id string) (store_domain.Checkout, error) {
+	checkout := store_domain.Checkout{Items: make(map[string]store_domain.CartProduct)}
+	rows, err := exec.QueryContext(
+		ctx,
+		`SELECT c.id, c.customer_id, c.created_at, c.status, sr.product_id, sr.amount FROM checkouts AS c 
+				JOIN stock_reservations AS sr ON c.id = sr.checkout_id
+				WHERE c.status = $1 AND c.checkout_id = $2 GROUP BY c.id, sr.product_id, sr.amount`,
+		store_domain.CheckoutPending, id,
+	)
+	if err != nil {
+		return store_domain.Checkout{}, fmt.Errorf("retrieving checkout: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var checkoutProduct store_domain.CartProduct
+		err = rows.Scan(
+			&checkout.ID,
+			&checkout.UserID,
+			&checkout.CreatedAt,
+			&checkout.Status,
+			&checkoutProduct.ProductID,
+			&checkoutProduct.Count,
+		)
+		if err != nil {
+			return store_domain.Checkout{}, fmt.Errorf("scanning checkout and stock: %w", err)
+		}
+		checkout.Items[checkoutProduct.ProductID] = checkoutProduct
+	}
+	return checkout, nil
+}
+
+func checkoutByBasketID(ctx context.Context, exec executor, basketID string) (store_domain.Checkout, error) {
 	checkout := store_domain.Checkout{Items: make(map[string]store_domain.CartProduct)}
 	rows, err := exec.QueryContext(
 		ctx,
@@ -418,15 +486,13 @@ func (r repository) UpsertCart(ctx context.Context, userID string, item store_do
 		var domainCheckout store_domain.Checkout
 		var domainStock store_domain.Stock
 		if !cart.IsZero() {
-			domainCheckout, err = checkout(ctx, tx, cart.ID)
+			domainCheckout, err = checkoutByBasketID(ctx, tx, cart.ID)
 			if err != nil && err != sql.ErrNoRows {
 				return fmt.Errorf("retrieving checkout: %w", err)
 			}
 		}
-		checkoutProductIds := make([]string, 0, len(domainCheckout.Items))
-		for productID := range domainCheckout.Items {
-			checkoutProductIds = append(checkoutProductIds, productID)
-		}
+		checkoutProductIds := slices.Collect(maps.Keys(domainCheckout.Items))
+
 		if !domainCheckout.IsZero() {
 			domainStock, err = stockForUpdate(ctx, tx, checkoutProductIds...)
 			if err != nil {

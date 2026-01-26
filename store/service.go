@@ -58,6 +58,17 @@ type Repository interface {
 		userID string,
 		updateFn func(checkout *store_domain.Checkout, stock *store_domain.Stock) error,
 	) error
+
+	CreateOrder(
+		ctx context.Context,
+		order store_domain.Order,
+		createFn func(checkout *store_domain.Checkout, stock *store_domain.Stock) error,
+	) error
+
+	CheckoutProducts(
+		ctx context.Context,
+		checkoutID string,
+	) ([]store_domain.OrderProduct, error)
 }
 
 type Services struct {

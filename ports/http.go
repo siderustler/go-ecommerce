@@ -74,6 +74,7 @@ func NewHttpServer(
 	h.srv.Post("/basket/customer/billing", h.handlers.postBillingInfo)
 	h.srv.Post("/basket/customer/shipping", h.handlers.postShippingInfo)
 	h.srv.Post("/api/checkout", h.handlers.createCheckout)
+	h.srv.Post("/api/stripe/wh", h.handlers.checkoutStripeWebhook)
 
 	h.srv.Static("/public", "./ports/views/public")
 	return h

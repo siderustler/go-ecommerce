@@ -15,3 +15,15 @@ func NewProduct(id, name string, actualPrice, discount float32) Product {
 		DiscountPrice: discount,
 	}
 }
+
+type CartProduct struct {
+	ProductID string
+	Count     int
+}
+
+func NewCartProduct(id string, count int) CartProduct {
+	return CartProduct{
+		ProductID: id,
+		Count:     count,
+	}
+}

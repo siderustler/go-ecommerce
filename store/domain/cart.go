@@ -91,15 +91,3 @@ func NewCart(id, customerID string, products map[string]CartProduct, lastModifie
 		Status:         cartStatus,
 	}
 }
-
-type CartProduct struct {
-	ProductID string
-	Count     int
-}
-
-func NewCartProduct(id string, count int) CartProduct {
-	return CartProduct{
-		ProductID: id,
-		Count:     count,
-	}
-}

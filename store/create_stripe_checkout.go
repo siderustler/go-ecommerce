@@ -22,7 +22,6 @@ func (s Services) CreateStripeCheckout(
 		LineItems:         mapCartProductsToStripeLineItems(cartProducts, products),
 		ClientReferenceID: stripe.String(checkoutID),
 	}
-
 	sess, err = session.New(sessionParams)
 	if err != nil {
 		return nil, err

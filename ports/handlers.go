@@ -3,10 +3,13 @@ package ports
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"maps"
 	"net/http"
 	"net/url"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
@@ -21,7 +24,9 @@ import (
 	"github.com/siderustler/go-ecommerce/product"
 	"github.com/siderustler/go-ecommerce/store"
 	store_domain "github.com/siderustler/go-ecommerce/store/domain"
+	"github.com/stripe/stripe-go/v84"
 	stripeSession "github.com/stripe/stripe-go/v84/checkout/session"
+	"github.com/stripe/stripe-go/v84/webhook"
 	"golang.org/x/oauth2"
 )
 
@@ -226,10 +231,7 @@ func (h handlers) getBasket(c *fiber.Ctx) error {
 	navBarViewModel.Align(cartCount)
 
 	//FIXME -- create mapper
-	productIds := make([]string, 0, cartCount)
-	for productID := range cart.Products {
-		productIds = append(productIds, productID)
-	}
+	productIds := slices.Collect(maps.Keys(cart.Products))
 	products, err := h.productServices.ProductsByIDs(c.Context(), productIds)
 	//FIXME?
 	if err != nil {
@@ -265,11 +267,7 @@ func (h handlers) updateBasket(c *fiber.Ctx) error {
 		return renderFragmentOrView(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
 	}
 
-	productIds := make([]string, 0, len(cart.Products))
-	for productID := range cart.Products {
-		productIds = append(productIds, productID)
-	}
-	products, err := h.productServices.ProductsByIDs(c.Context(), productIds)
+	products, err := h.productServices.ProductsByIDs(c.Context(), slices.Collect(maps.Keys(cart.Products)))
 	if err != nil {
 
 		return renderFragmentOrView(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
@@ -454,14 +452,11 @@ func (h handlers) getCheckoutStart(c *fiber.Ctx) error {
 
 func (h handlers) getCheckoutFinalized(c *fiber.Ctx) error {
 	var navBarViewModel components.NavBarViewModel
-	navBarViewModel.Align(0)
 
 	checkoutSession := c.Query("session_id")
 	s, err := stripeSession.Get(checkoutSession, nil)
 	if err != nil {
 		//FIXME
-	}
-	if s.Status == "open" {
 		return c.Redirect("/basket/checkout")
 	}
 	checkoutPaidSuccessfully := s.Status == "complete"
@@ -479,23 +474,17 @@ func (h handlers) createCheckout(c *fiber.Ctx) error {
 	}
 	if err != nil {
 		fmt.Printf("error is :%+v", err)
-		return c.JSON(errStruct{Err: fmt.Sprintf("error creating cehckout: %v", err.Error())})
+		return c.Status(http.StatusBadRequest).JSON(errStruct{Err: fmt.Sprintf("error creating cehckout: %v", err.Error())})
 	}
-	productIds := make([]string, 0, len(checkout.Items))
-	for itemID := range checkout.Items {
-		productIds = append(productIds, itemID)
-	}
-	products, err := h.productServices.ProductsByIDs(c.Context(), productIds)
+	products, err := h.productServices.ProductsByIDs(c.Context(), slices.Collect(maps.Keys(checkout.Items)))
 	if err != nil {
-		fmt.Printf("error is :%+v", err)
-
-		return c.JSON(errStruct{Err: fmt.Sprintf("error retrieving products for checkout creation: %v", err.Error())})
+		return c.Status(http.StatusInternalServerError).JSON(errStruct{Err: fmt.Sprintf("error retrieving products for checkout creation: %v", err.Error())})
 	}
 	sess, err := h.storeServices.CreateStripeCheckout(c.Context(), checkout.ID, checkout.Items, products)
 	if err != nil {
 		fmt.Printf("error is :%+v", err)
 
-		return c.JSON(errStruct{Err: fmt.Sprintf("error creating stripe checkout: %v", err.Error())})
+		return c.Status(http.StatusInternalServerError).JSON(errStruct{Err: fmt.Sprintf("error creating stripe checkout: %v", err.Error())})
 	}
 	data := struct {
 		ClientSecret string `json:"clientSecret"`
@@ -619,4 +608,51 @@ func oauthLogoutHandler(sessionStore *session.Store) func(c *fiber.Ctx) error {
 		logoutUrl.RawQuery = parameters.Encode()
 		return c.Redirect(logoutUrl.String(), http.StatusTemporaryRedirect)
 	}
+}
+
+func (h handlers) checkoutStripeWebhook(c *fiber.Ctx) error {
+	endpointSecret := "whsec_60d478a7c44ffabeea32f6c4f99499a8106e357f9518e25725a18c23839e2a83"
+
+	event, err := webhook.ConstructEvent(c.Body(), c.Get("Stripe-Signature"), endpointSecret)
+	type errStruct struct {
+		Err string `json:"error"`
+	}
+	if err != nil {
+		return c.Status(http.StatusBadRequest).JSON(errStruct{Err: fmt.Sprintf("Parsing body: %v", err)})
+	}
+	if event.Type != stripe.EventTypeCheckoutSessionCompleted && event.Type != stripe.EventTypeCheckoutSessionExpired {
+		return c.SendStatus(http.StatusOK)
+	}
+	var checkoutSession stripe.CheckoutSession
+	if err := json.Unmarshal(event.Data.Raw, &checkoutSession); err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(errStruct{Err: fmt.Sprintf("unmarshalling checkout session: %v", err)})
+	}
+
+	switch event.Type {
+	case stripe.EventTypeCheckoutSessionCompleted:
+		err = h.storeServices.CreateOrder(
+			c.Context(),
+			store_domain.NewOrder(
+				uuid.NewString(),
+				checkoutSession.ClientReferenceID,
+				time.Unix(event.Created, 0).Format(time.RFC3339),
+				store_domain.OrderPaid,
+			),
+		)
+		if err != nil {
+			return c.Status(http.StatusInternalServerError).JSON(errStruct{Err: fmt.Sprintf("creating order: %v", err)})
+		}
+	case stripe.EventTypeCheckoutSessionExpired:
+		var session stripe.CheckoutSession
+		if err := json.Unmarshal(event.Data.Raw, &session); err != nil {
+
+			return c.Status(http.StatusInternalServerError).JSON(errStruct{Err: fmt.Sprintf("unmarshalling checkout session: %v", err)})
+		}
+		err := h.storeServices.InvalidateExpiredCheckout(c.Context(), session.ClientReferenceID)
+		if err != nil {
+			return c.Status(http.StatusInternalServerError).JSON(errStruct{Err: fmt.Sprintf("invalidating checkout: %v", err)})
+		}
+	}
+
+	return c.SendStatus(http.StatusCreated)
 }
