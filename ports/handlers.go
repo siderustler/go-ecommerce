@@ -641,12 +641,8 @@ func (h handlers) checkoutStripeWebhook(c *fiber.Ctx) error {
 	case stripe.EventTypeCheckoutSessionCompleted:
 		err = h.storeServices.CreateOrder(
 			c.Context(),
-			store_domain.NewOrder(
-				uuid.NewString(),
-				checkoutSession.ClientReferenceID,
-				time.Unix(event.Created, 0).Format(time.RFC3339),
-				store_domain.OrderPaid,
-			),
+			checkoutSession.ClientReferenceID,
+			time.Unix(event.Created, 0).Format(time.RFC3339),
 		)
 		if err != nil {
 			fmt.Printf(" CREAITNGORDER: %v", err)

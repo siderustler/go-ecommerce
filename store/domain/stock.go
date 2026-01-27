@@ -57,7 +57,6 @@ func (s *StockItem) RemoveItem(count int) error {
 	if s.ReservedAmount < count {
 		return errors.New("requested count is greater than actual reserved amount")
 	}
-	s.AvailableAmount -= count
 	s.ReservedAmount -= count
 	return nil
 }

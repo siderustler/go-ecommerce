@@ -61,17 +61,14 @@ type Repository interface {
 
 	CreateOrder(
 		ctx context.Context,
-		order store_domain.Order,
-		createFn func(cart *store_domain.Cart, checkout *store_domain.Checkout, stock *store_domain.Stock) error,
+		checkoutID string,
+		createFn func(cart *store_domain.Cart, checkout *store_domain.Checkout, stock *store_domain.Stock, products []store_domain.Product) (store_domain.Order, error),
 	) error
+
 	CheckoutByUserID(
 		ctx context.Context,
 		userID string,
 	) (store_domain.Checkout, error)
-	CheckoutProducts(
-		ctx context.Context,
-		checkoutID string,
-	) ([]store_domain.OrderProduct, error)
 }
 
 type Services struct {

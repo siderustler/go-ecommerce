@@ -4,17 +4,18 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/uuid"
 	store_domain "github.com/siderustler/go-ecommerce/store/domain"
 )
 
-func (s Services) CreateOrder(ctx context.Context, order store_domain.Order) error {
+func (s Services) CreateOrder(ctx context.Context, checkoutID, orderTime string) error {
 	return s.repository.CreateOrder(
 		ctx,
-		order,
-		func(cart *store_domain.Cart, checkout *store_domain.Checkout, stock *store_domain.Stock) error {
+		checkoutID,
+		func(cart *store_domain.Cart, checkout *store_domain.Checkout, stock *store_domain.Stock, products []store_domain.Product) (store_domain.Order, error) {
 			var err error
 			if err = cart.Inactivate(); err != nil {
-				return fmt.Errorf("inactivating cart: %w", err)
+				return store_domain.Order{}, fmt.Errorf("inactivating cart: %w", err)
 			}
 			for itemID, checkoutItem := range checkout.Items {
 				stockItem, ok := stock.Items[itemID]
@@ -25,18 +26,27 @@ func (s Services) CreateOrder(ctx context.Context, order store_domain.Order) err
 				case store_domain.CheckoutInvalidated:
 					err = stockItem.DecreaseAvailableAmount(checkoutItem.Count)
 					if err != nil {
-						return fmt.Errorf("decreasing available amount: %w", err)
+						return store_domain.Order{}, fmt.Errorf("decreasing available amount: %w", err)
 					}
 				case store_domain.CheckoutPending:
 					err = stockItem.RemoveItem(checkoutItem.Count)
 					if err != nil {
-						return fmt.Errorf("removing item from stock: %w", err)
+						return store_domain.Order{}, fmt.Errorf("removing item from stock: %w", err)
 					}
 				}
 
 				stock.Items[itemID] = stockItem
 			}
 			checkout.Finalize()
-			return nil
+			orderProducts := make([]store_domain.OrderProduct, 0, len(products))
+			for _, product := range products {
+				count := cart.Products[product.ID].Count
+				itemPrice := product.ActualPrice
+				if product.DiscountPrice != 0 {
+					itemPrice = product.DiscountPrice
+				}
+				orderProducts = append(orderProducts, store_domain.NewOrderProduct(product.Name, count, itemPrice))
+			}
+			return store_domain.NewOrder(uuid.NewString(), checkoutID, orderTime, store_domain.OrderPaid, orderProducts), nil
 		})
 }

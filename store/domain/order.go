@@ -33,12 +33,13 @@ type OrderProduct struct {
 	ItemPrice float32
 }
 
-func NewOrder(id, checkoutID string, createdAt string, status orderStatus) Order {
+func NewOrder(id, checkoutID string, createdAt string, status orderStatus, products []OrderProduct) Order {
 	return Order{
 		ID:         id,
 		CheckoutID: checkoutID,
 		CreatedAt:  createdAt,
 		Status:     status,
+		Products:   products,
 	}
 }
 

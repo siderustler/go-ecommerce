@@ -86,22 +86,64 @@ func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
 	if err != nil {
 		return nil, fmt.Errorf("creating stock_reservations table: %w", err)
 	}
+	_, err = db.ExecContext(
+		ctx,
+		`CREATE TABLE IF NOT EXISTS orders (
+			id UUID PRIMARY KEY, 
+			checkout_id UUID REFERENCES checkouts(id),
+			created_at TIMESTAMP NOT NULL,
+			status TEXT CHECK (status IN ('FINALIZED', 'PAID', 'SHIPPING'))
+		)`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("creating orders table: %w", err)
+	}
+	_, err = db.ExecContext(
+		ctx,
+		`CREATE TABLE IF NOT EXISTS order_products (
+		id SERIAL PRIMARY KEY, 
+		order_id UUID REFERENCES orders(id),
+		name TEXT NOT NULL,
+		price REAL NOT NULL,
+		count INT NOT NULL
+		)`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("creating order_products table: %w", err)
+	}
 	return &repository{db: db}, nil
 }
 
-// CheckoutProducts implements store.Repository.
-func (r repository) CheckoutProducts(ctx context.Context, checkoutID string) ([]store_domain.OrderProduct, error) {
-	panic("unimplemented")
+func products(ctx context.Context, exec executor, ids ...string) ([]store_domain.Product, error) {
+	row, err := exec.QueryContext(ctx, `SELECT id, name, price, price_before FROM products WHERE id = ANY($1)`, ids)
+	if err != nil {
+		return nil, fmt.Errorf("retrieving products: %w", err)
+	}
+	products := make([]store_domain.Product, 0, len(ids))
+	for row.Next() {
+		var product store_domain.Product
+		err = row.Scan(&product.ID, &product.Name, &product.ActualPrice, &product.DiscountPrice)
+		if err != nil {
+			return nil, fmt.Errorf("scanning product: %w", err)
+		}
+		products = append(products, product)
+	}
+	return products, nil
 }
 
 // CreateOrder implements store.Repository.
 func (r repository) CreateOrder(
 	ctx context.Context,
-	order store_domain.Order,
-	createFn func(cart *store_domain.Cart, checkout *store_domain.Checkout, stock *store_domain.Stock) error,
+	checkoutID string,
+	createFn func(
+		cart *store_domain.Cart,
+		checkout *store_domain.Checkout,
+		stock *store_domain.Stock,
+		products []store_domain.Product,
+	) (store_domain.Order, error),
 ) error {
 	return RunInTx(ctx, r.db, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
-		checkout, err := checkoutByID(ctx, tx, order.CheckoutID)
+		checkout, err := checkoutByID(ctx, tx, checkoutID)
 		if err != nil {
 			return fmt.Errorf("retrieving checkout by id: %w", err)
 		}
@@ -113,8 +155,33 @@ func (r repository) CreateOrder(
 		if err != nil {
 			return fmt.Errorf("retrieving cart: %w", err)
 		}
-		if err = createFn(&cart, &checkout, &stock); err != nil {
+		products, err := products(ctx, tx, slices.Collect(maps.Keys(cart.Products))...)
+		if err != nil {
+			return fmt.Errorf("retrieving products: %w", err)
+		}
+		order, err := createFn(&cart, &checkout, &stock, products)
+		if err != nil {
 			return fmt.Errorf("domain: %w", err)
+		}
+		_, err = tx.ExecContext(
+			ctx,
+			`INSERT INTO orders (id, checkout_id, status, created_at) 
+			VALUES ($1, $2, $3, $4)`,
+			order.ID, order.CheckoutID, order.Status, order.CreatedAt,
+		)
+		if err != nil {
+			return fmt.Errorf("inserting order: %w", err)
+		}
+		for _, orderProduct := range order.Products {
+			_, err = tx.ExecContext(
+				ctx,
+				`INSERT INTO order_products (order_id, name, price, count) 
+				VALUES ($1, $2, $3, $4)`,
+				order.ID, orderProduct.Name, orderProduct.ItemPrice, orderProduct.Count,
+			)
+			if err != nil {
+				return fmt.Errorf("inserting order product: %w", err)
+			}
 		}
 		_, err = tx.ExecContext(
 			ctx,
