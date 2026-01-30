@@ -68,7 +68,7 @@ func NewShippingAddress(id, city, address, postalCode, local string) (ShippingAd
 }
 
 func (s ShippingAddress) IsZero() bool {
-	return s.Address.isZero() || s.ID == ""
+	return s.ID == ""
 }
 
 type Billing struct {
@@ -133,7 +133,7 @@ func (c Credentials) IsZero() bool {
 }
 
 func (b Billing) IsZero() bool {
-	return b.Address.isZero() || b.Company == "" || b.NIPCode == "" || b.ID == ""
+	return b.ID == ""
 }
 
 func NewCustomer(id string, credentials Credentials, billing Billing, shipping ShippingAddress) Customer {

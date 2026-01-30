@@ -46,8 +46,22 @@ type BillingInfoViewModel struct {
 	UseBillingAddressAsShipping bool `form:"billingAsShipping"`
 }
 
-func (c *BillingInfoViewModel) Align(navBarViewModel components.NavBarViewModel) {
+func (c *BillingInfoViewModel) WithNavBarViewModel(navBarViewModel components.NavBarViewModel) *BillingInfoViewModel {
 	c.navBarViewModel = navBarViewModel
+	return c
+}
+
+func (s *BillingInfoViewModel) WithCustomer(customer customer.Customer) *BillingInfoViewModel {
+	s.Address = customer.Billing.Address.Address
+	s.City = customer.Billing.Address.City
+	s.Company = customer.Billing.Company
+	s.Email = customer.Credentials.Email
+	s.LocalNumber = customer.Billing.Address.Local
+	s.Name = customer.Credentials.Name
+	s.NipCode = customer.Billing.NIPCode
+	s.Phone = customer.Credentials.Phone
+	s.PostalCode = customer.Billing.Address.PostalCode
+	return s
 }
 
 func (c BillingInfoViewModel) ParseToDomainCustomer(id string) (customer.Customer, error) {
@@ -129,8 +143,17 @@ type ShippingInfoViewModel struct {
 	LocalNumberErr string
 }
 
-func (s *ShippingInfoViewModel) Align(navBarViewModel components.NavBarViewModel) {
+func (s *ShippingInfoViewModel) WithNavBarViewModel(navBarViewModel components.NavBarViewModel) *ShippingInfoViewModel {
 	s.navBarViewModel = navBarViewModel
+	return s
+}
+
+func (s *ShippingInfoViewModel) WithShipping(address customer.ShippingAddress) *ShippingInfoViewModel {
+	s.Address = address.Address.Address
+	s.City = address.Address.City
+	s.LocalNumber = address.Address.Local
+	s.PostalCode = address.Address.PostalCode
+	return s
 }
 
 func (s ShippingInfoViewModel) ParseToDomainShippingAddress(id string) (customer.ShippingAddress, error) {
@@ -160,8 +183,119 @@ func (s *ShippingInfoViewModel) MapDomainErrorToViewModelError(err error) {
 
 templ BillingInfo(viewModel BillingInfoViewModel) {
 	@layout() {
-		@components.NavBar(viewModel.navBarViewModel)
 		@templ.Fragment(BillingInfoFragment) {
+			@components.NavBar(viewModel.navBarViewModel)
+			@form("/account/customer/billing", "post") {
+				{{
+					contactSectionInputs := []components.InputConfig{
+						{
+							Icon:           "/public/icons/additional-info.svg",
+							IconAlt:        "imie i nazwisko ikona",
+							Label:          "Imię i nazwisko",
+							Value:          viewModel.Name,
+							Placeholder:    "Imię i nazwisko...",
+							ErrorElementID: "name-err",
+							Error:          viewModel.NameErr,
+							InputName:      "name",
+						},
+						{
+							Icon:           "/public/icons/additional-info.svg",
+							IconAlt:        "adres email ikona",
+							Label:          "Adres e-mail",
+							Value:          viewModel.Email,
+							Placeholder:    "Adres e-mail...",
+							ErrorElementID: "email-err",
+							Error:          viewModel.EmailErr,
+							InputName:      "email",
+						},
+						{
+							Icon:           "/public/icons/additional-info.svg",
+							IconAlt:        "numer telefonu ikona",
+							Label:          "Numer telefonu",
+							Value:          viewModel.Phone,
+							Placeholder:    "Numer telefonu...",
+							ErrorElementID: "phone-err",
+							Error:          viewModel.PhoneErr,
+							InputName:      "phone",
+						},
+					}
+					paymentSectionInputs := []components.InputConfig{
+						{
+							Icon:           "/public/icons/additional-info.svg",
+							IconAlt:        "nazwa firmy ikona",
+							Label:          "Nazwa firmy",
+							Value:          viewModel.Company,
+							Placeholder:    "Nazwa firmy...",
+							ErrorElementID: "company-err",
+							Error:          viewModel.CompanyErr,
+							InputName:      "company",
+						},
+						{
+							Icon:           "/public/icons/additional-info.svg",
+							IconAlt:        "nip ikona",
+							Label:          "NIP",
+							Value:          viewModel.NipCode,
+							Placeholder:    "Kod NIP...",
+							ErrorElementID: "nip-err",
+							Error:          viewModel.NipCodeErr,
+							InputName:      "nip",
+						},
+						{
+							Icon:           "/public/icons/additional-info.svg",
+							IconAlt:        "miasto ikona",
+							Label:          "Miasto",
+							Value:          viewModel.City,
+							Placeholder:    "Miasto...",
+							ErrorElementID: "city-err",
+							Error:          viewModel.CityErr,
+							InputName:      "city",
+						},
+						{
+							Icon:           "/public/icons/additional-info.svg",
+							IconAlt:        "ulica i numer ikona",
+							Label:          "Ulica i numer",
+							Value:          viewModel.Address,
+							Placeholder:    "Ulica i numer...",
+							ErrorElementID: "address-err",
+							Error:          viewModel.AddressErr,
+							InputName:      "address",
+						},
+						{
+							Icon:           "/public/icons/additional-info.svg",
+							IconAlt:        "kod pocztowy ikona",
+							Label:          "Kod pocztowy",
+							Value:          viewModel.PostalCode,
+							Placeholder:    "Kod pocztowy...",
+							ErrorElementID: "postal-err",
+							Error:          viewModel.PostalCodeErr,
+							InputName:      "postal",
+						},
+						{
+							Icon:           "/public/icons/additional-info.svg",
+							IconAlt:        "numer lokalu ikona",
+							Label:          "Numer lokalu",
+							Value:          viewModel.LocalNumber,
+							Placeholder:    "Numer lokalu...",
+							ErrorElementID: "local-err",
+							Error:          viewModel.LocalNumberErr,
+							InputName:      "local",
+						},
+					}
+				}}
+				@formSection("/public/icons/additional-info.svg", "Dane kontaktowe ikona", "Dane kontaktowe", contactSectionInputs) {
+				}
+				@formSection("/public/icons/additional-info.svg", "Dane do płatności ikona", "Dane do płatności", paymentSectionInputs) {
+					@submitButton("Zapisz")
+				}
+			}
+		}
+	}
+}
+
+templ BasketBillingInfo(viewModel BillingInfoViewModel) {
+	@layout() {
+		@templ.Fragment(BillingInfoFragment) {
+			@components.NavBar(viewModel.navBarViewModel)
 			@form("/basket/customer/billing", "post") {
 				{{
 					contactSectionInputs := []components.InputConfig{
@@ -270,10 +404,10 @@ templ BillingInfo(viewModel BillingInfoViewModel) {
 	}
 }
 
-templ ShippingInfo(viewModel ShippingInfoViewModel) {
+templ BasketShippingInfo(viewModel ShippingInfoViewModel) {
 	@layout() {
-		@components.NavBar(viewModel.navBarViewModel)
 		@templ.Fragment(ShippingInfoFragment) {
+			@components.NavBar(viewModel.navBarViewModel)
 			@form("/basket/customer/shipping", "post") {
 				{{
 					inputs := []components.InputConfig{
@@ -321,6 +455,63 @@ templ ShippingInfo(viewModel ShippingInfoViewModel) {
 				}}
 				@formSection("/public/icons/additional-info.svg", "dane do dostawy ikona", "Dane do dostawy", inputs) {
 					@submitButton("Przejdż do kolejnego etapu")
+				}
+			}
+		}
+	}
+}
+
+templ ShippingInfo(viewModel ShippingInfoViewModel) {
+	@layout() {
+		@templ.Fragment(ShippingInfoFragment) {
+			@components.NavBar(viewModel.navBarViewModel)
+			@form("/account/customer/shipping", "post") {
+				{{
+					inputs := []components.InputConfig{
+						{
+							Icon:           "/public/icons/additional-info.svg",
+							IconAlt:        "miasto ikona",
+							Label:          "Miasto",
+							Value:          viewModel.City,
+							Placeholder:    "Miasto...",
+							ErrorElementID: "city-err",
+							Error:          viewModel.CityErr,
+							InputName:      "city",
+						},
+						{
+							Icon:           "/public/icons/additional-info.svg",
+							IconAlt:        "ulica i numer ikona",
+							Label:          "Ulica i numer",
+							Value:          viewModel.Address,
+							Placeholder:    "Ulica i numer...",
+							ErrorElementID: "address-err",
+							Error:          viewModel.AddressErr,
+							InputName:      "address",
+						},
+						{
+							Icon:           "/public/icons/additional-info.svg",
+							IconAlt:        "kod pocztowy ikona",
+							Label:          "Kod pocztowy",
+							Value:          viewModel.PostalCode,
+							Placeholder:    "Kod pocztowy...",
+							ErrorElementID: "postal-err",
+							Error:          viewModel.PostalCodeErr,
+							InputName:      "postal",
+						},
+						{
+							Icon:           "/public/icons/additional-info.svg",
+							IconAlt:        "numer lokalu ikona",
+							Label:          "Numer lokalu",
+							Value:          viewModel.LocalNumber,
+							Placeholder:    "Numer lokalu...",
+							ErrorElementID: "local-err",
+							Error:          viewModel.LocalNumberErr,
+							InputName:      "local",
+						},
+					}
+				}}
+				@formSection("/public/icons/additional-info.svg", "dane do dostawy ikona", "Dane do dostawy", inputs) {
+					@submitButton("Zapisz")
 				}
 			}
 		}

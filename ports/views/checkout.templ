@@ -34,8 +34,8 @@ templ CheckoutStart(navBarViewModel components.NavBarViewModel) {
 
 templ CheckoutFinalized(checkoutViewModel CheckoutViewModel) {
 	@layout() {
-		@components.NavBar(checkoutViewModel.navBarViewModel)
 		@templ.Fragment(CheckoutFragment) {
+			@components.NavBar(checkoutViewModel.navBarViewModel)
 			<section id="products">
 				if checkoutViewModel.Finalized {
 					<div>FINALIZED</div>

@@ -101,7 +101,7 @@ func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
 	_, err = db.ExecContext(
 		ctx,
 		`CREATE TABLE IF NOT EXISTS order_products (
-		id SERIAL PRIMARY KEY, 
+		id SERIAL PRIMARY KEY,
 		order_id UUID REFERENCES orders(id),
 		name TEXT NOT NULL,
 		price REAL NOT NULL,
@@ -176,7 +176,7 @@ func (r repository) CreateOrder(
 			_, err = tx.ExecContext(
 				ctx,
 				`INSERT INTO order_products (order_id, name, price, count) 
-				VALUES ($1, $2, $3, $4)`,
+				VALUES ($1, $2, $3, $4, $5)`,
 				order.ID, orderProduct.Name, orderProduct.ItemPrice, orderProduct.Count,
 			)
 			if err != nil {

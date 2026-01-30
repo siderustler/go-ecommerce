@@ -263,13 +263,11 @@ func (h handlers) updateBasket(c *fiber.Ctx) error {
 	}
 	cart, err := h.storeServices.Cart(c.Context(), userID)
 	if err != nil {
-
 		return renderFragmentOrView(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
 	}
 
 	products, err := h.productServices.ProductsByIDs(c.Context(), slices.Collect(maps.Keys(cart.Products)))
 	if err != nil {
-
 		return renderFragmentOrView(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
 	}
 	navBarViewModel.Align(len(cart.Products))
@@ -310,7 +308,7 @@ func (h handlers) addItemToBasket(c *fiber.Ctx) error {
 	return renderFragmentOrRedirect(c, components.NavBar(components.NewNavBarViewModel("", cartCount)), basketAdd.Redirect, components.BasketCountFragment)
 }
 
-func (h handlers) getBillingInfo(c *fiber.Ctx) error {
+func (h handlers) getBasketBillingInfo(c *fiber.Ctx) error {
 	var billingInfoViewModel views.BillingInfoViewModel
 	var navBarViewModel components.NavBarViewModel
 	//FIXME retrieving search value in navbar while js is not enabled (use form or a tag and messy query?)
@@ -324,7 +322,7 @@ func (h handlers) getBillingInfo(c *fiber.Ctx) error {
 	customer, _ := h.customerServices.Customer(c.Context(), userID)
 
 	navBarViewModel.Align(cartCount)
-	billingInfoViewModel.Align(navBarViewModel)
+	billingInfoViewModel.WithNavBarViewModel(navBarViewModel)
 
 	hasShipping := !customer.Shipping.IsZero()
 	hasBilling := !customer.Billing.IsZero()
@@ -336,11 +334,11 @@ func (h handlers) getBillingInfo(c *fiber.Ctx) error {
 	if hasBilling {
 		shippingUrl := "/basket/customer/shipping"
 		var shippingInfoViewModel views.ShippingInfoViewModel
-		shippingInfoViewModel.Align(navBarViewModel)
+		shippingInfoViewModel.WithNavBarViewModel(navBarViewModel)
 		c.Append("Hx-Push-Url", shippingUrl)
-		return renderFragmentOrRedirect(c, views.ShippingInfo(shippingInfoViewModel), shippingUrl, views.ShippingInfoFragment)
+		return renderFragmentOrRedirect(c, views.BasketShippingInfo(shippingInfoViewModel), shippingUrl, views.ShippingInfoFragment)
 	}
-	return renderFragmentOrView(c, views.BillingInfo(billingInfoViewModel), views.BillingInfoFragment)
+	return renderFragmentOrView(c, views.BasketBillingInfo(billingInfoViewModel), views.BillingInfoFragment)
 }
 
 func (h handlers) postBillingInfo(c *fiber.Ctx) error {
@@ -356,7 +354,7 @@ func (h handlers) postBillingInfo(c *fiber.Ctx) error {
 		return c.Redirect("/")
 	}
 	navBarViewModel.Align(cartCount)
-	billingInfoViewModel.Align(navBarViewModel)
+	billingInfoViewModel.WithNavBarViewModel(navBarViewModel)
 	customer, err := billingInfoViewModel.ParseToDomainCustomer(userID)
 	if err != nil {
 		fmt.Printf("error occured creating customer: %+v", err)
@@ -371,13 +369,69 @@ func (h handlers) postBillingInfo(c *fiber.Ctx) error {
 		fmt.Printf("error occured creating customer: %+v", err)
 		return renderFragmentOrView(c, views.BillingInfo(billingInfoViewModel), views.BillingInfoFragment)
 	}
+	accountUrl := "/account"
+	c.Append("Hx-Push-Url", accountUrl)
+
+	return renderFragmentOrRedirect(c, views.AccountProfile(views.NewProfileViewModel(customer, navBarViewModel)), accountUrl, views.ProfileFragment)
+}
+
+func (h handlers) getBillingInfo(c *fiber.Ctx) error {
+	var billingInfoViewModel views.BillingInfoViewModel
+	var navBarViewModel components.NavBarViewModel
+	//FIXME retrieving search value in navbar while js is not enabled (use form or a tag and messy query?)
+	userID := auth.UserIDFromContext(c.UserContext())
+
+	cartCount, err := h.storeServices.CartCount(c.Context(), userID)
+	//FIXME?
+	if err != nil {
+		return c.Redirect("/")
+	}
+	navBarViewModel.Align(cartCount)
+	billingInfoViewModel.WithNavBarViewModel(navBarViewModel)
+	customer, err := h.customerServices.Customer(c.Context(), userID)
+	if err != nil {
+		//FIXME
+		// -- display error toast
+	}
+	billingInfoViewModel.WithCustomer(customer)
+	return renderFragmentOrView(c, views.BillingInfo(billingInfoViewModel), views.BillingInfoFragment)
+}
+
+func (h handlers) postBasketBillingInfo(c *fiber.Ctx) error {
+	var billingInfoViewModel views.BillingInfoViewModel
+	var navBarViewModel components.NavBarViewModel
+	//FIXME retrieving search value in navbar while js is not enabled (use form or a tag and messy query?)
+	userID := auth.UserIDFromContext(c.UserContext())
+	_ = c.BodyParser(&billingInfoViewModel)
+
+	cartCount, err := h.storeServices.CartCount(c.Context(), userID)
+	//FIXME?
+	if err != nil {
+		return c.Redirect("/")
+	}
+	navBarViewModel.Align(cartCount)
+	billingInfoViewModel.WithNavBarViewModel(navBarViewModel)
+	customer, err := billingInfoViewModel.ParseToDomainCustomer(userID)
+	if err != nil {
+		fmt.Printf("error occured creating customer: %+v", err)
+		billingInfoViewModel.MapDomainErrorToViewModelError(err)
+		return renderFragmentOrView(c, views.BasketBillingInfo(billingInfoViewModel), views.BillingInfoFragment)
+	}
+	err = h.customerServices.CreateCustomer(c.Context(), customer)
+	if err != nil {
+		fmt.Printf("ERROR")
+		//FIXME
+		// DISPLAY TOAST OTN ERROR
+		fmt.Printf("error occured creating customer: %+v", err)
+		return renderFragmentOrView(c, views.BasketBillingInfo(billingInfoViewModel), views.BillingInfoFragment)
+	}
 	if !billingInfoViewModel.UseBillingAddressAsShipping {
 		var shippingInfoViewModel views.ShippingInfoViewModel
-		shippingInfoViewModel.Align(navBarViewModel)
+		shippingInfoViewModel.WithNavBarViewModel(navBarViewModel)
 		addShippingAddressUrl := "/basket/customer/shipping"
 
 		c.Append("Hx-Push-Url", addShippingAddressUrl)
-		return renderFragmentOrRedirect(c, views.ShippingInfo(shippingInfoViewModel), addShippingAddressUrl, views.ShippingInfoFragment)
+		return renderFragmentOrRedirect(c, views.BasketShippingInfo(shippingInfoViewModel), addShippingAddressUrl, views.ShippingInfoFragment)
 	}
 	paymentUrl := "/basket/checkout"
 	c.Append("Hx-Push-Url", paymentUrl)
@@ -396,8 +450,11 @@ func (h handlers) getShippingInfo(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Redirect("/")
 	}
+	customer, _ := h.customerServices.Customer(c.Context(), userID)
 	navBarViewModel.Align(cartCount)
-	shippingInfoViewModel.Align(navBarViewModel)
+	shippingInfoViewModel.WithNavBarViewModel(navBarViewModel).WithShipping(customer.Shipping)
+	shippingUrl := "/account/shipping"
+	c.Append("Hx-Push-Url", shippingUrl)
 
 	return renderFragmentOrView(c, views.ShippingInfo(shippingInfoViewModel), views.ShippingInfoFragment)
 }
@@ -414,8 +471,9 @@ func (h handlers) postShippingInfo(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Redirect("/")
 	}
+
 	navBarViewModel.Align(cartCount)
-	shippingInfoViewModel.Align(navBarViewModel)
+	shippingInfoViewModel.WithNavBarViewModel(navBarViewModel)
 
 	shipping, err := shippingInfoViewModel.ParseToDomainShippingAddress(uuid.NewString())
 	if err != nil {
@@ -427,6 +485,63 @@ func (h handlers) postShippingInfo(c *fiber.Ctx) error {
 		fmt.Printf("error: %v", err)
 		//FIXME -- toast on error
 		return renderFragmentOrView(c, views.ShippingInfo(shippingInfoViewModel), views.ShippingInfoFragment)
+	}
+	accountUrl := "/account"
+	c.Append("Hx-Push-Url", accountUrl)
+
+	customer, err := h.customerServices.Customer(c.Context(), id)
+	if err != nil {
+		fmt.Printf("error: %v", err)
+		//FIXME -- toast on error
+		return renderFragmentOrView(c, views.ShippingInfo(shippingInfoViewModel), views.ShippingInfoFragment)
+	}
+	return renderFragmentOrRedirect(c, views.AccountProfile(views.NewProfileViewModel(customer, navBarViewModel)), accountUrl, views.ProfileFragment)
+}
+
+func (h handlers) getBasketShippingInfo(c *fiber.Ctx) error {
+	var shippingInfoViewModel views.ShippingInfoViewModel
+	var navBarViewModel components.NavBarViewModel
+	//FIXME retrieving search value in navbar while js is not enabled (use form or a tag and messy query?)
+	userID := auth.UserIDFromContext(c.UserContext())
+
+	cartCount, err := h.storeServices.CartCount(c.Context(), userID)
+	//FIXME?
+	if err != nil {
+		return c.Redirect("/")
+	}
+	navBarViewModel.Align(cartCount)
+	shippingInfoViewModel.WithNavBarViewModel(navBarViewModel)
+	shippingUrl := "/basket/customer/shipping"
+	c.Append("Hx-Push-Url", shippingUrl)
+
+	return renderFragmentOrView(c, views.BasketShippingInfo(shippingInfoViewModel), views.ShippingInfoFragment)
+}
+
+func (h handlers) postBasketShippingInfo(c *fiber.Ctx) error {
+	var navBarViewModel components.NavBarViewModel
+	var shippingInfoViewModel views.ShippingInfoViewModel
+	id := auth.UserIDFromContext(c.UserContext())
+	//FIXME retrieving search value in navbar while js is not enabled (use form or a tag and messy query?)
+	_ = c.BodyParser(&shippingInfoViewModel)
+
+	cartCount, err := h.storeServices.CartCount(c.Context(), id)
+	//FIXME?
+	if err != nil {
+		return c.Redirect("/")
+	}
+	navBarViewModel.Align(cartCount)
+	shippingInfoViewModel.WithNavBarViewModel(navBarViewModel)
+
+	shipping, err := shippingInfoViewModel.ParseToDomainShippingAddress(uuid.NewString())
+	if err != nil {
+		shippingInfoViewModel.MapDomainErrorToViewModelError(err)
+		return renderFragmentOrView(c, views.BasketShippingInfo(shippingInfoViewModel), views.ShippingInfoFragment)
+	}
+	err = h.customerServices.AddShippingAddress(c.Context(), id, shipping)
+	if err != nil {
+		fmt.Printf("error: %v", err)
+		//FIXME -- toast on error
+		return renderFragmentOrView(c, views.BasketShippingInfo(shippingInfoViewModel), views.ShippingInfoFragment)
 	}
 	paymentUrl := "/basket/checkout"
 	c.Append("Hx-Push-Url", paymentUrl)
@@ -461,8 +576,8 @@ func (h handlers) getCheckoutFinalized(c *fiber.Ctx) error {
 	}
 	checkoutPaidSuccessfully := s.Status == "complete"
 	checkoutViewModel := views.NewCheckoutViewModel(checkoutPaidSuccessfully, navBarViewModel)
-
-	return renderFragmentOrView(c, views.CheckoutFinalized(checkoutViewModel), views.CheckoutFragment)
+	c.Append("HX-Push-Url", "/basket/checkout/finalize")
+	return renderFragmentOrView(c, views.CheckoutFinalized(checkoutViewModel), views.CheckoutFragment, components.BasketCountFragment)
 }
 
 func (h handlers) createCheckout(c *fiber.Ctx) error {
@@ -552,17 +667,15 @@ func (h handlers) oauthCallbackHandler(oauth *auth.Authenticator, sessionStore *
 			return c.SendString("Failed to verify ID Token.")
 		}
 
-		var profile auth.Profile
-		if err = idToken.Claims(&profile); err != nil {
-			return c.SendString(err.Error())
-		}
 		previousUser := sess.Get("user_id").(string)
 		sess.Set("ip", c.IP())
-		sess.Set("profile", profile)
-		sess.Set("access_token", token.AccessToken)
 		sess.Set("refresh_token", token.RefreshToken)
-		sess.Set("expiry", time.Now().Unix()+token.ExpiresIn)
-
+		expiryTime := time.Now().Unix() + token.ExpiresIn
+		sess.Set("expiry", expiryTime)
+		sess.Set("user_id", idToken.Subject)
+		if err = sess.Save(); err != nil {
+			return c.SendString("saving session: " + err.Error())
+		}
 		if err = h.customerServices.CreateCustomer(c.Context(), customer.NewCustomer(
 			idToken.Subject,
 			customer.Credentials{},
@@ -574,22 +687,26 @@ func (h handlers) oauthCallbackHandler(oauth *auth.Authenticator, sessionStore *
 		if err = h.storeServices.MergeUserCarts(c.Context(), previousUser, idToken.Subject); err != nil {
 			return c.SendString("merging cart: " + err.Error())
 		}
-		if err = sess.Save(); err != nil {
-			return c.SendString("saving session: " + err.Error())
-		}
-		return c.Redirect("/user", http.StatusTemporaryRedirect)
+		return c.Redirect("/account", http.StatusTemporaryRedirect)
 	}
 }
 
-func usersHandler(sessionStore *session.Store) func(c *fiber.Ctx) error {
-	return func(c *fiber.Ctx) error {
-		sess, err := sessionStore.Get(c)
-		if err != nil {
-			return c.SendString("retrieving session: " + err.Error())
-		}
-		profile := sess.Get("profile")
-		return c.SendString(fmt.Sprintf("%+v", profile))
+func (h handlers) accountHandler(c *fiber.Ctx) error {
+	userID := auth.UserIDFromContext(c.UserContext())
+	var navBarViewModel components.NavBarViewModel
+	cartCount, err := h.storeServices.CartCount(c.Context(), userID)
+	//FIXME
+	if err != nil {
 	}
+	navBarViewModel.Align(cartCount)
+
+	customer, err := h.customerServices.Customer(c.Context(), userID)
+	if err != nil {
+		//FIXME TOAST
+		return c.Redirect("/")
+	}
+
+	return renderFragmentOrView(c, views.AccountProfile(views.NewProfileViewModel(customer, navBarViewModel)), views.ProfileFragment)
 }
 
 func oauthLogoutHandler(sessionStore *session.Store) func(c *fiber.Ctx) error {

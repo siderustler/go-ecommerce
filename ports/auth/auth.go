@@ -111,6 +111,8 @@ type RefreshTokenResponse struct {
 	TokenType   string `json:"token_type"`
 }
 
+var httpClient http.Client = http.Client{Timeout: 10 * time.Second}
+
 func (a *Authenticator) RefreshToken(ctx context.Context, actualRefreshToken string) (RefreshTokenResponse, error) {
 	tokenUrl := a.oauth.Endpoint.TokenURL
 	parsedUrl, err := url.Parse("https://" + tokenUrl)
@@ -128,7 +130,7 @@ func (a *Authenticator) RefreshToken(ctx context.Context, actualRefreshToken str
 
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
 
-	res, err := http.DefaultClient.Do(req)
+	res, err := httpClient.Do(req)
 	if err != nil {
 		return RefreshTokenResponse{}, fmt.Errorf("requesting new token: %w", err)
 	}
@@ -154,11 +156,13 @@ func (a *Authenticator) Exchange(ctx context.Context, code string, opts ...oauth
 	return a.oauth.Exchange(ctx, code, opts...)
 }
 
-func VerifySession(requestIP string, session *session.Session) (isExpired bool, err error) {
-	expiry := session.Get("expiry").(int64)
-	now := time.Now().Add(12 * time.Hour).Unix()
-	if now > expiry {
-		return true, nil
+func VerifySession(session *session.Session) (isExpired bool, err error) {
+	expiry, ok := session.Get("expiry").(int64)
+	if !ok {
+		return false, errors.New("expiry field not set")
 	}
-	return false, nil
+	now := time.Now().Add(24 * time.Hour).Unix()
+	isExpired = now > expiry
+
+	return isExpired, nil
 }

@@ -39,7 +39,7 @@ func NewHttpServer(
 		},
 	}
 	sessionStore := session.New(session.Config{
-		Expiration: time.Minute * 15,
+		Expiration: time.Hour * 24 * 3,
 		Storage: postgres.New(postgres.Config{
 			ConnectionURI: os.Getenv("DATABASE_URI"),
 		}),
@@ -48,32 +48,36 @@ func NewHttpServer(
 		//CookieSecure: true,
 	})
 
-	m := &middleware{r: customerServices, sessionStore: sessionStore}
+	m := &middleware{r: customerServices, sessionStore: sessionStore, authenticator: authenticator}
 	h.srv.Use("/public", ignoreCacheStaticFilesInDev)
 	h.srv.Get("/oauth/login", oauthLoginHandler(authenticator, sessionStore))
 	h.srv.Get("/oauth/callback", h.handlers.oauthCallbackHandler(authenticator, sessionStore))
 	h.srv.Get("/oauth/logout", oauthLogoutHandler(sessionStore))
 
-	h.srv.Use("/", m.auth)
-	authorizedSession := h.srv.Group("/user", m.authSessionVerifier)
-	authorizedSession.Get("/", usersHandler(sessionStore))
-	h.srv.Get("/products", h.handlers.getProductsRedirect)
-	h.srv.Get("/products/:page", h.handlers.getProducts)
-	h.srv.Get("/products/details/:productID", h.handlers.getProductDetails)
-	h.srv.Get("/filter/products", h.handlers.getFilterProducts)
-	h.srv.Get("/", h.handlers.getDashboard)
-	h.srv.Get("/basket", h.handlers.getBasket)
-	h.srv.Get("/basket/customer/billing", h.handlers.getBillingInfo)
-	h.srv.Get("/basket/customer/shipping", h.handlers.getShippingInfo)
-	h.srv.Get("/basket/checkout", h.handlers.getCheckoutStart)
-	h.srv.Get("/basket/checkout/finalize", h.handlers.getCheckoutFinalized)
+	anonymoUserAuth := h.srv.Group("/", m.auth)
+	authorizedSession := h.srv.Group("/account", m.auth, m.authSessionVerifier)
+	authorizedSession.Get("/", h.handlers.accountHandler)
+	authorizedSession.Get("/customer/billing", h.handlers.getBillingInfo)
+	authorizedSession.Get("/customer/shipping", h.handlers.getShippingInfo)
+	anonymoUserAuth.Get("/products", h.handlers.getProductsRedirect)
+	anonymoUserAuth.Get("/products/:page", h.handlers.getProducts)
+	anonymoUserAuth.Get("/products/details/:productID", h.handlers.getProductDetails)
+	anonymoUserAuth.Get("/filter/products", h.handlers.getFilterProducts)
+	anonymoUserAuth.Get("/", h.handlers.getDashboard)
+	anonymoUserAuth.Get("/basket", h.handlers.getBasket)
+	anonymoUserAuth.Get("/basket/customer/billing", h.handlers.getBasketBillingInfo)
+	anonymoUserAuth.Get("/basket/customer/shipping", h.handlers.getBasketShippingInfo)
+	anonymoUserAuth.Get("/basket/checkout", h.handlers.getCheckoutStart)
+	anonymoUserAuth.Get("/basket/checkout/finalize", h.handlers.getCheckoutFinalized)
 
-	h.srv.Post("/filter/products/validate/price", h.handlers.filterProductsPriceValidate)
-	h.srv.Post("/basket/update", h.handlers.updateBasket)
-	h.srv.Post("/basket/add", h.handlers.addItemToBasket)
-	h.srv.Post("/basket/customer/billing", h.handlers.postBillingInfo)
-	h.srv.Post("/basket/customer/shipping", h.handlers.postShippingInfo)
-	h.srv.Post("/api/checkout", h.handlers.createCheckout)
+	authorizedSession.Post("/customer/shipping", h.handlers.postShippingInfo)
+	authorizedSession.Post("/customer/billing", h.handlers.postBillingInfo)
+	anonymoUserAuth.Post("/filter/products/validate/price", h.handlers.filterProductsPriceValidate)
+	anonymoUserAuth.Post("/basket/update", h.handlers.updateBasket)
+	anonymoUserAuth.Post("/basket/add", h.handlers.addItemToBasket)
+	anonymoUserAuth.Post("/basket/customer/billing", h.handlers.postBasketBillingInfo)
+	anonymoUserAuth.Post("/basket/customer/shipping", h.handlers.postBasketShippingInfo)
+	anonymoUserAuth.Post("/api/checkout", h.handlers.createCheckout)
 	h.srv.Post("/api/stripe/wh", h.handlers.checkoutStripeWebhook)
 
 	h.srv.Static("/public", "./ports/views/public")

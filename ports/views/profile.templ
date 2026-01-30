@@ -1,0 +1,125 @@
+package views
+
+import "github.com/siderustler/go-ecommerce/customer"
+import "github.com/siderustler/go-ecommerce/ports/views/components"
+
+type profileFragment struct{}
+
+var ProfileFragment = profileFragment{}
+
+type profileViewModel struct {
+	navBarViewModel components.NavBarViewModel
+	customer        customer.Customer
+}
+
+func NewProfileViewModel(customer customer.Customer, navBarViewModel components.NavBarViewModel) profileViewModel {
+	return profileViewModel{customer: customer, navBarViewModel: navBarViewModel}
+}
+
+templ AccountProfile(viewModel profileViewModel) {
+	@layout() {
+		@templ.Fragment(ProfileFragment) {
+			@components.NavBar(viewModel.navBarViewModel)
+			<section id="products" class="flex flex-col justify-center md:flex-row md:flex-wrap gap-6 md:gap-12 px-4 pt-8 pb-12 md:px-8 md:pt-10 lg:px-12 lg:py-16 bg-grey-200 shadow-lg border border-grey-300 rounded-lg">
+				@personalInfo(viewModel.customer.Credentials)
+				@billingInfo(viewModel.customer.Billing)
+				@shippingInfo(viewModel.customer.Shipping)
+			</section>
+		}
+	}
+}
+
+templ personalInfo(creds customer.Credentials) {
+	@userInfo("/public/icons/user-info.svg",
+		"user info",
+		"Dane kontaktowe",
+		"/account/customer/billing",
+		[]string{creds.Name, creds.Phone, creds.Email},
+		!creds.IsZero(),
+	)
+}
+
+templ billingInfo(billing customer.Billing) {
+	{{
+		company := "Firma: " + billing.Company
+		nip := "NIP: " + billing.NIPCode
+		address1 := billing.Address.Address
+		address2 := billing.Address.City + ", " + billing.Address.PostalCode
+	}}
+	@userInfo("/public/icons/user-info.svg",
+		"user info",
+		"Dane billingowe",
+		"/account/customer/billing",
+		[]string{company, nip, address1, address2},
+		!billing.IsZero(),
+	)
+}
+
+templ shippingInfo(shipping customer.ShippingAddress) {
+	{{
+		address1 := shipping.Address.Address
+		address2 := shipping.Address.City + ", " + shipping.Address.PostalCode
+	}}
+	@userInfo("/public/icons/user-info.svg",
+		"user info",
+		"Dane dostawy",
+		"/account/customer/shipping",
+		[]string{address1, address2},
+		!shipping.IsZero(),
+	)
+}
+
+templ userInfo(iconPath, iconAlt, title, editUrl string, description []string, includeContent bool) {
+	<section class="flex lg:min-w-2/5 flex-col gap-4 md:gap-8 lg:gap-10 shadow-md px-6 py-6 sm:px-8 sm:py-10 lg:px-12 lg:py-16 bg-grey-100 rounded-xl">
+		@header(iconPath, iconAlt, title) {
+			<a
+				href={ editUrl }
+				class="sm:hidden flex self-end justify-center items-center gap-1 md:gap-2 lg:gap-4 bg-primary-300 rounded-full p-3 md:px-5 lg:px-6 md:py-3 md:rounded-xl md:w-full min-w-12 min-h-12"
+				hx-get={ editUrl }
+				hx-swap="outerHTML"
+				hx-target="#products"
+			>
+				<img
+					src="/public/icons/edit-pencil-primary.svg"
+					alt="edit icon"
+					width="24px"
+					height="24px"
+				/>
+			</a>
+		}
+		if includeContent {
+			<div class="flex flex-col gap-3 md:gap-4 lg:gap-6">
+				for _, desc := range description {
+					<p class="text-secondary-900">{ desc }</p>
+				}
+			</div>
+			@editButton(editUrl)
+		} else {
+			<p class="text-tertiary-700 font-bold text-xl px-4 text-center mx-auto sm:max-w-1/2 sm:pt-4 py-3">Uups! Jeszcze nie miałeś okazji dodać swoich danych.</p>
+			@editButton(editUrl)
+		}
+	</section>
+}
+
+templ editButton(url string) {
+	<a
+		href={ url }
+		class="hidden sm:flex items-center justify-center px-5 py-3 shadow-sm rounded-xl border border-secondary-500 mt-2"
+		hx-get={ url }
+		hx-swap="outerHTML"
+		hx-target="#products"
+	>
+		<img src="/public/icons/edit-pencil-secondary.svg" alt="edit icon"/>
+		<p class="text-secondary-900 mx-4 md:mx-5 lg:mx-6">Edytuj</p>
+	</a>
+}
+
+templ header(iconPath, iconAlt, headerTitle string) {
+	<div class="flex justify-between">
+		<div class="flex gap-4 md:gap-5 lg:gap-6 items-center">
+			<img src={ iconPath } alt={ iconAlt } width="24px" height="24px"/>
+			<p class="text-primary-900 text-sm sm:text-base">{ headerTitle }</p>
+		</div>
+		{ children... }
+	</div>
+}

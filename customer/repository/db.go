@@ -60,8 +60,18 @@ func (r repository) CustomerByID(ctx context.Context, userID string) (customer.C
 		ctx,
 		`SELECT 
 		c.customer_id, c.name, c.email, c.phone, 
-		COALESCE(s.id::text,'') AS shippingID, COALESCE(s.city::text,'') AS shippingCity, COALESCE(s.address::text,'') AS shippingAddress, COALESCE(s.local::text,'') AS shippingLocal, COALESCE(s.postal_code::text,'') AS shippingPostal,
-		b.id AS billingID, b.city AS billingCity, b.address AS billingAddress, b.local AS billingLocal, b.postal_code AS billingPostal, b.nip_code AS billingNipCode, b.company
+		COALESCE(s.id::text,'') AS shippingID, 
+		COALESCE(s.city::text,'') AS shippingCity, 
+		COALESCE(s.address::text,'') AS shippingAddress, 
+		COALESCE(s.local::text,'') AS shippingLocal, 
+		COALESCE(s.postal_code::text,'') AS shippingPostal,
+		COALESCE(b.id::text,'') AS billingID, 
+		COALESCE(b.city::text,'') AS billingCity, 
+		COALESCE(b.address::text,'') AS billingAddress, 
+		COALESCE(b.local,'') AS billingLocal, 
+		COALESCE(b.postal_code::text,'') AS billingPostal, 
+		COALESCE(b.nip_code::text,'') AS billingNipCode, 
+		COALESCE(b.company::text,'')
 		FROM customers AS c 
 		LEFT JOIN billings AS b ON c.billing = b.id
 		LEFT JOIN shippings AS s ON c.shipping = s.id
@@ -87,8 +97,8 @@ func (r repository) CustomerByID(ctx context.Context, userID string) (customer.C
 		&cust.Billing.NIPCode,
 		&cust.Billing.Company,
 	)
-	if err != nil {
-		return customer.Customer{}, fmt.Errorf("scanning customer row: %w: %v", err)
+	if err != nil && err != sql.ErrNoRows {
+		return customer.Customer{}, fmt.Errorf("scanning customer row: %w", err)
 	}
 	return cust, nil
 }
