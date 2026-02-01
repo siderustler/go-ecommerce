@@ -105,16 +105,28 @@ templ Products(productsListViewModel ProductsListViewModel) {
 						@components.Descriptor("Products", "p-4")
 						<img id="spinner3" src="/public/icons/spinner.svg" class="htmx-indicator absolute top-1/2 left-1/2 z-2"/>
 						<div id="spinner2" class="flex flex-col pb-8 items-center justify-center gap-4 sm:gap-6 lg:gap-12 htmx-request:opacity-50">
-							for _, product := range productsListViewModel.products {
-								@productItem(product)
+							{{ productsFound := len(productsListViewModel.products) > 0 }}
+							if !productsFound {
+								@noProducts()
+							} else {
+								for _, product := range productsListViewModel.products {
+									@productItem(product)
+								}
+								@paginator(productsListViewModel.paginator)
 							}
-							@paginator(productsListViewModel.paginator)
 						</div>
 					</section>
 				</section>
 			</div>
 		}
 	}
+}
+
+templ noProducts() {
+	<div class="flex flex-col items-center justify-center py-8 px-2 md:p-8 gap-4 md:gap-6 lg:gap-8 w-full shadow-sm rounded-2xl bg-grey-100 border border-grey-300">
+		<img src="/public/icons/no-products-cart.svg" alt="no products in basket" width="320px" height="320px"/>
+		<p class="mx-auto text-primary-900 max-w-80 text-center text-xl">Wygląda na to że nie mamy produktów względem Twojego kryterium.</p>
+	</div>
 }
 
 templ sectionHeader(icon, iconAlt, content string) {
