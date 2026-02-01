@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/siderustler/go-ecommerce/product"
@@ -90,12 +92,69 @@ func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
 	return &repository{db: db}, nil
 }
 
+func mapDomainFilterToSQLQueryFilter(filter product.Filter, limit, offset int) (clause string, args []any) {
+	var where []string
+	if filter.IncludeElectro {
+		args = append(args, "1")
+	}
+	if filter.IncludeElectroMachines {
+		args = append(args, "2")
+	}
+	if filter.IncludeGardening {
+		args = append(args, "3")
+	}
+	if filter.IncludeMachines {
+		args = append(args, "4")
+	}
+	if filter.IncludeParts {
+		args = append(args, "5")
+	}
+	placeholders := make([]string, 0, len(args))
+	if len(args) > 0 {
+		for i := 1; i < len(args)+1; i++ {
+			placeholders = append(placeholders, "$"+strconv.Itoa(i))
+		}
+		where = append(where, fmt.Sprintf(`category_id IN (%s)`, strings.Join(placeholders, ",")))
+	}
+	if filter.Search != "" {
+		placeholder := "$" + strconv.Itoa(len(placeholders)+1)
+		placeholders = append(placeholders, placeholder)
+		where = append(where, "ILIKE %"+placeholder+"%")
+		args = append(args, filter.Search)
+	}
+	var sort string
+	if filter.Sort != "" {
+		switch filter.Sort {
+		case product.NameDesc:
+			sort = " ORDER BY name DESC"
+		case product.PriceAsc:
+			sort = " ORDER BY price ASC"
+		case product.PriceDesc:
+			sort = " ORDER BY price DESC"
+		default:
+			sort = " ORDER BY name ASC"
+		}
+	}
+	if filter.PriceFrom != 0 {
+		where = append(where, "price >= "+fmt.Sprintf("%f", filter.PriceFrom))
+	}
+	if filter.PriceTo != 0 {
+		where = append(where, "price <= "+fmt.Sprintf("%f", filter.PriceTo))
+	}
+
+	shouldIncludeWhere := len(where) > 0
+	if shouldIncludeWhere {
+		clause = " WHERE " + strings.Join(where, " AND ")
+	}
+	clause += sort
+	clause += " LIMIT $" + strconv.Itoa(len(placeholders)+1) + " OFFSET $" + strconv.Itoa(len(placeholders)+2)
+	args = append(args, limit, offset)
+	return clause, args
+}
+
 func (r repository) Products(ctx context.Context, offset int, limit int, filter product.Filter) ([]product.Product, error) {
-	rows, err := r.db.QueryContext(
-		ctx,
-		"SELECT id, name, main_image, price, price_before,category_id FROM products LIMIT $1 OFFSET $2",
-		limit, offset,
-	)
+	filterClause, args := mapDomainFilterToSQLQueryFilter(filter, limit, offset)
+	rows, err := r.db.QueryContext(ctx, "SELECT id, name, main_image, price, price_before,category_id FROM products"+filterClause, args...)
 	if err != nil {
 		return nil, fmt.Errorf("retrieving products: %w", err)
 	}

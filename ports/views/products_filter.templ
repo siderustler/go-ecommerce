@@ -5,14 +5,14 @@ import "github.com/siderustler/go-ecommerce/product"
 type FilterViewModel struct {
 	PriceFrom       float32 `query:"price-from" url:"price-from,omitempty"`
 	priceFromErr    string
-	PriceTo         float32       `query:"price-to" url:"price-to,omitempty"`
-	Machines        bool          `query:"machines" url:"machines,omitempty"`
-	Gardening       bool          `query:"gardening" url:"gardening,omitempty"`
-	Parts           bool          `query:"parts" url:"parts,omitempty"`
-	Electro         bool          `query:"electro" url:"electro,omitempty"`
-	ElectroMachines bool          `query:"electroMachines" url:"electroMachines,omitempty"`
-	Sort            SortSpecifier `query:"sort" url:"sort,omitempty"`
-	Search          string        `query:"search" url:"search,omitempty"`
+	PriceTo         float32 `query:"price-to" url:"price-to,omitempty"`
+	Machines        bool    `query:"machines" url:"machines,omitempty"`
+	Gardening       bool    `query:"gardening" url:"gardening,omitempty"`
+	Parts           bool    `query:"parts" url:"parts,omitempty"`
+	Electro         bool    `query:"electro" url:"electro,omitempty"`
+	ElectroMachines bool    `query:"electroMachines" url:"electroMachines,omitempty"`
+	Sort            string  `query:"sort" url:"sort,omitempty"`
+	Search          string  `query:"search" url:"search,omitempty"`
 }
 
 func (f FilterViewModel) MapToDomainFilter() product.Filter {
@@ -24,31 +24,9 @@ func (f FilterViewModel) MapToDomainFilter() product.Filter {
 		f.Parts,
 		f.Electro,
 		f.ElectroMachines,
-		string(f.Sort),
+		f.Sort,
 		f.Search,
 	)
-}
-
-type SortSpecifier string
-
-const (
-	PriceAsc  SortSpecifier = "price-asc"
-	PriceDesc SortSpecifier = "price-desc"
-	NameAsc   SortSpecifier = "name-asc"
-	NameDesc  SortSpecifier = "name-desc"
-)
-
-func (f *FilterViewModel) specifySort() {
-	switch f.Sort {
-	case PriceAsc:
-		f.Sort = PriceAsc
-	case PriceDesc:
-		f.Sort = PriceDesc
-	case NameDesc:
-		f.Sort = NameDesc
-	default:
-		f.Sort = NameAsc
-	}
 }
 
 func (f *FilterViewModel) Validate() {
@@ -61,7 +39,6 @@ func (f *FilterViewModel) Validate() {
 	if f.PriceFrom > f.PriceTo {
 		f.priceFromErr = "Cena od nie może być większa niż cena do"
 	}
-	f.specifySort()
 }
 
 func (f FilterViewModel) HasError() bool {
@@ -205,8 +182,8 @@ templ filterItem(name, icon, iconAlt, content string, checked bool) {
 	</div>
 }
 
-templ radioInput(label, value string, sort SortSpecifier) {
-	{{ checked := string(sort) == value }}
+templ radioInput(label, value string, sort string) {
+	{{ checked := sort == value }}
 	<div class="group shadow-lg has-checked:bg-tertiary-300 flex gap-2 md:gap-4 lg:gap-6 px-4 py-3 border-2 border-tertiary-500 rounded-2xl w-full items-center">
 		<input
 			id={ value }

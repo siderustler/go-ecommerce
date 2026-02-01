@@ -8,6 +8,28 @@ type Product struct {
 	Price       float32
 }
 
+type SortSpecifier string
+
+const (
+	PriceAsc  SortSpecifier = "price-asc"
+	PriceDesc SortSpecifier = "price-desc"
+	NameAsc   SortSpecifier = "name-asc"
+	NameDesc  SortSpecifier = "name-desc"
+)
+
+func SpecifySort(candidate string) SortSpecifier {
+	switch candidate {
+	case string(PriceAsc):
+		return PriceAsc
+	case string(PriceDesc):
+		return PriceDesc
+	case string(NameDesc):
+		return NameDesc
+	default:
+		return NameAsc
+	}
+}
+
 type Filter struct {
 	PriceFrom              float32
 	PriceTo                float32
@@ -16,7 +38,7 @@ type Filter struct {
 	IncludeParts           bool
 	IncludeElectro         bool
 	IncludeElectroMachines bool
-	Sort                   string
+	Sort                   SortSpecifier
 	Search                 string
 }
 
@@ -33,7 +55,7 @@ func NewFilter(
 		IncludeParts:           includeParts,
 		IncludeElectro:         includeElectro,
 		IncludeElectroMachines: includeElectroMachines,
-		Sort:                   sort,
+		Sort:                   SpecifySort(sort),
 		Search:                 search,
 	}
 }
