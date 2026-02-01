@@ -394,6 +394,7 @@ func (h handlers) getBillingInfo(c *fiber.Ctx) error {
 		// -- display error toast
 	}
 	billingInfoViewModel.WithCustomer(customer)
+	c.Append("Hx-Push-Url", "/account/customer/billing")
 	return renderFragmentOrView(c, views.BillingInfo(billingInfoViewModel), views.BillingInfoFragment)
 }
 
@@ -453,7 +454,7 @@ func (h handlers) getShippingInfo(c *fiber.Ctx) error {
 	customer, _ := h.customerServices.Customer(c.Context(), userID)
 	navBarViewModel.Align(cartCount)
 	shippingInfoViewModel.WithNavBarViewModel(navBarViewModel).WithShipping(customer.Shipping)
-	shippingUrl := "/account/shipping"
+	shippingUrl := "/account/customer/shipping"
 	c.Append("Hx-Push-Url", shippingUrl)
 
 	return renderFragmentOrView(c, views.ShippingInfo(shippingInfoViewModel), views.ShippingInfoFragment)
