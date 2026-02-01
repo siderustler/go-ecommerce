@@ -53,8 +53,8 @@ func (h handlers) getProducts(c *fiber.Ctx) error {
 
 	var navBarViewModel components.NavBarViewModel
 	_ = c.QueryParser(&navBarViewModel)
-
-	products, err := h.productServices.Products(c.Context(), page, filterViewModel.MapToDomainFilter())
+	limit := 10
+	products, err := h.productServices.Products(c.Context(), page, limit, filterViewModel.MapToDomainFilter())
 	//FIXME -- display empty product list
 	if err != nil {
 		fmt.Printf("ERRRO :%+v", err)

@@ -5,6 +5,8 @@ import "context"
 type repository interface {
 	Products(
 		ctx context.Context,
+		offset int,
+		limit int,
 		filter Filter,
 	) ([]Product, error)
 	ProductsByIDs(

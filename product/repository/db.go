@@ -90,8 +90,12 @@ func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
 	return &repository{db: db}, nil
 }
 
-func (r repository) Products(ctx context.Context, filter product.Filter) ([]product.Product, error) {
-	rows, err := r.db.QueryContext(ctx, "SELECT id, name, main_image, price, price_before,category_id FROM products")
+func (r repository) Products(ctx context.Context, offset int, limit int, filter product.Filter) ([]product.Product, error) {
+	rows, err := r.db.QueryContext(
+		ctx,
+		"SELECT id, name, main_image, price, price_before,category_id FROM products LIMIT $1 OFFSET $2",
+		limit, offset,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("retrieving products: %w", err)
 	}
