@@ -31,9 +31,9 @@ func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
 			id UUID PRIMARY KEY,
 			name TEXT NOT NULL,
 			main_image TEXT NOT NULL,
-			price REAL NOT NULL,
+			price INT NOT NULL,
 			category_id INT NOT NULL REFERENCES product_categories(id),
-			price_before REAL DEFAULT 0
+			price_before INT DEFAULT 0
 		)`,
 	)
 	if err != nil {
@@ -69,7 +69,7 @@ func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
 	productUUID := uuid.NewString()
 	_, err = db.ExecContext(ctx,
 		`INSERT INTO products (id, name, main_image, price, category_id, price_before) VALUES ($1, $2, $3,$4,$5,$6)`,
-		productUUID, "DLUGIE NAME BARDZO DLUGIE OJOJO JOJ ", "/public/products/essa/1.webp", 1.90, 1, 0,
+		productUUID, "DLUGIE NAME BARDZO DLUGIE OJOJO JOJ ", "/public/products/essa/1.webp", 1900, 1, 0,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("INSERT products table: %w", err)
@@ -136,10 +136,10 @@ func mapDomainFilterToSQLQueryFilter(filter product.Filter, limit, offset int) (
 		}
 	}
 	if filter.PriceFrom != 0 {
-		where = append(where, "price >= "+fmt.Sprintf("%f", filter.PriceFrom))
+		where = append(where, "price >= "+strconv.Itoa(filter.PriceFrom))
 	}
 	if filter.PriceTo != 0 {
-		where = append(where, "price <= "+fmt.Sprintf("%f", filter.PriceTo))
+		where = append(where, "price <= "+strconv.Itoa(filter.PriceTo))
 	}
 
 	shouldIncludeWhere := len(where) > 0

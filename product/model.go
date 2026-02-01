@@ -4,8 +4,8 @@ type Product struct {
 	ID          string
 	Name        string
 	Image       string
-	PriceBefore float32
-	Price       float32
+	PriceBefore int
+	Price       int
 }
 
 type SortSpecifier string
@@ -31,8 +31,8 @@ func SpecifySort(candidate string) SortSpecifier {
 }
 
 type Filter struct {
-	PriceFrom              float32
-	PriceTo                float32
+	PriceFrom              int
+	PriceTo                int
 	IncludeMachines        bool
 	IncludeGardening       bool
 	IncludeParts           bool
@@ -43,7 +43,7 @@ type Filter struct {
 }
 
 func NewFilter(
-	priceFrom, priceTo float32,
+	priceFrom, priceTo int,
 	includeMachines, includeGardening, includeParts, includeElectro, includeElectroMachines bool,
 	sort, search string,
 ) Filter {
@@ -98,7 +98,7 @@ type BasketProduct struct {
 	Count     int
 }
 
-func NewProduct(id, name, image string, price float32) Product {
+func NewProduct(id, name, image string, price int) Product {
 	return Product{
 		ID:    id,
 		Name:  name,
@@ -107,14 +107,14 @@ func NewProduct(id, name, image string, price float32) Product {
 	}
 }
 
-func (p Product) ProductPrice() float32 {
+func (p Product) ProductPrice() int {
 	if p.PriceBefore != 0 {
 		return p.PriceBefore
 	}
 	return p.Price
 }
 
-func NewPromoProduct(id, name, image string, priceBefore float32, price float32) Product {
+func NewPromoProduct(id, name, image string, priceBefore int, price int) Product {
 	return Product{
 		ID:          id,
 		Name:        name,

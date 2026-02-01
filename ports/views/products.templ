@@ -174,7 +174,7 @@ templ productItem(viewModel productViewModel) {
 						<h1 class="text-xl">{ viewModel.domain.Name }</h1>
 					}
 					@components.Info("Cena") {
-						<h2 class="text-primary-700 text-xl">{ strconv.FormatFloat(float64(viewModel.domain.Price), 'f', 2, 32) + " zł" }</h2>
+						<h2 class="text-primary-700 text-xl">{ fmt.Sprintf("%.2f",float32(viewModel.domain.Price / 100.0)) + " zł" }</h2>
 					}
 					<button type="submit" class="absolute top-0 left-0 w-full h-full z-10"></button>
 				</form>

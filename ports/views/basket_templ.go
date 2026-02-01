@@ -484,7 +484,7 @@ func basketSummary(items []BasketItemViewModel) templ.Component {
 		ctx = templ.ClearChildren(ctx)
 		var partPrice, fullPrice float32
 		for _, item := range items {
-			partPrice += item.product.Price * float32(item.count)
+			partPrice += float32(item.product.Price*item.count) / 100.0
 		}
 		fullPrice = partPrice
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<div id=\"summary\" hx-swap-oob=\"true\" class=\"flex flex-1 flex-col gap-6 px-4 pb-6 pt-4 md:px-6 md:py-6 lg:px-8 lg:py-8 shadow-md rounded-xl border-2 border-grey-300 2xl:max-w-1/2\"><img src=\"/public/icons/spinner.svg\" width=\"24px\" height=\"24px\" alt=\"Loading...\" class=\"htmx-indicator absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2\">")

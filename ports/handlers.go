@@ -79,10 +79,10 @@ func (h handlers) getProducts(c *fiber.Ctx) error {
 	productsListViewModel.Align(products, filterViewModel, navBarViewModel, page, maxPagesBoundary, encodedFilter)
 
 	productListUrl := fmt.Sprintf("/products/%d?%s", page, encodedFilter)
-	isAlreadyOnProductList := strings.HasSuffix(c.Get("HX-Current-Url"), productListUrl)
+	isAlreadyOnProductList := strings.HasSuffix(c.Get("Hx-Current-Url"), productListUrl)
 
 	if !isAlreadyOnProductList {
-		c.Append("HX-Push-Url", productListUrl)
+		c.Append("Hx-Push-Url", productListUrl)
 	}
 
 	if productsListViewModel.DecrementBasketCount || productsListViewModel.IncrementBasketCount {

@@ -119,7 +119,7 @@ templ basketSummary(items []BasketItemViewModel) {
 	{{
 		var partPrice, fullPrice float32
 		for _, item := range items {
-			partPrice += item.product.Price * float32(item.count)
+			partPrice += float32(item.product.Price*item.count) / 100.0
 		}
 		fullPrice = partPrice
 	}}
