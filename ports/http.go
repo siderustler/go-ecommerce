@@ -53,7 +53,6 @@ func NewHttpServer(
 	h.srv.Get("/oauth/login", oauthLoginHandler(authenticator, sessionStore))
 	h.srv.Get("/oauth/callback", h.handlers.oauthCallbackHandler(authenticator, sessionStore))
 	h.srv.Get("/oauth/logout", oauthLogoutHandler(sessionStore))
-
 	anonymoUserAuth := h.srv.Group("/", m.auth)
 	authorizedSession := h.srv.Group("/account", m.auth, m.authSessionVerifier)
 	authorizedSession.Get("/", h.handlers.accountHandler)

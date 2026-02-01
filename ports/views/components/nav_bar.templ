@@ -52,7 +52,14 @@ templ NavBar(viewModel NavBarViewModel) {
 				}
 			}}
 			for _, item := range items {
-				<a href={ item.href } hx-get={ item.href } hx-target="#products" hx-swap="outerHTML" hx-push-url="true" class={ "relative flex flex-col sm:flex-row items-center justify-center gap-2 md:gap-3 lg:gap-4 text-sm md:text-lg " + item.color }>
+				<a
+					href={ item.href }
+					hx-get={ item.href }
+					hx-target="#products"
+					hx-swap="outerHTML"
+					hx-push-url="true"
+					class={ "relative flex flex-col sm:flex-row items-center justify-center gap-2 md:gap-3 lg:gap-4 text-sm md:text-lg " + item.color }
+				>
 					<img
 						src={ item.icon }
 						alt={ item.name + " ikona" }

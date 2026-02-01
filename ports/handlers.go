@@ -650,8 +650,7 @@ func (h handlers) oauthCallbackHandler(oauth *auth.Authenticator, sessionStore *
 
 		previousUser := sess.Get("user_id").(string)
 		sess.Set("ip", c.IP())
-		sess.Set("refresh_token", token.RefreshToken)
-		expiryTime := time.Now().Unix() + token.ExpiresIn
+		expiryTime := time.Now().Unix() + int64(auth.TokenExpiryTime)
 		sess.Set("expiry", expiryTime)
 		sess.Set("user_id", idToken.Subject)
 		if err = sess.Save(); err != nil {

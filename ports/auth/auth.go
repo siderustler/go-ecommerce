@@ -3,14 +3,8 @@ package auth
 import (
 	"context"
 	"encoding/gob"
-	"encoding/json"
 	"errors"
-	"fmt"
-	"io"
-	"net/http"
-	"net/url"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
@@ -103,51 +97,6 @@ func (a *Authenticator) VerifyIDToken(ctx context.Context, token *oauth2.Token) 
 	return a.oidc.Verifier(oidcConfig).Verify(ctx, rawIDToken)
 }
 
-type RefreshTokenResponse struct {
-	AccessToken string `json:"access_token"`
-	ExpiresIn   int64  `json:"expires_in"`
-	Scope       string `json:"scope"`
-	IdToken     string `json:"id_token"`
-	TokenType   string `json:"token_type"`
-}
-
-var httpClient http.Client = http.Client{Timeout: 10 * time.Second}
-
-func (a *Authenticator) RefreshToken(ctx context.Context, actualRefreshToken string) (RefreshTokenResponse, error) {
-	tokenUrl := a.oauth.Endpoint.TokenURL
-	parsedUrl, err := url.Parse("https://" + tokenUrl)
-	if err != nil {
-		return RefreshTokenResponse{}, fmt.Errorf("parsing refresh token url: %w", err)
-	}
-	payload := strings.NewReader("grant_type=refresh_token&client_id={yourClientId}&client_secret=%7ByourClientSecret%7D&refresh_token=%7ByourRefreshToken%7D")
-	params := url.Values{}
-	params.Add("grant_type", "refresh_token")
-	params.Add("client_id", os.Getenv("AUTH0_CLIENT_ID"))
-	params.Add("refresh_token", actualRefreshToken)
-	parsedUrl.RawQuery = params.Encode()
-
-	req, _ := http.NewRequestWithContext(ctx, "POST", tokenUrl, payload)
-
-	req.Header.Add("content-type", "application/x-www-form-urlencoded")
-
-	res, err := httpClient.Do(req)
-	if err != nil {
-		return RefreshTokenResponse{}, fmt.Errorf("requesting new token: %w", err)
-	}
-	defer res.Body.Close()
-
-	var refreshTokenResp RefreshTokenResponse
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		return RefreshTokenResponse{}, fmt.Errorf("reading response body: %w", err)
-	}
-	err = json.Unmarshal(body, &refreshTokenResp)
-	if err != nil {
-		return RefreshTokenResponse{}, fmt.Errorf("unmarshalling response body: %w", err)
-	}
-	return refreshTokenResp, nil
-}
-
 func (a *Authenticator) AuthCodeURL(state string, opts ...oauth2.AuthCodeOption) string {
 	return a.oauth.AuthCodeURL(state, opts...)
 }
@@ -155,6 +104,8 @@ func (a *Authenticator) AuthCodeURL(state string, opts ...oauth2.AuthCodeOption)
 func (a *Authenticator) Exchange(ctx context.Context, code string, opts ...oauth2.AuthCodeOption) (*oauth2.Token, error) {
 	return a.oauth.Exchange(ctx, code, opts...)
 }
+
+const TokenExpiryTime = 3 * 24 * time.Hour
 
 func VerifySession(session *session.Session) (isExpired bool, err error) {
 	expiry, ok := session.Get("expiry").(int64)
