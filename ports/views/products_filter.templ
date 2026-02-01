@@ -37,6 +37,7 @@ func (f *FilterViewModel) Validate() {
 		f.PriceTo = 0
 	}
 	if f.PriceFrom > f.PriceTo {
+		f.PriceFrom = 0
 		f.priceFromErr = "Cena od nie może być większa niż cena do"
 	}
 }
@@ -45,10 +46,8 @@ func (f FilterViewModel) HasError() bool {
 	return len(f.priceFromErr) > 0
 }
 
-type priceFilterFragment struct{}
 type productsFilterFragment struct{}
 
-var PriceFilterFragment = priceFilterFragment{}
 var ProductsFilterFragment = productsFilterFragment{}
 
 templ ProductsFilter(filterViewModel FilterViewModel) {
@@ -86,39 +85,33 @@ templ filter(filterViewModel FilterViewModel) {
 		</div>
 		<p class="text-center text-tertiary-900 mt-8 mb-3 lg:mb-4">Cena</p>
 		<div
-			id="price-filter"
 			class="flex flex-col gap-3 lg:gap-4"
 		>
-			@templ.Fragment(PriceFilterFragment) {
-				@textInput("price-from", "/public/icons/chevron-left-secondary.svg", "cena od ikona", "price-from", "Od...", filterViewModel.PriceFrom, filterViewModel.HasError())
-				@inputError(filterViewModel.priceFromErr)
-				@textInput("price-to", "/public/icons/chevron-left-secondary.svg", "cena do ikona", "price-to", "Do...", filterViewModel.PriceTo, false)
-				<div class="py-4 lg:py-4">
-					@sectionHeader("/public/icons/products-filter.svg", "sortuj ikona", "Sortuj")
-					<fieldset id="sort" class="flex flex-col gap-2 sm:gap-3 md:gap-4">
-						<div class="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4">
-							@radioInput("Cena rosnąco", "price-asc", filterViewModel.Sort)
-							@radioInput("Cena malejąco", "price-desc", filterViewModel.Sort)
-						</div>
-						<div class="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4">
-							@radioInput("Nazwa A-Z", "name-asc", filterViewModel.Sort)
-							@radioInput("Nazwa Z-A", "name-desc", filterViewModel.Sort)
-						</div>
-					</fieldset>
-				</div>
-				<button
-					id="submit-btn"
-					type="submit"
-					class="group flex items-center justify-center gap-1 md:gap-2 lg:gap-4 px-4 md:px-5 lg:px-6 py-2 md:py-3 text-secondary-900 border-2 border-secondary-500 rounded-xl text-center text-sm hover:border-secondary-400 focus:border-secondary-700 disabled:border-grey-500 disabled:text-grey-500"
-					if filterViewModel.HasError() {
-						disabled="true"
-					}
-				>
-					<img src="/public/icons/products-filter.svg" alt="filtruj ikona" width="24px" height="24px" class="group-disabled:opacity-50"/>
-					Filtruj
-					<img id="spinner" src="/public/icons/spinner.svg" width="24px" height="24px" alt="Loading..." class="htmx-indicator"/>
-				</button>
-			}
+			@textInput("price-from", "/public/icons/chevron-left-secondary.svg", "cena od ikona", "price-from", "Od...", filterViewModel.PriceFrom, filterViewModel.HasError())
+			@inputError(filterViewModel.priceFromErr)
+			@textInput("price-to", "/public/icons/chevron-left-secondary.svg", "cena do ikona", "price-to", "Do...", filterViewModel.PriceTo, false)
+			<div class="py-4 lg:py-4">
+				@sectionHeader("/public/icons/products-filter.svg", "sortuj ikona", "Sortuj")
+				<fieldset id="sort" class="flex flex-col gap-2 sm:gap-3 md:gap-4">
+					<div class="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4">
+						@radioInput("Cena rosnąco", "price-asc", filterViewModel.Sort)
+						@radioInput("Cena malejąco", "price-desc", filterViewModel.Sort)
+					</div>
+					<div class="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4">
+						@radioInput("Nazwa A-Z", "name-asc", filterViewModel.Sort)
+						@radioInput("Nazwa Z-A", "name-desc", filterViewModel.Sort)
+					</div>
+				</fieldset>
+			</div>
+			<button
+				id="submit-btn"
+				type="submit"
+				class="group flex items-center justify-center gap-1 md:gap-2 lg:gap-4 px-4 md:px-5 lg:px-6 py-2 md:py-3 text-secondary-900 border-2 border-secondary-500 rounded-xl text-center text-sm hover:border-secondary-400 focus:border-secondary-700"
+			>
+				<img src="/public/icons/products-filter.svg" alt="filtruj ikona" width="24px" height="24px" class="group-disabled:opacity-50"/>
+				Filtruj
+				<img id="spinner" src="/public/icons/spinner.svg" width="24px" height="24px" alt="Loading..." class="htmx-indicator"/>
+			</button>
 		</div>
 	</form>
 }
@@ -148,19 +141,12 @@ templ textInput(id, icon, iconAlt, name, placeholder string, value float32, isEr
 		<img src={ icon } alt={ iconAlt } height="24px" width="24px"/>
 		<input
 			id={ id }
-			min="1"
-			type="number"
 			name={ name }
 			placeholder={ placeholder }
 			class="placeholder:text-grey-700 text-grey-900 outline-none w-full"
 			if value != 0 {
 				value={ value }
 			}
-			hx-trigger="validatePrice from:body, input changed delay:0.2s"
-			hx-post="/filter/products/validate/price"
-			hx-swap="innerHTML"
-			hx-target="#price-filter"
-			hx-preserve
 		/>
 	</div>
 }
@@ -183,7 +169,7 @@ templ filterItem(name, icon, iconAlt, content string, checked bool) {
 }
 
 templ radioInput(label, value string, sort string) {
-	{{ checked := sort == value }}
+	{{ checked := value == string(product.SpecifySort(sort)) }}
 	<div class="group shadow-lg has-checked:bg-tertiary-300 flex gap-2 md:gap-4 lg:gap-6 px-4 py-3 border-2 border-tertiary-500 rounded-2xl w-full items-center">
 		<input
 			id={ value }

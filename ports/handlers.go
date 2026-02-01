@@ -47,13 +47,14 @@ func (h handlers) getProducts(c *fiber.Ctx) error {
 	var filterViewModel views.FilterViewModel
 	_ = c.QueryParser(&filterViewModel)
 	filterViewModel.Validate()
+	limit := 10
 
 	var productsListViewModel views.ProductsListViewModel
 	_ = c.QueryParser(&productsListViewModel)
 
 	var navBarViewModel components.NavBarViewModel
 	_ = c.QueryParser(&navBarViewModel)
-	limit := 10
+
 	products, err := h.productServices.Products(c.Context(), page, limit, filterViewModel.MapToDomainFilter())
 	//FIXME -- display empty product list
 	if err != nil {
@@ -82,10 +83,6 @@ func (h handlers) getProducts(c *fiber.Ctx) error {
 
 	if !isAlreadyOnProductList {
 		c.Append("HX-Push-Url", productListUrl)
-	}
-
-	if filterViewModel.HasError() {
-		c.Append("HX-Trigger", "validatePrice")
 	}
 
 	if productsListViewModel.DecrementBasketCount || productsListViewModel.IncrementBasketCount {
@@ -171,23 +168,6 @@ func (h handlers) getFilterProducts(c *fiber.Ctx) error {
 		c.Append("HX-Push-Url", url)
 	}
 	return renderFragmentOrView(c, views.ProductsFilter(filterViewModel), views.ProductsFilterFragment)
-}
-
-func (h handlers) filterProductsPriceValidate(c *fiber.Ctx) error {
-	var filterViewModel views.FilterViewModel
-	//FIXME render error
-	_ = c.BodyParser(&filterViewModel)
-	filterViewModel.Validate()
-
-	var preserveFocus = func() {
-		trigger, ok := c.GetReqHeaders()["Hx-Trigger"]
-		if !ok || len(trigger) < 1 {
-			return
-		}
-		c.Append("Hx-Trigger", fmt.Sprintf(`{"preserveFilterInputFocus":{"triggerElement" : "%s"}}`, trigger[0]))
-	}
-	preserveFocus()
-	return renderFragmentOrView(c, views.ProductsFilter(filterViewModel), views.PriceFilterFragment)
 }
 
 func (h handlers) getDashboard(c *fiber.Ctx) error {

@@ -72,7 +72,6 @@ func NewHttpServer(
 
 	authorizedSession.Post("/customer/shipping", h.handlers.postShippingInfo)
 	authorizedSession.Post("/customer/billing", h.handlers.postBillingInfo)
-	anonymoUserAuth.Post("/filter/products/validate/price", h.handlers.filterProductsPriceValidate)
 	anonymoUserAuth.Post("/basket/update", h.handlers.updateBasket)
 	anonymoUserAuth.Post("/basket/add", h.handlers.addItemToBasket)
 	anonymoUserAuth.Post("/basket/customer/billing", h.handlers.postBasketBillingInfo)
