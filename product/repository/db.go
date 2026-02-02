@@ -119,8 +119,8 @@ func mapDomainFilterToSQLQueryFilter(filter product.Filter, limit, offset int) (
 	if filter.Search != "" {
 		placeholder := "$" + strconv.Itoa(len(placeholders)+1)
 		placeholders = append(placeholders, placeholder)
-		where = append(where, "ILIKE %"+placeholder+"%")
-		args = append(args, filter.Search)
+		where = append(where, "name ILIKE "+placeholder)
+		args = append(args, "%"+filter.Search+"%")
 	}
 	var sort string
 	if filter.Sort != "" {
