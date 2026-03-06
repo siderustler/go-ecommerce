@@ -36,7 +36,13 @@ live:
 	make -j4 live/templ live/server live/tailwind live/sync_assets
 
 db:
-	docker run -it -e POSTGRES_USER=user -e POSTGRES_PASSWORD=secret -e POSTGRES_DB=ecomm -p 5432:5432 postgres
+	docker run -it \
+	-e POSTGRES_USER=user \
+	-e POSTGRES_PASSWORD=secret \
+	-e POSTGRES_DB=ecomm \
+	-v $(CURDIR)/sql/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro \
+	-v $(CURDIR)/sql/02_seed.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro \
+	-p 5432:5432 postgres
 
 
 #need to be authorized to stripe (stripe cli = stripe login)
