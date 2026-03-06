@@ -224,7 +224,10 @@ func (r repository) UpdateShippingAddress(ctx context.Context, userID string, sh
 }
 
 func RunInTx(ctx context.Context, db *sql.DB, opts *sql.TxOptions, txFunc func(tx *sql.Tx) error) (err error) {
-	tx, err := db.BeginTx(ctx, nil)
+	tx, err := db.BeginTx(ctx, opts)
+	if err != nil {
+		return fmt.Errorf("starting transaction: %w", err)
+	}
 	defer func() {
 		if err != nil {
 			_ = tx.Rollback()
@@ -232,9 +235,6 @@ func RunInTx(ctx context.Context, db *sql.DB, opts *sql.TxOptions, txFunc func(t
 			err = tx.Commit()
 		}
 	}()
-	if err != nil {
-		return fmt.Errorf("starting transaction: %w", err)
-	}
 
 	return txFunc(tx)
 }

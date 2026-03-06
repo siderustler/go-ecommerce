@@ -24,8 +24,11 @@ func (s StockItem) IsZero() bool {
 }
 
 func (s *StockItem) ReserveItem(reserveAmount int) error {
+	if reserveAmount <= 0 {
+		return errors.New("amount to reserve must be greater than zero")
+	}
 	if s.AvailableAmount < reserveAmount {
-		return errors.New("reserved amount is greater than available amount")
+		return errors.New("amount to reserve is greater than available amount")
 	}
 	s.AvailableAmount -= reserveAmount
 	s.ReservedAmount += reserveAmount
@@ -33,6 +36,9 @@ func (s *StockItem) ReserveItem(reserveAmount int) error {
 }
 
 func (s *StockItem) ReleaseItemReservation(reserveAmount int) error {
+	if reserveAmount <= 0 {
+		return errors.New("amount to release must be greater than zero")
+	}
 	if s.ReservedAmount < reserveAmount {
 		return fmt.Errorf("requested amount to reserve is greater than actual reserved amount: actual: %d, request to reserve: %d", s.ReservedAmount, reserveAmount)
 	}
@@ -42,6 +48,9 @@ func (s *StockItem) ReleaseItemReservation(reserveAmount int) error {
 }
 
 func (s *StockItem) DecreaseAvailableAmount(count int) error {
+	if count <= 0 {
+		return errors.New("requested count must be greater than zero")
+	}
 	if s.AvailableAmount < count {
 		return errors.New("requested count is greater than actual available amount")
 	}
@@ -51,8 +60,8 @@ func (s *StockItem) DecreaseAvailableAmount(count int) error {
 }
 
 func (s *StockItem) RemoveItem(count int) error {
-	if s.AvailableAmount < count {
-		return errors.New("requested count is greater than actual available amount")
+	if count <= 0 {
+		return errors.New("requested count must be greater than zero")
 	}
 	if s.ReservedAmount < count {
 		return errors.New("requested count is greater than actual reserved amount")
@@ -62,7 +71,7 @@ func (s *StockItem) RemoveItem(count int) error {
 }
 
 func (s StockItem) IsAvailable() bool {
-	return s.AvailableAmount > s.ReservedAmount
+	return s.AvailableAmount > 0
 }
 
 type Stock struct {

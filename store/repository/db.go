@@ -71,14 +71,23 @@ func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
 	}
 	_, err = db.ExecContext(ctx,
 		`CREATE TABLE IF NOT EXISTS stock_reservations (
-			checkout_id UUID PRIMARY KEY REFERENCES checkouts(id),
+			checkout_id UUID REFERENCES checkouts(id),
 			product_id UUID REFERENCES products(id),
 			amount INT DEFAULT 0,
-			reserved_at TIMESTAMP NOT NULL
+			reserved_at TIMESTAMP NOT NULL,
+			PRIMARY KEY (checkout_id, product_id)
 		)`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("creating stock_reservations table: %w", err)
+	}
+	_, err = db.ExecContext(ctx, `ALTER TABLE stock_reservations DROP CONSTRAINT IF EXISTS stock_reservations_pkey`)
+	if err != nil {
+		return nil, fmt.Errorf("dropping stock_reservations pk: %w", err)
+	}
+	_, err = db.ExecContext(ctx, `ALTER TABLE stock_reservations ADD PRIMARY KEY (checkout_id, product_id)`)
+	if err != nil {
+		return nil, fmt.Errorf("adding stock_reservations pk: %w", err)
 	}
 	_, err = db.ExecContext(ctx,
 		`INSERT INTO stock (product_id, available_amount, reserved_amount) SELECT id, 9999,0 FROM products ON CONFLICT (product_id) DO NOTHING`,
@@ -176,7 +185,7 @@ func (r repository) CreateOrder(
 			_, err = tx.ExecContext(
 				ctx,
 				`INSERT INTO order_products (order_id, name, price, count) 
-				VALUES ($1, $2, $3, $4, $5)`,
+					VALUES ($1, $2, $3, $4)`,
 				order.ID, orderProduct.Name, orderProduct.ItemPrice, orderProduct.Count,
 			)
 			if err != nil {
@@ -658,7 +667,10 @@ func (r repository) UpsertCart(ctx context.Context, userID string, item store_do
 }
 
 func RunInTx(ctx context.Context, db *sql.DB, opts *sql.TxOptions, txFunc func(tx *sql.Tx) error) (err error) {
-	tx, err := db.BeginTx(ctx, nil)
+	tx, err := db.BeginTx(ctx, opts)
+	if err != nil {
+		return fmt.Errorf("starting transaction: %w", err)
+	}
 	defer func() {
 		if err != nil {
 			_ = tx.Rollback()
@@ -666,9 +678,6 @@ func RunInTx(ctx context.Context, db *sql.DB, opts *sql.TxOptions, txFunc func(t
 			err = tx.Commit()
 		}
 	}()
-	if err != nil {
-		return fmt.Errorf("starting transaction: %w", err)
-	}
 
 	return txFunc(tx)
 }

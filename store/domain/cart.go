@@ -38,6 +38,9 @@ func (b *Cart) AddProduct(cartProduct CartProduct) error {
 	if b.Status == CartInactive {
 		return errors.New("unable to add product to inactive cart")
 	}
+	if cartProduct.Count <= 0 {
+		return errors.New("count must be greater than zero")
+	}
 	b.LastModifiedAt = time.Now().UTC().Format(time.RFC3339)
 	product, inCart := b.Products[cartProduct.ProductID]
 	if !inCart {
@@ -54,12 +57,22 @@ func (b *Cart) RemoveProduct(cartProduct CartProduct) error {
 	if b.Status == CartInactive {
 		return errors.New("unable to remove product from inactive cart")
 	}
+	if cartProduct.Count <= 0 {
+		return errors.New("count must be greater than zero")
+	}
 	product, inCart := b.Products[cartProduct.ProductID]
 	if !inCart {
 		return errors.New("product not in Cart")
 	}
+	if product.Count < cartProduct.Count {
+		return errors.New("requested count is greater than count in cart")
+	}
 	b.LastModifiedAt = time.Now().UTC().Format(time.RFC3339)
 	product.Count -= cartProduct.Count
+	if product.Count == 0 {
+		delete(b.Products, cartProduct.ProductID)
+		return nil
+	}
 	b.Products[cartProduct.ProductID] = product
 	return nil
 }

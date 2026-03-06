@@ -711,7 +711,7 @@ func oauthLogoutHandler(sessionStore *session.Store) func(c *fiber.Ctx) error {
 }
 
 func (h handlers) checkoutStripeWebhook(c *fiber.Ctx) error {
-	endpointSecret := "whsec_60d478a7c44ffabeea32f6c4f99499a8106e357f9518e25725a18c23839e2a83"
+	endpointSecret := os.Getenv("STRIPE_WEBHOOK_SIGNING_SECRET")
 
 	event, err := webhook.ConstructEvent(c.Body(), c.Get("Stripe-Signature"), endpointSecret)
 	type errStruct struct {
