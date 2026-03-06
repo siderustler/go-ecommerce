@@ -13,43 +13,8 @@ type repository struct {
 	db *sql.DB
 }
 
-// FIXME
-func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
-	_, err := db.ExecContext(ctx,
-		`CREATE TABLE IF NOT EXISTS products (
-			id UUID PRIMARY KEY,
-			name TEXT NOT NULL,
-			main_image TEXT NOT NULL,
-			price INT NOT NULL,
-			category TEXT CHECK(category IN ('MACHINES', 'GARDENING','ELECTRO', 'PARTS', 'ELECTROMACHINES')),
-			price_before INT DEFAULT 0
-		)`,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("creating products table: %w", err)
-	}
-	_, err = db.ExecContext(ctx,
-		`CREATE TABLE IF NOT EXISTS product_images (
-			id UUID REFERENCES products(id),
-			image_url TEXT NOT NULL,
-			PRIMARY KEY (id, image_url)
-		)`,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("creating product_images table: %w", err)
-	}
-	_, err = db.ExecContext(ctx,
-		`CREATE TABLE IF NOT EXISTS product_details (
-			id SERIAL PRIMARY KEY,
-			product_id UUID REFERENCES products(id),
-			product_info TEXT NOT NULL,
-			technical_parameters TEXT NOT NULL
-		)`,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("creating product_details table: %w", err)
-	}
-	return &repository{db: db}, nil
+func NewRepository(db *sql.DB) *repository {
+	return &repository{db: db}
 }
 
 func mapDomainFilterToSQLQueryFilter(filter product.Filter) (clause string, args []any) {

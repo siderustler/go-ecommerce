@@ -24,103 +24,8 @@ type executor interface {
 
 var _ store.Repository = repository{}
 
-func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
-	_, err := db.ExecContext(ctx,
-		`CREATE TABLE IF NOT EXISTS baskets (
-			id UUID PRIMARY KEY,
-			customer_id TEXT NOT NULL,
-			last_modified_at TIMESTAMP NOT NULL,
-			status TEXT CHECK (status IN ('ACTIVE', 'INACTIVE'))
-		)`,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("creating baskets table: %w", err)
-	}
-	_, err = db.ExecContext(ctx,
-		`CREATE TABLE IF NOT EXISTS checkouts (
-			id UUID PRIMARY KEY,
-			customer_id TEXT NOT NULL REFERENCES customers(customer_id),
-			basket_id UUID NOT NULL REFERENCES baskets(id),
-			created_at TIMESTAMP NOT NULL,
-			status TEXT CHECK (status IN ('INVALIDATED', 'PENDING', 'FINALIZED'))
-		)`,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("creating checkouts table: %w", err)
-	}
-	_, err = db.ExecContext(ctx,
-		`CREATE TABLE IF NOT EXISTS basket_products (
-			id UUID NOT NULL REFERENCES baskets(id),
-			product_id UUID NOT NULL REFERENCES products(id),
-			count INT NOT NULL,
-			PRIMARY KEY(id, product_id)
-		)`,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("creating basket_products table: %w", err)
-	}
-	_, err = db.ExecContext(ctx,
-		`CREATE TABLE IF NOT EXISTS stock (
-			product_id UUID PRIMARY KEY NOT NULL REFERENCES products(id),
-			available_amount INT DEFAULT 0,
-			reserved_amount INT DEFAULT 0
-		)`,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("creating stock table: %w", err)
-	}
-	_, err = db.ExecContext(ctx,
-		`CREATE TABLE IF NOT EXISTS stock_reservations (
-			checkout_id UUID REFERENCES checkouts(id),
-			product_id UUID REFERENCES products(id),
-			amount INT DEFAULT 0,
-			reserved_at TIMESTAMP NOT NULL,
-			PRIMARY KEY (checkout_id, product_id)
-		)`,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("creating stock_reservations table: %w", err)
-	}
-	_, err = db.ExecContext(ctx, `ALTER TABLE stock_reservations DROP CONSTRAINT IF EXISTS stock_reservations_pkey`)
-	if err != nil {
-		return nil, fmt.Errorf("dropping stock_reservations pk: %w", err)
-	}
-	_, err = db.ExecContext(ctx, `ALTER TABLE stock_reservations ADD PRIMARY KEY (checkout_id, product_id)`)
-	if err != nil {
-		return nil, fmt.Errorf("adding stock_reservations pk: %w", err)
-	}
-	_, err = db.ExecContext(ctx,
-		`INSERT INTO stock (product_id, available_amount, reserved_amount) SELECT id, 9999,0 FROM products ON CONFLICT (product_id) DO NOTHING`,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("creating stock_reservations table: %w", err)
-	}
-	_, err = db.ExecContext(
-		ctx,
-		`CREATE TABLE IF NOT EXISTS orders (
-			id UUID PRIMARY KEY, 
-			checkout_id UUID REFERENCES checkouts(id),
-			created_at TIMESTAMP NOT NULL,
-			status TEXT CHECK (status IN ('FINALIZED', 'PAID', 'SHIPPING'))
-		)`,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("creating orders table: %w", err)
-	}
-	_, err = db.ExecContext(
-		ctx,
-		`CREATE TABLE IF NOT EXISTS order_products (
-		id SERIAL PRIMARY KEY,
-		order_id UUID REFERENCES orders(id),
-		name TEXT NOT NULL,
-		price REAL NOT NULL,
-		count INT NOT NULL
-		)`,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("creating order_products table: %w", err)
-	}
-	return &repository{db: db}, nil
+func NewRepository(db *sql.DB) *repository {
+	return &repository{db: db}
 }
 
 func products(ctx context.Context, exec executor, ids ...string) ([]store_domain.Product, error) {
@@ -340,7 +245,11 @@ func cart(ctx context.Context, exec executor, userID string) (store_domain.Cart,
 	if err != nil {
 		return store_domain.Cart{}, fmt.Errorf("retrieving cart: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil {
+			fmt.Printf("closing rows in cart query: %v\n", closeErr)
+		}
+	}()
 	cart := store_domain.Cart{Products: make(map[string]store_domain.CartProduct)}
 	for rows.Next() {
 		var cartProduct store_domain.CartProduct
@@ -349,6 +258,9 @@ func cart(ctx context.Context, exec executor, userID string) (store_domain.Cart,
 			return store_domain.Cart{}, fmt.Errorf("scanning cart: %w", err)
 		}
 		cart.Products[cartProduct.ProductID] = cartProduct
+	}
+	if err = rows.Err(); err != nil {
+		return store_domain.Cart{}, fmt.Errorf("iterating cart rows: %w", err)
 	}
 	return cart, nil
 }
@@ -384,7 +296,11 @@ func stockForUpdate(ctx context.Context, exec executor, stockItemIds ...string) 
 	if err != nil {
 		return store_domain.Stock{}, fmt.Errorf("retrieving stock: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil {
+			fmt.Printf("closing rows in stock query: %v\n", closeErr)
+		}
+	}()
 	for rows.Next() {
 		var stockItem store_domain.StockItem
 		err := rows.Scan(&stockItem.ProductID, &stockItem.AvailableAmount, &stockItem.ReservedAmount)
@@ -392,6 +308,9 @@ func stockForUpdate(ctx context.Context, exec executor, stockItemIds ...string) 
 			return store_domain.Stock{}, fmt.Errorf("scanning stock item: %w", err)
 		}
 		stock.Items[stockItem.ProductID] = stockItem
+	}
+	if err = rows.Err(); err != nil {
+		return store_domain.Stock{}, fmt.Errorf("iterating stock rows: %w", err)
 	}
 	return stock, nil
 }
@@ -511,7 +430,11 @@ func checkoutByID(ctx context.Context, exec executor, id string) (store_domain.C
 	if err != nil {
 		return store_domain.Checkout{}, fmt.Errorf("retrieving checkout: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil {
+			fmt.Printf("closing rows in checkoutByID query: %v\n", closeErr)
+		}
+	}()
 	for rows.Next() {
 		var checkoutProduct store_domain.CartProduct
 		err = rows.Scan(
@@ -526,6 +449,9 @@ func checkoutByID(ctx context.Context, exec executor, id string) (store_domain.C
 			return store_domain.Checkout{}, fmt.Errorf("scanning checkout and stock: %w", err)
 		}
 		checkout.Items[checkoutProduct.ProductID] = checkoutProduct
+	}
+	if err = rows.Err(); err != nil {
+		return store_domain.Checkout{}, fmt.Errorf("iterating checkout rows: %w", err)
 	}
 	return checkout, nil
 }
@@ -542,7 +468,11 @@ func checkoutByBasketID(ctx context.Context, exec executor, basketID string) (st
 	if err != nil {
 		return store_domain.Checkout{}, fmt.Errorf("retrieving checkout: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil {
+			fmt.Printf("closing rows in checkoutByBasketID query: %v\n", closeErr)
+		}
+	}()
 	for rows.Next() {
 		var checkoutProduct store_domain.CartProduct
 		err = rows.Scan(
@@ -557,6 +487,9 @@ func checkoutByBasketID(ctx context.Context, exec executor, basketID string) (st
 			return store_domain.Checkout{}, fmt.Errorf("scanning checkout and stock: %w", err)
 		}
 		checkout.Items[checkoutProduct.ProductID] = checkoutProduct
+	}
+	if err = rows.Err(); err != nil {
+		return store_domain.Checkout{}, fmt.Errorf("iterating checkout rows: %w", err)
 	}
 	return checkout, nil
 }
@@ -573,7 +506,11 @@ func checkoutByUserID(ctx context.Context, exec executor, userID string) (store_
 	if err != nil {
 		return store_domain.Checkout{}, fmt.Errorf("retrieving checkout: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil {
+			fmt.Printf("closing rows in checkoutByUserID query: %v\n", closeErr)
+		}
+	}()
 	for rows.Next() {
 		var checkoutProduct store_domain.CartProduct
 		err = rows.Scan(
@@ -588,6 +525,9 @@ func checkoutByUserID(ctx context.Context, exec executor, userID string) (store_
 			return store_domain.Checkout{}, fmt.Errorf("scanning checkout and stock: %w", err)
 		}
 		checkout.Items[checkoutProduct.ProductID] = checkoutProduct
+	}
+	if err = rows.Err(); err != nil {
+		return store_domain.Checkout{}, fmt.Errorf("iterating checkout rows: %w", err)
 	}
 	return checkout, nil
 }

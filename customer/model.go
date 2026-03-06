@@ -25,10 +25,6 @@ type address struct {
 	Local      string
 }
 
-func (a address) isZero() bool {
-	return a.City == "" || a.Address == "" || a.PostalCode == "" || a.Local == ""
-}
-
 func newAddress(city, addr, postalCode, local string) (address, error) {
 	var err error
 	if strings.Trim(city, " ") == "" {

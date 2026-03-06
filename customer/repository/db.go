@@ -12,47 +12,8 @@ type repository struct {
 	db *sql.DB
 }
 
-func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
-	_, err := db.ExecContext(ctx,
-		`CREATE TABLE IF NOT EXISTS billings (
-			id UUID PRIMARY KEY,
-			nip_code TEXT,
-			company TEXT,
-			city TEXT,
-			address TEXT,
-			postal_code TEXT,
-			local TEXT
-		)`,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("creating billings table: %w", err)
-	}
-	_, err = db.ExecContext(ctx,
-		`CREATE TABLE IF NOT EXISTS shippings (
-			id UUID PRIMARY KEY,
-			city TEXT,
-			address TEXT,
-			postal_code TEXT,
-			local TEXT
-		)`,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("creating shippings table: %w", err)
-	}
-	_, err = db.ExecContext(ctx,
-		`CREATE TABLE IF NOT EXISTS customers (
-			customer_id TEXT PRIMARY KEY,
-			name TEXT,
-			email TEXT,
-			phone TEXT,
-			billing UUID REFERENCES billings(id),
-			shipping UUID REFERENCES shippings(id)
-		)`,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("creating customers table: %w", err)
-	}
-	return &repository{db: db}, nil
+func NewRepository(db *sql.DB) *repository {
+	return &repository{db: db}
 }
 
 func (r repository) CustomerByID(ctx context.Context, userID string) (customer.Customer, error) {

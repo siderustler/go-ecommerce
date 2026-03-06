@@ -33,14 +33,14 @@ func (s Services) CreateStripeCheckout(
 func mapCartProductsToStripeLineItems(cartProducts map[string]store_domain.CartProduct, products map[string]product.Product) []*stripe.CheckoutSessionLineItemParams {
 	lineItems := make([]*stripe.CheckoutSessionLineItemParams, 0, len(products))
 	for productID, cartProduct := range cartProducts {
-		product, _ := products[productID]
-		unitAmount := float64(product.ProductPrice() * 100)
+		domainProduct := products[productID]
+		unitAmount := float64(domainProduct.ProductPrice() * 100)
 		lineItem := &stripe.CheckoutSessionLineItemParams{
 			PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
 				Currency: stripe.String("pln"),
 				ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
-					Name:   stripe.String(product.Name),
-					Images: []*string{stripe.String("http://localhost:8080/" + product.Image)},
+					Name:   stripe.String(domainProduct.Name),
+					Images: []*string{stripe.String("http://localhost:8080/" + domainProduct.Image)},
 				},
 				UnitAmountDecimal: &unitAmount,
 			},

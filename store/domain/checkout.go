@@ -51,10 +51,7 @@ func (c Checkout) IsExpired() bool {
 	}
 	expiryTime := 15 * time.Minute
 	expiredTime := parsedTime.Add(expiryTime)
-	if time.Now().UTC().After(expiredTime) {
-		return true
-	}
-	return false
+	return time.Now().UTC().After(expiredTime)
 }
 
 func (c Checkout) IsZero() bool {

@@ -180,6 +180,7 @@ func (h handlers) getDashboard(c *fiber.Ctx) error {
 	cartCount, err := h.storeServices.CartCount(c.Context(), userID)
 	//FIXME
 	if err != nil {
+		return c.Redirect("/")
 	}
 	navBarViewModel := components.NewNavBarViewModel("", cartCount)
 
@@ -366,8 +367,7 @@ func (h handlers) getBillingInfo(c *fiber.Ctx) error {
 	billingInfoViewModel.WithNavBarViewModel(navBarViewModel)
 	customer, err := h.customerServices.Customer(c.Context(), userID)
 	if err != nil {
-		//FIXME
-		// -- display error toast
+		return c.Redirect("/")
 	}
 	billingInfoViewModel.WithCustomer(customer)
 	c.Append("Hx-Push-Url", "/account/customer/billing")
@@ -673,6 +673,7 @@ func (h handlers) accountHandler(c *fiber.Ctx) error {
 	cartCount, err := h.storeServices.CartCount(c.Context(), userID)
 	//FIXME
 	if err != nil {
+		return c.Redirect("/")
 	}
 	navBarViewModel.Align(cartCount)
 

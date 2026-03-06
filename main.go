@@ -32,22 +32,13 @@ func main() {
 	if err != nil {
 		panic(fmt.Errorf("connecting to db: %w", err))
 	}
-	productsRepo, err := repository.NewRepository(context.Background(), db)
-	if err != nil {
-		panic(fmt.Errorf("creating products repo: %w", err))
-	}
+	productsRepo := repository.NewRepository(db)
 	productServices := product.NewServices(productsRepo)
 
-	customerRepo, err := customerRepository.NewRepository(context.Background(), db)
-	if err != nil {
-		panic(fmt.Errorf("creating customer repo: %w", err))
-	}
+	customerRepo := customerRepository.NewRepository(db)
 	customerServices := customer.NewServices(customerRepo)
 
-	storeRepo, err := store_repository.NewRepository(context.Background(), db)
-	if err != nil {
-		panic(fmt.Errorf("creating store repo: %w", err))
-	}
+	storeRepo := store_repository.NewRepository(db)
 	storeServices := store.NewServices(storeRepo)
 
 	httpServer := ports.NewHttpServer(customerServices, productServices, storeServices)
