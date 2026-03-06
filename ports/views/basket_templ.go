@@ -338,8 +338,8 @@ func basketProductItem(item BasketItemViewModel) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if item.product.PriceBefore != 0 {
-			templ_7745c5c3_Err = promotionPrice(item.product.PriceBefore, item.product.Price).Render(ctx, templ_7745c5c3_Buffer)
+		if item.product.DiscountPrice != 0 {
+			templ_7745c5c3_Err = promotionPrice(item.product.Price, item.product.DiscountPrice).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -361,7 +361,7 @@ func basketProductItem(item BasketItemViewModel) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var14 string
-				templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.2f zł", item.product.Price))
+				templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.2f zł", float32(item.product.Price)/100.0))
 				if templ_7745c5c3_Err != nil {
 					return templ.Error{Err: templ_7745c5c3_Err, FileName: `ports/views/basket.templ`, Line: 118, Col: 69}
 				}

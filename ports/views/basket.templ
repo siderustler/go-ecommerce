@@ -111,11 +111,11 @@ templ basketProductItem(item BasketItemViewModel) {
 			@components.Info("Nazwa produktu") {
 				<h2 class="text-xl text-primary-900">{ item.product.Name }</h2>
 			}
-			if item.product.PriceBefore != 0 {
-				@promotionPrice(item.product.PriceBefore, item.product.Price)
+			if item.product.DiscountPrice != 0 {
+				@promotionPrice(item.product.Price, item.product.DiscountPrice)
 			} else {
 				@components.Info("Cena") {
-					<p class="text-xl">{ fmt.Sprintf("%.2f zł", item.product.Price) }</p>
+					<p class="text-xl">{ fmt.Sprintf("%.2f zł", float32(item.product.Price)/100.0) }</p>
 				}
 			}
 		</div>

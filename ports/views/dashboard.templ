@@ -179,7 +179,7 @@ templ promoProduct(product product.Product) {
 				<p class="pl-4 pr-2 text-primary-800 text-lg">{ product.Name }</p>
 			</div>
 		</a>
-		@promotionPrice(product.PriceBefore, product.Price)
+			@promotionPrice(product.Price, product.DiscountPrice)
 		<form action="/basket/add" method="post" hx-post="/basket/add" class="w-full">
 			<input
 				name="count"
@@ -211,20 +211,20 @@ templ promoProduct(product product.Product) {
 	</div>
 }
 
-templ promotionPrice(priceBefore, actualPrice int) {
+templ promotionPrice(basePrice, discountPrice int) {
 	<div class="flex flex-col xl:flex-row gap-4 md:justify-around px-4 w-full">
 		<div class="flex gap-2 flex-col">
 			<p class="text-error-700 text-sm">Cena przed:</p>
 			<p class="flex gap-2 md:gap-3">
 				<img alt="price before promotion" src="/public/icons/promo-price-before.svg" width="24px" height="24px"/>
-				<span class="text-error-800 line-through text-lg">{ priceBefore / 100.0 }</span>
+					<span class="text-error-800 line-through text-lg">{ basePrice / 100.0 }</span>
 			</p>
 		</div>
 		<div class="flex gap-2 flex-col">
 			<p class="text-primary-700 text-sm">Aktualna cena:</p>
 			<p class="flex gap-2 md:gap-3">
 				<img alt="price with promotion" src="/public/icons/promo-price-after.svg" width="24px" height="24px"/>
-				<span class="text-primary-800 text-lg">{ actualPrice / 100.0 }</span>
+					<span class="text-primary-800 text-lg">{ discountPrice / 100.0 }</span>
 			</p>
 		</div>
 	</div>

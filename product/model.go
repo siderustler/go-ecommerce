@@ -11,12 +11,12 @@ var (
 )
 
 type Product struct {
-	ID          string
-	Name        string
-	Image       string
-	PriceBefore int
-	Price       int
-	Category    productCategory
+	ID            string
+	Name          string
+	Image         string
+	DiscountPrice int
+	Price         int
+	Category      productCategory
 }
 
 type SortSpecifier string
@@ -75,7 +75,7 @@ type ProductDetail struct {
 	ID                  string
 	Name                string
 	Images              []string
-	PriceBefore         float32
+	DiscountPrice       float32
 	Price               float32
 	ProductInfo         []string
 	TechnicalParameters []string
@@ -100,7 +100,7 @@ func NewPromoProductDetail(id, name string, images, productInfo, technicalParame
 		ProductInfo:         productInfo,
 		TechnicalParameters: technicalParameters,
 		Price:               price,
-		PriceBefore:         priceBefore,
+		DiscountPrice:       priceBefore,
 	}
 }
 
@@ -119,18 +119,18 @@ func NewProduct(id, name, image string, price int) Product {
 }
 
 func (p Product) ProductPrice() int {
-	if p.PriceBefore != 0 {
-		return p.PriceBefore
+	if p.DiscountPrice != 0 {
+		return p.DiscountPrice
 	}
 	return p.Price
 }
 
 func NewPromoProduct(id, name, image string, priceBefore int, price int) Product {
 	return Product{
-		ID:          id,
-		Name:        name,
-		Price:       price,
-		Image:       image,
-		PriceBefore: priceBefore,
+		ID:            id,
+		Name:          name,
+		Price:         price,
+		Image:         image,
+		DiscountPrice: priceBefore,
 	}
 }

@@ -4,12 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"math/rand"
+	"github.com/siderustler/go-ecommerce/product"
 	"strconv"
 	"strings"
-
-	"github.com/google/uuid"
-	"github.com/siderustler/go-ecommerce/product"
 )
 
 type repository struct {
@@ -51,35 +48,6 @@ func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
 	)
 	if err != nil {
 		return nil, fmt.Errorf("creating product_details table: %w", err)
-	}
-	for i := 0; i < 100; i++ {
-		productUUID := uuid.NewString()
-		_, err = db.ExecContext(ctx,
-			`INSERT INTO products (id, name, main_image, price, category, price_before) VALUES ($1, $2, $3,$4,$5,$6)`,
-			productUUID, productUUID, "/public/products/essa/1.webp", rand.New(rand.NewSource(1)).Intn(100), "MACHINES", 0,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("INSERT products table: %w", err)
-		}
-		_, err = db.ExecContext(ctx,
-			`INSERT INTO product_images (id, image_url) VALUES ($1,$2), ($3,$4)`,
-			productUUID, "/public/products/essa/2.webp",
-			productUUID, "/public/products/essa/3.webp",
-		)
-		if err != nil {
-			return nil, fmt.Errorf("INSERT product_images table: %w", err)
-		}
-		_, err = db.ExecContext(ctx,
-			`INSERT INTO product_details (product_id, product_info, technical_parameters) VALUES ($1,$2,$3)`,
-			productUUID, "SOME SOME SOME SOME SOME", "TEHCNICAL TECHNICLA TEHCNIALCA",
-		)
-		if err != nil {
-			return nil, fmt.Errorf("INSERT product_details table: %w", err)
-		}
-	}
-
-	if err != nil {
-		return nil, fmt.Errorf("INSERT product_details table: %w", err)
 	}
 	return &repository{db: db}, nil
 }
@@ -157,7 +125,7 @@ func (r repository) Products(ctx context.Context, offset int, limit int, filter 
 	var products []product.Product
 	for rows.Next() {
 		var product product.Product
-		err := rows.Scan(&product.ID, &product.Name, &product.Image, &product.Price, &product.PriceBefore, &product.Category)
+		err := rows.Scan(&product.ID, &product.Name, &product.Image, &product.Price, &product.DiscountPrice, &product.Category)
 		if err != nil {
 			return nil, 0, fmt.Errorf("scannig product: %w", err)
 		}
@@ -184,7 +152,7 @@ func (r repository) ProductsByIDs(ctx context.Context, ids []string) (map[string
 	products := make(map[string]product.Product, len(ids))
 	for rows.Next() {
 		var product product.Product
-		err := rows.Scan(&product.ID, &product.Name, &product.Image, &product.Price, &product.PriceBefore)
+		err := rows.Scan(&product.ID, &product.Name, &product.Image, &product.Price, &product.DiscountPrice)
 		if err != nil {
 			return nil, fmt.Errorf("scannig product: %w", err)
 		}
@@ -204,7 +172,7 @@ func (r repository) Promotions(ctx context.Context, offset, limit int) (promos [
 	}
 	for rows.Next() {
 		var product product.Product
-		err := rows.Scan(&product.ID, &product.Name, &product.Image, &product.Price, &product.PriceBefore)
+		err := rows.Scan(&product.ID, &product.Name, &product.Image, &product.Price, &product.DiscountPrice)
 		if err != nil {
 			return nil, 0, fmt.Errorf("scanning product: %w", err)
 		}
@@ -219,7 +187,10 @@ func (r repository) Promotions(ctx context.Context, offset, limit int) (promos [
 }
 
 func RunInTx(ctx context.Context, db *sql.DB, opts *sql.TxOptions, txFunc func(tx *sql.Tx) error) (err error) {
-	tx, err := db.BeginTx(ctx, nil)
+	tx, err := db.BeginTx(ctx, opts)
+	if err != nil {
+		return fmt.Errorf("starting transaction: %w", err)
+	}
 	defer func() {
 		if err != nil {
 			_ = tx.Rollback()
@@ -227,9 +198,6 @@ func RunInTx(ctx context.Context, db *sql.DB, opts *sql.TxOptions, txFunc func(t
 			err = tx.Commit()
 		}
 	}()
-	if err != nil {
-		return fmt.Errorf("starting transaction: %w", err)
-	}
 
 	return txFunc(tx)
 }
