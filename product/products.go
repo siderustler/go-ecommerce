@@ -4,7 +4,7 @@ import (
 	"context"
 )
 
-func (s Services) Products(ctx context.Context, page int, limit int, filter Filter) ([]Product, error) {
+func (s Services) Products(ctx context.Context, page int, limit int, filter Filter) (products []Product, allProductsCount int, err error) {
 	offset := (page - 1) * limit
 	return s.repository.Products(ctx, offset, limit, filter)
 }

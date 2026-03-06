@@ -1,11 +1,22 @@
 package product
 
+type productCategory string
+
+var (
+	MachinesProductCategory        productCategory = "MACHINES"
+	GardeningProductCategory       productCategory = "GARDENING"
+	PartsProductCategory           productCategory = "PARTS"
+	ElectroProductCategory         productCategory = "ELECTRO"
+	ElectroMachinesProductCategory                 = "ELECTROMACHINES"
+)
+
 type Product struct {
 	ID          string
 	Name        string
 	Image       string
 	PriceBefore int
 	Price       int
+	Category    productCategory
 }
 
 type SortSpecifier string

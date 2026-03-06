@@ -47,7 +47,7 @@ func (h handlers) getProducts(c *fiber.Ctx) error {
 	var filterViewModel views.FilterViewModel
 	_ = c.QueryParser(&filterViewModel)
 	filterViewModel.Validate()
-	limit := 10
+	limit := 5
 
 	var productsListViewModel views.ProductsListViewModel
 	_ = c.QueryParser(&productsListViewModel)
@@ -55,8 +55,7 @@ func (h handlers) getProducts(c *fiber.Ctx) error {
 	var navBarViewModel components.NavBarViewModel
 	_ = c.QueryParser(&navBarViewModel)
 
-	products, err := h.productServices.Products(c.Context(), page, limit, filterViewModel.MapToDomainFilter())
-	//FIXME -- display empty product list
+	products, maxProductCount, err := h.productServices.Products(c.Context(), page, limit, filterViewModel.MapToDomainFilter())
 	if err != nil {
 		fmt.Printf("ERRRO :%+v", err)
 		return nil
@@ -70,13 +69,10 @@ func (h handlers) getProducts(c *fiber.Ctx) error {
 
 	navBarViewModel.Align(cartCount)
 
-	//FIXME -- get max products count to display (paginated)
-	maxPagesBoundary := 10
-
 	values, _ := query.Values(filterViewModel)
 	encodedFilter := values.Encode()
 
-	productsListViewModel.Align(products, filterViewModel, navBarViewModel, page, maxPagesBoundary, encodedFilter)
+	productsListViewModel.Align(products, filterViewModel, navBarViewModel, page, maxProductCount/limit, encodedFilter)
 
 	productListUrl := fmt.Sprintf("/products/%d?%s", page, encodedFilter)
 	isAlreadyOnProductList := strings.HasSuffix(c.Get("Hx-Current-Url"), productListUrl)

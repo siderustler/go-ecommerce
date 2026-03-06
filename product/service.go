@@ -8,7 +8,7 @@ type repository interface {
 		offset int,
 		limit int,
 		filter Filter,
-	) ([]Product, error)
+	) (products []Product, allProductsCount int, err error)
 	ProductsByIDs(
 		ctx context.Context,
 		ids []string,

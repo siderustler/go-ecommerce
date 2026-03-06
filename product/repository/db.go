@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"math/rand"
 	"strconv"
 	"strings"
 
@@ -18,21 +19,12 @@ type repository struct {
 // FIXME
 func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
 	_, err := db.ExecContext(ctx,
-		`CREATE TABLE IF NOT EXISTS product_categories (
-			id SERIAL PRIMARY KEY,
-			name TEXT NOT NULL
-		)`,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("creating product_categories table: %w", err)
-	}
-	_, err = db.ExecContext(ctx,
 		`CREATE TABLE IF NOT EXISTS products (
 			id UUID PRIMARY KEY,
 			name TEXT NOT NULL,
 			main_image TEXT NOT NULL,
 			price INT NOT NULL,
-			category_id INT NOT NULL REFERENCES product_categories(id),
+			category TEXT CHECK(category IN ('MACHINES', 'GARDENING','ELECTRO', 'PARTS', 'ELECTROMACHINES')),
 			price_before INT DEFAULT 0
 		)`,
 	)
@@ -60,68 +52,84 @@ func NewRepository(ctx context.Context, db *sql.DB) (*repository, error) {
 	if err != nil {
 		return nil, fmt.Errorf("creating product_details table: %w", err)
 	}
-	_, err = db.ExecContext(ctx,
-		`INSERT INTO product_categories (name) VALUES ('GARDENING'), ('MACHINES')`,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("INSERT product_categories table: %w", err)
+	for i := 0; i < 100; i++ {
+		productUUID := uuid.NewString()
+		_, err = db.ExecContext(ctx,
+			`INSERT INTO products (id, name, main_image, price, category, price_before) VALUES ($1, $2, $3,$4,$5,$6)`,
+			productUUID, productUUID, "/public/products/essa/1.webp", rand.New(rand.NewSource(1)).Intn(100), "MACHINES", 0,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("INSERT products table: %w", err)
+		}
+		_, err = db.ExecContext(ctx,
+			`INSERT INTO product_images (id, image_url) VALUES ($1,$2), ($3,$4)`,
+			productUUID, "/public/products/essa/2.webp",
+			productUUID, "/public/products/essa/3.webp",
+		)
+		if err != nil {
+			return nil, fmt.Errorf("INSERT product_images table: %w", err)
+		}
+		_, err = db.ExecContext(ctx,
+			`INSERT INTO product_details (product_id, product_info, technical_parameters) VALUES ($1,$2,$3)`,
+			productUUID, "SOME SOME SOME SOME SOME", "TEHCNICAL TECHNICLA TEHCNIALCA",
+		)
+		if err != nil {
+			return nil, fmt.Errorf("INSERT product_details table: %w", err)
+		}
 	}
-	productUUID := uuid.NewString()
-	_, err = db.ExecContext(ctx,
-		`INSERT INTO products (id, name, main_image, price, category_id, price_before) VALUES ($1, $2, $3,$4,$5,$6)`,
-		productUUID, "DLUGIE NAME BARDZO DLUGIE OJOJO JOJ ", "/public/products/essa/1.webp", 1900, 1, 0,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("INSERT products table: %w", err)
-	}
-	_, err = db.ExecContext(ctx,
-		`INSERT INTO product_images (id, image_url) VALUES ($1,$2), ($3,$4)`,
-		productUUID, "/public/products/essa/2.webp",
-		productUUID, "/public/products/essa/3.webp",
-	)
-	if err != nil {
-		return nil, fmt.Errorf("INSERT product_images table: %w", err)
-	}
-	_, err = db.ExecContext(ctx,
-		`INSERT INTO product_details (product_id, product_info, technical_parameters) VALUES ($1,$2,$3)`,
-		productUUID, "SOME SOME SOME SOME SOME", "TEHCNICAL TECHNICLA TEHCNIALCA",
-	)
+
 	if err != nil {
 		return nil, fmt.Errorf("INSERT product_details table: %w", err)
 	}
 	return &repository{db: db}, nil
 }
 
-func mapDomainFilterToSQLQueryFilter(filter product.Filter, limit, offset int) (clause string, args []any) {
+func mapDomainFilterToSQLQueryFilter(filter product.Filter) (clause string, args []any) {
 	var where []string
 	if filter.IncludeElectro {
-		args = append(args, "1")
+		args = append(args, "ELECTRO")
 	}
 	if filter.IncludeElectroMachines {
-		args = append(args, "2")
+		args = append(args, "ELECTROMACHINES")
 	}
 	if filter.IncludeGardening {
-		args = append(args, "3")
+		args = append(args, "GARDENING")
 	}
 	if filter.IncludeMachines {
-		args = append(args, "4")
+		args = append(args, "MACHINES")
 	}
 	if filter.IncludeParts {
-		args = append(args, "5")
+		args = append(args, "PARTS")
 	}
-	placeholders := make([]string, 0, len(args))
 	if len(args) > 0 {
+		placeholders := make([]string, 0, len(args))
 		for i := 1; i < len(args)+1; i++ {
 			placeholders = append(placeholders, "$"+strconv.Itoa(i))
 		}
-		where = append(where, fmt.Sprintf(`category_id IN (%s)`, strings.Join(placeholders, ",")))
+		where = append(where, fmt.Sprintf(`category IN (%s)`, strings.Join(placeholders, ",")))
 	}
 	if filter.Search != "" {
-		placeholder := "$" + strconv.Itoa(len(placeholders)+1)
-		placeholders = append(placeholders, placeholder)
+		placeholder := "$" + strconv.Itoa(len(args)+1)
 		where = append(where, "name ILIKE "+placeholder)
 		args = append(args, "%"+filter.Search+"%")
 	}
+	if filter.PriceFrom != 0 {
+		where = append(where, "price >= "+strconv.Itoa(filter.PriceFrom))
+	}
+	if filter.PriceTo != 0 {
+		where = append(where, "price <= "+strconv.Itoa(filter.PriceTo))
+	}
+
+	shouldIncludeWhere := len(where) > 0
+	if shouldIncludeWhere {
+		clause = " WHERE " + strings.Join(where, " AND ")
+	}
+	return clause, args
+}
+
+func (r repository) Products(ctx context.Context, offset int, limit int, filter product.Filter) ([]product.Product, int, error) {
+	filterClause, args := mapDomainFilterToSQLQueryFilter(filter)
+	args = append(args, limit, offset)
 	var sort string
 	if filter.Sort != "" {
 		switch filter.Sort {
@@ -135,40 +143,33 @@ func mapDomainFilterToSQLQueryFilter(filter product.Filter, limit, offset int) (
 			sort = " ORDER BY name ASC"
 		}
 	}
-	if filter.PriceFrom != 0 {
-		where = append(where, "price >= "+strconv.Itoa(filter.PriceFrom))
-	}
-	if filter.PriceTo != 0 {
-		where = append(where, "price <= "+strconv.Itoa(filter.PriceTo))
-	}
-
-	shouldIncludeWhere := len(where) > 0
-	if shouldIncludeWhere {
-		clause = " WHERE " + strings.Join(where, " AND ")
-	}
-	clause += sort
-	clause += " LIMIT $" + strconv.Itoa(len(placeholders)+1) + " OFFSET $" + strconv.Itoa(len(placeholders)+2)
-	args = append(args, limit, offset)
-	return clause, args
-}
-
-func (r repository) Products(ctx context.Context, offset int, limit int, filter product.Filter) ([]product.Product, error) {
-	filterClause, args := mapDomainFilterToSQLQueryFilter(filter, limit, offset)
-	rows, err := r.db.QueryContext(ctx, "SELECT id, name, main_image, price, price_before,category_id FROM products"+filterClause, args...)
+	stmt := `SELECT id, 
+		name, 
+		main_image, 
+		price, 
+		price_before, 
+		category
+		FROM products` + filterClause + sort + " LIMIT $" + strconv.Itoa(len(args)-1) + " OFFSET $" + strconv.Itoa(len(args))
+	rows, err := r.db.QueryContext(ctx, stmt, args...)
 	if err != nil {
-		return nil, fmt.Errorf("retrieving products: %w", err)
+		return nil, 0, fmt.Errorf("retrieving products: %w", err)
 	}
 	var products []product.Product
 	for rows.Next() {
 		var product product.Product
-		var xd string
-		err := rows.Scan(&product.ID, &product.Name, &product.Image, &product.Price, &product.PriceBefore, &xd)
+		err := rows.Scan(&product.ID, &product.Name, &product.Image, &product.Price, &product.PriceBefore, &product.Category)
 		if err != nil {
-			return nil, fmt.Errorf("scannig product: %w", err)
+			return nil, 0, fmt.Errorf("scannig product: %w", err)
 		}
 		products = append(products, product)
 	}
-	return products, nil
+	var allFilteredProductsCount int
+	row := r.db.QueryRowContext(ctx, "SELECT COUNT(id) FROM products"+filterClause, args[:len(args)-2]...)
+	err = row.Scan(&allFilteredProductsCount)
+	if err != nil {
+		return nil, 0, fmt.Errorf("scanning product count: %w", err)
+	}
+	return products, allFilteredProductsCount, nil
 }
 
 func (r repository) ProductsByIDs(ctx context.Context, ids []string) (map[string]product.Product, error) {

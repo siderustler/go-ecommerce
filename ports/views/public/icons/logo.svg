@@ -1,3 +1,126 @@
-<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path fill-rule="evenodd" clip-rule="evenodd" d="M5 1C3.93913 1 2.92172 1.42143 2.17157 2.17157C1.42143 2.92172 1 3.93913 1 5V19C1 20.0609 1.42143 21.0783 2.17157 21.8284C2.92172 22.5786 3.93913 23 5 23H19C20.0609 23 21.0783 22.5786 21.8284 21.8284C22.5786 21.0783 23 20.0609 23 19V5C23 3.93913 22.5786 2.92172 21.8284 2.17157C21.0783 1.42143 20.0609 1 19 1H5ZM5.962 9.455H4L5.455 10.182L6.545 14.546H8L9.818 9.455H8.364L7.273 12.727L6.672 10.024C6.63574 9.8626 6.54575 9.7183 6.41675 9.61475C6.28776 9.51119 6.12742 9.45551 5.962 9.455ZM11.636 9.455H10.546L9.818 14.545H10.909L11.636 9.455ZM15.605 9.666C15.362 9.546 14.766 9.455 14.184 9.455C13.456 9.455 12.309 9.897 12.309 10.989C12.309 11.853 12.917 12.169 13.421 12.433C13.78 12.62 14.086 12.78 14.086 13.09C14.086 13.297 13.732 13.539 13.253 13.539C12.773 13.539 12.174 13.372 11.957 13.297L11.787 14.334C12.029 14.455 12.74 14.546 13.322 14.546C14.05 14.546 15.434 14.086 15.434 12.995C15.434 12.053 14.704 11.665 14.169 11.382C13.862 11.219 13.619 11.09 13.619 10.91C13.619 10.78 13.756 10.478 14.235 10.478C14.714 10.478 15.213 10.583 15.434 10.703L15.605 9.666ZM16.727 14.546H15.273L17.454 9.455H18.909L20 14.545H18.804L18.642 13.818H16.976L16.727 14.546ZM17.332 12.726H18.408L18.012 10.888L17.332 12.726Z" fill="black"/>
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 27.5.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 6000 6000" style="enable-background:new 0 0 6000 6000;" xml:space="preserve">
+<rect style="fill-rule:evenodd;clip-rule:evenodd;fill:#FFFFFF;" width="6000" height="6000"/>
+<path style="fill-rule:evenodd;clip-rule:evenodd;fill:#35383B;" d="M2739.162,2632.168h-637.163
+	c-0.516,12.5-0.776,25.066-0.776,37.693c0,12.628,0.26,25.193,0.776,37.693h637.163c-18.38,121.571-124.154,215.733-250.591,215.733
+	h-158.376h-192.748c7.515,25.622,16.143,50.768,25.824,75.385h325.301c168.103,0,307.769-127.854,326.62-291.118h147.117v147.117
+	c-163.265,18.85-291.118,158.517-291.118,326.62v325.302c24.617,9.681,49.764,18.307,75.385,25.823v-192.748v-158.376
+	c0-126.437,94.162-232.211,215.733-250.591v637.163c12.5,0.516,25.065,0.776,37.692,0.776s25.193-0.26,37.693-0.776v-637.163
+	c121.568,18.382,215.732,124.155,215.732,250.591v158.376v192.748c25.622-7.515,50.768-16.142,75.385-25.823v-325.302
+	c0-168.103-127.854-307.768-291.117-326.62v-147.117h147.117c18.85,163.265,158.517,291.118,326.619,291.118h325.301
+	c9.681-24.617,18.307-49.763,25.824-75.385h-192.748H3511.43c-126.437,0-232.211-94.162-250.591-215.733h637.163
+	c0.516-12.5,0.776-25.065,0.776-37.693c0-12.627-0.26-25.193-0.776-37.693h-637.163c18.381-121.568,124.155-215.731,250.591-215.731
+	h158.376h192.748c-7.517-25.622-16.143-50.769-25.824-75.385H3511.43c-168.103,0-307.768,127.853-326.619,291.116h-147.117v-147.115
+	c163.264-18.853,291.117-158.518,291.117-326.621v-325.3c-24.617-9.682-49.763-18.307-75.385-25.823v192.748v158.376
+	c0,126.436-94.164,232.209-215.732,250.591V1771.86c-12.5-0.516-25.065-0.776-37.693-0.776s-25.193,0.26-37.692,0.776v637.163
+	c-121.571-18.381-215.733-124.154-215.733-250.591v-158.376v-192.748c-25.622,7.516-50.769,16.142-75.385,25.823v325.3
+	c0,168.103,127.853,307.77,291.118,326.621v147.115h-147.117c-18.851-163.264-158.517-291.116-326.62-291.116h-325.301
+	c-9.681,24.616-18.308,49.763-25.824,75.385h192.748h158.376C2615.007,2416.437,2720.781,2510.6,2739.162,2632.168"/>
+<g>
+	<g>
+		<text transform="matrix(1 0 0 1 1796.1475 4021.2598)" style="fill:#35383B; font-family:'Nexa-Heavy'; font-size:326.0542px;">L</text>
+	</g>
+</g>
+<g>
+	<g>
+		<text transform="matrix(1 0 0 1 1998.9736 4021.2598)" style="fill:#35383B; font-family:'Nexa-Heavy'; font-size:326.0542px;">O</text>
+	</g>
+</g>
+<g>
+	<g>
+		<text transform="matrix(1 0 0 1 2276.1396 4021.2598)" style="fill:#35383B; font-family:'Nexa-Heavy'; font-size:326.0542px;">R</text>
+	</g>
+</g>
+<g>
+	<g>
+		<text transform="matrix(1 0 0 1 2520.0518 4021.2598)" style="fill:#35383B; font-family:'Nexa-Heavy'; font-size:326.0542px;">E</text>
+	</g>
+</g>
+<g>
+	<g>
+		<text transform="matrix(1 0 0 1 2745.0508 4021.2598)" style="fill:#35383B; font-family:'Nexa-Heavy'; font-size:326.0542px;">M </text>
+	</g>
+</g>
+<g>
+	<g>
+		
+			<text transform="matrix(1 0 0 1 3130.5322 4021.2598)" style="fill:#35383B; font-family:'Nexa-ExtraLight'; font-size:326.0542px;">I</text>
+	</g>
+</g>
+<g>
+	<g>
+		
+			<text transform="matrix(1 0 0 1 3219.6953 4021.2598)" style="fill:#35383B; font-family:'Nexa-ExtraLight'; font-size:326.0542px;">P</text>
+	</g>
+</g>
+<g>
+	<g>
+		
+			<text transform="matrix(1 0 0 1 3446.4492 4021.2598)" style="fill:#35383B; font-family:'Nexa-ExtraLight'; font-size:326.0542px;">S</text>
+	</g>
+</g>
+<g>
+	<g>
+		
+			<text transform="matrix(1 0 0 1 3668.9717 4021.2598)" style="fill:#35383B; font-family:'Nexa-ExtraLight'; font-size:326.0542px;">U</text>
+	</g>
+</g>
+<g>
+	<g>
+		
+			<text transform="matrix(1 0 0 1 3916.5967 4021.2598)" style="fill:#35383B; font-family:'Nexa-ExtraLight'; font-size:326.0542px;">M</text>
+	</g>
+</g>
+<g>
+	<g>
+		<text transform="matrix(1 0 0 1 2208.042 4226.3691)" style="fill:#35383B; font-family:'Nexa-Heavy'; font-size:149.65px;">S</text>
+	</g>
+</g>
+<g>
+	<g>
+		<text transform="matrix(1 0 0 1 2362.7842 4226.3691)" style="fill:#35383B; font-family:'Nexa-Heavy'; font-size:149.65px;">L</text>
+	</g>
+</g>
+<g>
+	<g>
+		<text transform="matrix(1 0 0 1 2508.3975 4226.3691)" style="fill:#35383B; font-family:'Nexa-Heavy'; font-size:149.65px;">O</text>
+	</g>
+</g>
+<g>
+	<g>
+		<text transform="matrix(1 0 0 1 2688.1318 4226.3691)" style="fill:#35383B; font-family:'Nexa-Heavy'; font-size:149.65px;">G</text>
+	</g>
+</g>
+<g>
+	<g>
+		<text transform="matrix(1 0 0 1 2855.1436 4226.3691)" style="fill:#35383B; font-family:'Nexa-Heavy'; font-size:149.65px;">A</text>
+	</g>
+</g>
+<g>
+	<g>
+		<text transform="matrix(1 0 0 1 3029.0381 4226.3691)" style="fill:#35383B; font-family:'Nexa-Heavy'; font-size:149.65px;">N</text>
+	</g>
+</g>
+<g>
+	<g>
+		<text transform="matrix(1 0 0 1 3201.4395 4226.3691)" style="fill:#35383B; font-family:'Nexa-Heavy'; font-size:149.65px;">H</text>
+	</g>
+</g>
+<g>
+	<g>
+		<text transform="matrix(1 0 0 1 3373.835 4226.3691)" style="fill:#35383B; font-family:'Nexa-Heavy'; font-size:149.65px;">E</text>
+	</g>
+</g>
+<g>
+	<g>
+		<text transform="matrix(1 0 0 1 3529.623 4226.3691)" style="fill:#35383B; font-family:'Nexa-Heavy'; font-size:149.65px;">R</text>
+	</g>
+</g>
+<g>
+	<g>
+		<text transform="matrix(1 0 0 1 3694.0938 4226.3691)" style="fill:#35383B; font-family:'Nexa-Heavy'; font-size:149.65px;">E</text>
+	</g>
+</g>
 </svg>
