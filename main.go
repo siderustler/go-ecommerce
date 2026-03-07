@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"encoding/gob"
 	"fmt"
 	"log"
 	"os"
@@ -25,7 +24,6 @@ func main() {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
-	gob.Register(map[string]interface{}{})
 	stripe.Key = os.Getenv("STRIPE_SERVER_KEY")
 
 	db, err := sql.Open("pgx", os.Getenv("DATABASE_URI"))

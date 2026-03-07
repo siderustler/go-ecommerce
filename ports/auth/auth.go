@@ -2,52 +2,20 @@ package auth
 
 import (
 	"context"
-	"encoding/gob"
 	"errors"
 	"os"
-	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
-	"github.com/gofiber/fiber/v2/middleware/session"
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/session"
 	"golang.org/x/oauth2"
 )
 
-type Profile struct {
-	Name string `json:"name"`
-}
-
-func init() {
-	gob.Register(Profile{})
-}
-
-type userIDContextType struct{}
-type sessionToContext struct{}
-
-var userIDContext = userIDContextType{}
-var sessionContext = sessionToContext{}
-
-func UserIDToContext(ctx context.Context, userID string) context.Context {
-	return context.WithValue(ctx, userIDContext, userID)
-}
-
-func SessionToContext(ctx context.Context, session *session.Session) context.Context {
-	return context.WithValue(ctx, sessionContext, session)
-}
-
-// panics when session not in context
-func SessionFromContext(ctx context.Context) *session.Session {
-	session, ok := ctx.Value(sessionContext).(*session.Session)
+func UserIDFromSession(c fiber.Ctx) string {
+	sess := session.FromContext(c)
+	retrievedClaims, ok := sess.Get("user_id").(string)
 	if !ok {
-		panic("unable to retrieve session from context")
-	}
-	return session
-}
-
-// panics when userID not in context
-func UserIDFromContext(ctx context.Context) string {
-	retrievedClaims, ok := ctx.Value(userIDContext).(string)
-	if !ok {
-		panic("unable to retrieve userID from context")
+		return ""
 	}
 
 	return retrievedClaims
@@ -103,17 +71,4 @@ func (a *Authenticator) AuthCodeURL(state string, opts ...oauth2.AuthCodeOption)
 
 func (a *Authenticator) Exchange(ctx context.Context, code string, opts ...oauth2.AuthCodeOption) (*oauth2.Token, error) {
 	return a.oauth.Exchange(ctx, code, opts...)
-}
-
-const TokenExpiryTime = 3 * 24 * time.Hour
-
-func VerifySession(session *session.Session) (isExpired bool, err error) {
-	expiry, ok := session.Get("expiry").(int64)
-	if !ok {
-		return false, errors.New("expiry field not set")
-	}
-	now := time.Now().Add(24 * time.Hour).Unix()
-	isExpired = now > expiry
-
-	return isExpired, nil
 }

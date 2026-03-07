@@ -64,6 +64,29 @@ func (r repository) CustomerByID(ctx context.Context, userID string) (customer.C
 	return cust, nil
 }
 
+func (r repository) CustomerOrCreate(ctx context.Context, userID string) (customer.Customer, error) {
+	existingCustomer, err := r.CustomerByID(ctx, userID)
+	if err != nil {
+		return customer.Customer{}, fmt.Errorf("retrieving customer by id: %w", err)
+	}
+	if !existingCustomer.IsZero() {
+		return existingCustomer, nil
+	}
+
+	newCustomer := customer.NewCustomer(
+		userID,
+		customer.Credentials{},
+		customer.Billing{},
+		customer.ShippingAddress{},
+	)
+	err = r.CreateCustomer(ctx, newCustomer)
+	if err != nil {
+		return customer.Customer{}, fmt.Errorf("creating customer: %w", err)
+	}
+
+	return newCustomer, nil
+}
+
 func (r repository) CreateCustomer(ctx context.Context, customer customer.Customer) error {
 	return RunInTx(ctx, r.db, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
 		if !customer.Billing.IsZero() {

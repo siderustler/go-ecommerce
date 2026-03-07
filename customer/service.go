@@ -6,6 +6,7 @@ import (
 
 type repository interface {
 	CustomerByID(ctx context.Context, userID string) (Customer, error)
+	CustomerOrCreate(ctx context.Context, userID string) (Customer, error)
 	UpdateShippingAddress(ctx context.Context, userID string, shipping ShippingAddress) error
 	CreateCustomer(ctx context.Context, customer Customer) error
 }

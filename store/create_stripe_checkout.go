@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"time"
 
 	"github.com/siderustler/go-ecommerce/product"
 	store_domain "github.com/siderustler/go-ecommerce/store/domain"
@@ -15,12 +16,14 @@ func (s Services) CreateStripeCheckout(
 	cartProducts map[string]store_domain.CartProduct,
 	products map[string]product.Product,
 ) (sess *stripe.CheckoutSession, err error) {
+	expires := int64((time.Hour * 2).Seconds())
 	sessionParams := &stripe.CheckoutSessionParams{
 		Mode:              stripe.String(string(stripe.CheckoutSessionModePayment)),
 		UIMode:            stripe.String("embedded"),
 		ReturnURL:         stripe.String("http://localhost:8080/basket/checkout/finalize?session_id={CHECKOUT_SESSION_ID}"),
 		LineItems:         mapCartProductsToStripeLineItems(cartProducts, products),
 		ClientReferenceID: stripe.String(checkoutID),
+		ExpiresAt:         &expires,
 	}
 	sess, err = session.New(sessionParams)
 	if err != nil {

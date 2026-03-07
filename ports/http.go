@@ -6,9 +6,11 @@ import (
 	"os"
 	"time"
 
+	"github.com/gofiber/fiber/v3/middleware/static"
+
 	"github.com/a-h/templ"
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/session"
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/session"
 	"github.com/gofiber/storage/postgres/v3"
 	"github.com/siderustler/go-ecommerce/customer"
 	"github.com/siderustler/go-ecommerce/ports/auth"
@@ -39,46 +41,46 @@ func NewHttpServer(
 		},
 	}
 	sessionStore := session.New(session.Config{
-		Expiration: time.Hour * 24 * 3,
+		IdleTimeout: time.Hour * 24 * 3,
 		Storage: postgres.New(postgres.Config{
 			ConnectionURI: os.Getenv("DATABASE_URI"),
 		}),
+		CookieSameSite: "Lax",
 		CookieHTTPOnly: true,
 		//FIXME
 		//CookieSecure: true,
 	})
-
-	m := &middleware{r: customerServices, sessionStore: sessionStore, authenticator: authenticator}
 	h.srv.Use("/public", ignoreCacheStaticFilesInDev)
-	h.srv.Get("/oauth/login", oauthLoginHandler(authenticator, sessionStore))
-	h.srv.Get("/oauth/callback", h.handlers.oauthCallbackHandler(authenticator, sessionStore))
-	h.srv.Get("/oauth/logout", oauthLogoutHandler(sessionStore))
-	anonymoUserAuth := h.srv.Group("/", m.auth)
-	authorizedSession := h.srv.Group("/account", m.auth, m.authSessionVerifier)
-	authorizedSession.Get("/", h.handlers.accountHandler)
-	authorizedSession.Get("/customer/billing", h.handlers.getBillingInfo)
-	authorizedSession.Get("/customer/shipping", h.handlers.getShippingInfo)
-	anonymoUserAuth.Get("/products", h.handlers.getProductsRedirect)
-	anonymoUserAuth.Get("/products/:page", h.handlers.getProducts)
-	anonymoUserAuth.Get("/products/details/:productID", h.handlers.getProductDetails)
-	anonymoUserAuth.Get("/filter/products", h.handlers.getFilterProducts)
-	anonymoUserAuth.Get("/", h.handlers.getDashboard)
-	anonymoUserAuth.Get("/basket", h.handlers.getBasket)
-	anonymoUserAuth.Get("/basket/customer/billing", h.handlers.getBasketBillingInfo)
-	anonymoUserAuth.Get("/basket/customer/shipping", h.handlers.getBasketShippingInfo)
-	anonymoUserAuth.Get("/basket/checkout", h.handlers.getCheckoutStart)
-	anonymoUserAuth.Get("/basket/checkout/finalize", h.handlers.getCheckoutFinalized)
 
-	authorizedSession.Post("/customer/shipping", h.handlers.postShippingInfo)
-	authorizedSession.Post("/customer/billing", h.handlers.postBillingInfo)
-	anonymoUserAuth.Post("/basket/update", h.handlers.updateBasket)
-	anonymoUserAuth.Post("/basket/add", h.handlers.addItemToBasket)
-	anonymoUserAuth.Post("/basket/customer/billing", h.handlers.postBasketBillingInfo)
-	anonymoUserAuth.Post("/basket/customer/shipping", h.handlers.postBasketShippingInfo)
-	anonymoUserAuth.Post("/api/checkout", h.handlers.createCheckout)
+	auth := h.srv.Group("/", sessionStore)
+	auth.Get("/oauth/logout", oauthLogoutHandler)
+	auth.Get("/oauth/login", oauthLoginHandler(authenticator))
+	auth.Get("/oauth/callback", h.handlers.oauthCallbackHandler(authenticator))
+	account := h.srv.Group("/account", sessionStore, isAuthorized)
+	account.Get("/", h.handlers.accountHandler)
+	account.Get("/customer/billing", h.handlers.getBillingInfo)
+	account.Get("/customer/shipping", h.handlers.getShippingInfo)
+	auth.Get("/products", h.handlers.getProductsRedirect)
+	auth.Get("/products/:page", h.handlers.getProducts)
+	auth.Get("/products/details/:productID", h.handlers.getProductDetails)
+	auth.Get("/filter/products", h.handlers.getFilterProducts)
+	auth.Get("/", h.handlers.getDashboard)
+	auth.Get("/basket", h.handlers.getBasket)
+	auth.Get("/basket/customer/billing", h.handlers.getBasketBillingInfo)
+	auth.Get("/basket/customer/shipping", h.handlers.getBasketShippingInfo)
+	auth.Get("/basket/checkout", h.handlers.getCheckoutStart)
+	auth.Get("/basket/checkout/finalize", h.handlers.getCheckoutFinalized)
+
+	account.Post("/customer/shipping", h.handlers.postShippingInfo)
+	account.Post("/customer/billing", h.handlers.postBillingInfo)
+	auth.Post("/basket/update", h.handlers.updateBasket)
+	auth.Post("/basket/add", h.handlers.addItemToBasket)
+	auth.Post("/basket/customer/billing", h.handlers.postBasketBillingInfo)
+	auth.Post("/basket/customer/shipping", h.handlers.postBasketShippingInfo)
+	auth.Post("/api/checkout", h.handlers.createCheckout)
 	h.srv.Post("/api/stripe/wh", h.handlers.checkoutStripeWebhook)
 
-	h.srv.Static("/public", "./ports/views/public")
+	h.srv.Get("/public*", static.New("./ports/views/public"))
 	return h
 }
 
@@ -86,22 +88,24 @@ func (h *httpServer) Run(ctx context.Context, addr string) error {
 	return h.srv.Listen(addr)
 }
 
-func renderFragmentOrView(c *fiber.Ctx, component templ.Component, fragments ...any) error {
+func renderFragmentOrView(c fiber.Ctx, component templ.Component, fragments ...any) error {
 	c.Set("Content-Type", "text/html")
 	if len(fragments) > 0 && isHTMXRequest(c) {
-		return templ.RenderFragments(c.Context(), c.Response().BodyWriter(), component, fragments...)
+		return templ.RenderFragments(c.RequestCtx(), c.Response().BodyWriter(), component, fragments...)
 	}
-	return component.Render(c.Context(), c.Response().BodyWriter())
+	return component.Render(c.RequestCtx(), c.Response().BodyWriter())
 }
 
-func renderFragmentOrRedirect(c *fiber.Ctx, component templ.Component, redirect string, fragments ...any) error {
+func renderFragmentOrRedirect(c fiber.Ctx, component templ.Component, redirect string, fragments ...any) error {
 	c.Set("Content-Type", "text/html")
 	if len(fragments) > 0 && isHTMXRequest(c) {
-		return templ.RenderFragments(c.Context(), c.Response().BodyWriter(), component, fragments...)
+		return templ.RenderFragments(c.RequestCtx(), c.Response().BodyWriter(), component, fragments...)
 	}
-	return c.Redirect(redirect)
+	return c.Redirect().To(redirect)
 }
-func isHTMXRequest(c *fiber.Ctx) bool {
+func isHTMXRequest(c fiber.Ctx) bool {
 	_, ok := c.GetReqHeaders()["Hx-Request"]
 	return ok
 }
+
+// fiber:context-methods migrated
