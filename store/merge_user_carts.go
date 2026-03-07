@@ -10,7 +10,7 @@ import (
 
 func (s Services) MergeUserCarts(ctx context.Context, fromID string, toID string) error {
 	mergeFn := func(
-		fromCart store_domain.Cart, toCart *store_domain.Cart,
+		fromCart *store_domain.Cart, toCart *store_domain.Cart,
 		fromCheckout *store_domain.Checkout, toCheckout *store_domain.Checkout,
 		stock *store_domain.Stock,
 	) error {
@@ -18,21 +18,33 @@ func (s Services) MergeUserCarts(ctx context.Context, fromID string, toID string
 			return nil
 		}
 		if toCart.IsZero() {
-			toCart.ID = uuid.NewString()
-			toCart.CustomerID = toID
-			toCart.Status = store_domain.CartActive
+			*toCart = store_domain.NewCart(
+				uuid.NewString(),
+				toID,
+				make(map[string]store_domain.CartProduct),
+				"",
+				store_domain.CartActive,
+			)
 		}
-		err := toCart.MergeCart(fromCart)
+		err := toCart.MergeCart(*fromCart)
 		if err != nil {
 			return fmt.Errorf("merging carts: %w", err)
 		}
-		err = fromCheckout.Invalidate()
+		err = fromCart.Inactivate()
 		if err != nil {
-			return fmt.Errorf("invalidating from checkout: %w", err)
+			return fmt.Errorf("inactivating from cart: %w", err)
 		}
-		err = toCheckout.Invalidate()
-		if err != nil {
-			return fmt.Errorf("invalidating to checkout: %w", err)
+		if !fromCheckout.IsZero() {
+			err = fromCheckout.Invalidate()
+			if err != nil {
+				return fmt.Errorf("invalidating from checkout: %w", err)
+			}
+		}
+		if !toCheckout.IsZero() {
+			err = toCheckout.Invalidate()
+			if err != nil {
+				return fmt.Errorf("invalidating to checkout: %w", err)
+			}
 		}
 		for productID, item := range stock.Items {
 			fromCheckoutItem, ok := fromCheckout.Items[productID]

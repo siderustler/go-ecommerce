@@ -22,17 +22,9 @@ func (s Services) CreateOrder(ctx context.Context, checkoutID, orderTime string)
 				if !ok {
 					continue
 				}
-				switch checkout.Status {
-				case store_domain.CheckoutInvalidated:
-					err = stockItem.DecreaseAvailableAmount(checkoutItem.Count)
-					if err != nil {
-						return store_domain.Order{}, fmt.Errorf("decreasing available amount: %w", err)
-					}
-				case store_domain.CheckoutPending:
-					err = stockItem.RemoveItem(checkoutItem.Count)
-					if err != nil {
-						return store_domain.Order{}, fmt.Errorf("removing item from stock: %w", err)
-					}
+				err = stockItem.RemoveItem(checkoutItem.Count)
+				if err != nil {
+					return store_domain.Order{}, fmt.Errorf("removing item from stock: %w", err)
 				}
 
 				stock.Items[itemID] = stockItem

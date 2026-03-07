@@ -7,7 +7,7 @@ import (
 	store_domain "github.com/siderustler/go-ecommerce/store/domain"
 )
 
-func (s Services) InvalidateExpiredCheckout(ctx context.Context, checkoutID string) error {
+func (s Services) InvalidateCheckout(ctx context.Context, checkoutID string) error {
 	return s.repository.UpdateCheckout(
 		ctx,
 		checkoutID,
@@ -25,6 +25,7 @@ func (s Services) InvalidateExpiredCheckout(ctx context.Context, checkoutID stri
 				if err != nil {
 					return fmt.Errorf("removing item from stock: %w", err)
 				}
+				stock.Items[productID] = stockItem
 			}
 			return nil
 		},

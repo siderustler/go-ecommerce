@@ -748,7 +748,7 @@ func (h handlers) checkoutStripeWebhook(c *fiber.Ctx) error {
 
 			return c.Status(http.StatusInternalServerError).JSON(errStruct{Err: fmt.Sprintf("unmarshalling checkout session: %v", err)})
 		}
-		err := h.storeServices.InvalidateExpiredCheckout(c.Context(), session.ClientReferenceID)
+		err := h.storeServices.InvalidateCheckout(c.Context(), session.ClientReferenceID)
 		if err != nil {
 			fmt.Printf("INVALIDATING EXPIRED CHECKOUT: %v", err)
 			return c.Status(http.StatusInternalServerError).JSON(errStruct{Err: fmt.Sprintf("invalidating checkout: %v", err)})

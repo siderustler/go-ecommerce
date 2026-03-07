@@ -9,21 +9,26 @@ import (
 	store_domain "github.com/siderustler/go-ecommerce/store/domain"
 )
 
-func (s Services) AddProductToCart(ctx context.Context, userID string, cartProduct store_domain.CartProduct) error {
+func (s Services) AddProductToCart(ctx context.Context, userID string, productToAdd store_domain.CartProduct) error {
 	return s.repository.UpsertCart(
 		ctx,
 		userID,
-		cartProduct,
-		func(cart *store_domain.Cart, checkout *store_domain.Checkout, stock *store_domain.Stock, stockItem store_domain.StockItem) error {
-			if !stockItem.IsAvailable() {
+		productToAdd,
+		func(cart *store_domain.Cart, checkout *store_domain.Checkout, checkoutStock *store_domain.Stock, requestedProductStock store_domain.StockItem) error {
+			if !requestedProductStock.IsAvailable() {
 				return errors.New("item is not available in stock")
 			}
 			if cart.IsZero() {
-				cart.ID = uuid.NewString()
-				cart.CustomerID = userID
-				cart.Status = store_domain.CartActive
+				newCart := store_domain.NewCart(
+					uuid.NewString(),
+					userID,
+					make(map[string]store_domain.CartProduct),
+					"",
+					store_domain.CartActive,
+				)
+				*cart = newCart
 			}
-			err := cart.AddProduct(cartProduct)
+			err := cart.AddProduct(productToAdd)
 			if err != nil {
 				return fmt.Errorf("adding product to cart: %w", err)
 			}
@@ -35,7 +40,7 @@ func (s Services) AddProductToCart(ctx context.Context, userID string, cartProdu
 				return fmt.Errorf("invalidating existing checkout: %w", err)
 			}
 			for productID, cartItem := range checkout.Items {
-				stockItem, exists := stock.Items[productID]
+				stockItem, exists := checkoutStock.Items[productID]
 				if !exists {
 					continue
 				}
@@ -43,7 +48,7 @@ func (s Services) AddProductToCart(ctx context.Context, userID string, cartProdu
 				if err != nil {
 					return fmt.Errorf("releasing item reservation: %w", err)
 				}
-				stock.Items[productID] = stockItem
+				checkoutStock.Items[productID] = stockItem
 			}
 			return nil
 		})

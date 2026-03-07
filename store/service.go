@@ -39,7 +39,7 @@ type Repository interface {
 		fromUserID string,
 		toUserID string,
 		mergeFn func(
-			fromCart store_domain.Cart,
+			fromCart *store_domain.Cart,
 			toCart *store_domain.Cart,
 			fromCheckout *store_domain.Checkout,
 			toCheckout *store_domain.Checkout,

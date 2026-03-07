@@ -134,7 +134,7 @@ func (r repository) MergeUserCarts(
 	fromUserID string,
 	toUserID string,
 	mergeFn func(
-		fromCart store_domain.Cart,
+		fromCart *store_domain.Cart,
 		toCart *store_domain.Cart,
 		fromCheckout *store_domain.Checkout,
 		toCheckout *store_domain.Checkout,
@@ -168,7 +168,7 @@ func (r repository) MergeUserCarts(
 		if err != nil && err != sql.ErrNoRows {
 			return fmt.Errorf("retrieving stock for update: %w", err)
 		}
-		err = mergeFn(fromCart, &toCart, &fromCheckout, &toCheckout, &stock)
+		err = mergeFn(&fromCart, &toCart, &fromCheckout, &toCheckout, &stock)
 		if err != nil {
 			return fmt.Errorf("domain merge: %w", err)
 		}
