@@ -18,8 +18,11 @@ func isAuthorized(c fiber.Ctx) error {
 	sess := session.FromContext(c)
 	authorized, ok := sess.Get("authorized").(bool)
 	if !ok || !authorized {
-		c.Set("Hx-Redirect", "/oauth/login")
-		return c.Redirect().To("/oauth/login")
+		if isHTMXRequest(c) {
+			c.Set("HX-Redirect", "/oauth/login")
+		} else {
+			return c.Redirect().To("/oauth/login")
+		}
 	}
 	return c.Next()
 }

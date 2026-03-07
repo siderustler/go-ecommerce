@@ -224,9 +224,18 @@ func (h handlers) updateBasket(c fiber.Ctx) error {
 	var navBarViewModel components.NavBarViewModel
 	_ = c.Bind().Body(&basketViewModel)
 	userID := auth.UserIDFromSession(c)
+	if userID == "" {
+		userID = uuid.NewString()
+		session.FromContext(c).Set("user_id", userID)
+	}
+	if _, err := h.customerServices.CustomerOrCreate(c.RequestCtx(), userID); err != nil {
+		fmt.Printf("ERR customer-or-create: %+v", err)
+		return renderFragmentOrView(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
+	}
 
 	var err error
 	if basketViewModel.IncBasketItem {
+
 		err = h.storeServices.AddProductToCart(c.RequestCtx(), userID, store_domain.NewCartProduct(basketViewModel.ChangeCountID, 1))
 		if err != nil {
 			return renderFragmentOrView(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
@@ -267,6 +276,10 @@ func (h handlers) addItemToBasket(c fiber.Ctx) error {
 		Redirect  string `form:"redirect"`
 	}
 	_ = c.Bind().Body(&basketAdd)
+	if userID == "" {
+		userID = uuid.NewString()
+		session.FromContext(c).Set("user_id", userID)
+	}
 	if _, err := h.customerServices.CustomerOrCreate(c.RequestCtx(), userID); err != nil {
 		fmt.Printf("ERR customer-or-create: %+v", err)
 		return c.Redirect().To(basketAdd.Redirect)
@@ -638,7 +651,6 @@ func (h handlers) oauthCallbackHandler(oauth *auth.Authenticator) func(c fiber.C
 		if err != nil {
 			return c.SendString("Failed to verify ID Token.")
 		}
-
 		previousUser := auth.UserIDFromSession(c)
 		sess.Set("ip", c.IP())
 		sess.Set("user_id", idToken.Subject)
