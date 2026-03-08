@@ -5,14 +5,15 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/siderustler/go-ecommerce/adapters"
 	"github.com/siderustler/go-ecommerce/customer"
 )
 
 type repository struct {
-	db *sql.DB
+	db *adapters.Database
 }
 
-func NewRepository(db *sql.DB) *repository {
+func NewRepository(db *adapters.Database) *repository {
 	return &repository{db: db}
 }
 
@@ -88,7 +89,7 @@ func (r repository) CustomerOrCreate(ctx context.Context, userID string) (custom
 }
 
 func (r repository) CreateCustomer(ctx context.Context, customer customer.Customer) error {
-	return RunInTx(ctx, r.db, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
+	return r.db.RunInTx(ctx, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
 		if !customer.Billing.IsZero() {
 			_, err := tx.ExecContext(
 				ctx,
@@ -180,7 +181,7 @@ func (r repository) CreateCustomer(ctx context.Context, customer customer.Custom
 }
 
 func (r repository) UpdateShippingAddress(ctx context.Context, userID string, shipping customer.ShippingAddress) error {
-	return RunInTx(ctx, r.db, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
+	return r.db.RunInTx(ctx, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(
 			ctx,
 			`INSERT INTO shippings (id, city, address, postal_code, local) VALUES ($1, $2, $3, $4, $5)
@@ -205,20 +206,4 @@ func (r repository) UpdateShippingAddress(ctx context.Context, userID string, sh
 		}
 		return nil
 	})
-}
-
-func RunInTx(ctx context.Context, db *sql.DB, opts *sql.TxOptions, txFunc func(tx *sql.Tx) error) (err error) {
-	tx, err := db.BeginTx(ctx, opts)
-	if err != nil {
-		return fmt.Errorf("starting transaction: %w", err)
-	}
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-		} else {
-			err = tx.Commit()
-		}
-	}()
-
-	return txFunc(tx)
 }

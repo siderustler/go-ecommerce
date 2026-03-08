@@ -2,18 +2,18 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
+	"github.com/siderustler/go-ecommerce/adapters"
 	"github.com/siderustler/go-ecommerce/product"
 	"strconv"
 	"strings"
 )
 
 type repository struct {
-	db *sql.DB
+	db *adapters.Database
 }
 
-func NewRepository(db *sql.DB) *repository {
+func NewRepository(db *adapters.Database) *repository {
 	return &repository{db: db}
 }
 
@@ -149,20 +149,4 @@ func (r repository) Promotions(ctx context.Context, offset, limit int) (promos [
 		return nil, 0, fmt.Errorf("scanning promo count: %w", err)
 	}
 	return promos, promoCount, nil
-}
-
-func RunInTx(ctx context.Context, db *sql.DB, opts *sql.TxOptions, txFunc func(tx *sql.Tx) error) (err error) {
-	tx, err := db.BeginTx(ctx, opts)
-	if err != nil {
-		return fmt.Errorf("starting transaction: %w", err)
-	}
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-		} else {
-			err = tx.Commit()
-		}
-	}()
-
-	return txFunc(tx)
 }
