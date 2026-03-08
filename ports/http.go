@@ -2,7 +2,7 @@ package ports
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 	"os"
 	"time"
 
@@ -28,12 +28,16 @@ func NewHttpServer(
 	customerServices *customer.Services,
 	productServices *product.Services,
 	storeServices *store.Services,
-) *httpServer {
+	logger *slog.Logger,
+) (*httpServer, error) {
+	if logger == nil {
+		logger = slog.Default()
+	}
 	stripe.Key = os.Getenv("STRIPE_SERVER_KEY")
 
 	authenticator, err := auth.New()
 	if err != nil {
-		panic(fmt.Errorf("creating new oauth authenticator: %v", err))
+		return nil, err
 	}
 	h := &httpServer{
 		srv: fiber.New(),
@@ -41,6 +45,7 @@ func NewHttpServer(
 			customerServices: customerServices,
 			productServices:  productServices,
 			storeServices:    storeServices,
+			logger:           logger.With("component", "ports.handlers"),
 		},
 	}
 	sessionStore := session.New(session.Config{
@@ -50,9 +55,11 @@ func NewHttpServer(
 		}),
 		CookieSameSite: "Lax",
 		CookieHTTPOnly: true,
-		//FIXME
-		//CookieSecure: true,
+		CookieSecure:   os.Getenv("ENVIRONMENT") != "DEV",
 	})
+	h.srv.Use(requestIDMiddleware)
+	h.srv.Use(clientIDMiddleware)
+	h.srv.Use(requestLoggingMiddleware(logger.With("component", "ports.http")))
 	h.srv.Use("/public", ignoreCacheStaticFilesInDev)
 
 	auth := h.srv.Group("/", sessionStore)
@@ -84,7 +91,7 @@ func NewHttpServer(
 	h.srv.Post("/api/stripe/wh", h.handlers.checkoutStripeWebhook)
 
 	h.srv.Get("/public*", static.New("./ports/views/public"))
-	return h
+	return h, nil
 }
 
 func (h *httpServer) Run(ctx context.Context, addr string) error {

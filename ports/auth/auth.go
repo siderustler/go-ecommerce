@@ -11,14 +11,37 @@ import (
 	"golang.org/x/oauth2"
 )
 
-func UserIDFromSession(c fiber.Ctx) string {
-	sess := session.FromContext(c)
-	retrievedClaims, ok := sess.Get("user_id").(string)
-	if !ok {
-		return ""
+func UserIDFromRequest(c fiber.Ctx) string {
+	userID, ok := c.Locals("user_id").(string)
+	if ok && userID != "" {
+		return userID
 	}
 
-	return retrievedClaims
+	sess := session.FromContext(c)
+	if sess == nil || sess.Session == nil {
+		return ""
+	}
+	userID, ok = sess.Get("user_id").(string)
+	if !ok || userID == "" {
+		return ""
+	}
+	c.Locals("user_id", userID)
+
+	return userID
+}
+
+func PersistUserID(c fiber.Ctx, userID string) {
+	if userID == "" {
+		return
+	}
+
+	c.Locals("user_id", userID)
+
+	sess := session.FromContext(c)
+	if sess == nil || sess.Session == nil {
+		return
+	}
+	sess.Set("user_id", userID)
 }
 
 // Authenticator is used to authenticate our users.

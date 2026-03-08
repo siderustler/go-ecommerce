@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -19,11 +19,16 @@ import (
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		slog.Error("loading env file", "error", err)
+		os.Exit(1)
 	}
+	logger := adapters.NewLogger()
+	slog.SetDefault(logger)
+
 	db, err := adapters.OpenDB(os.Getenv("DATABASE_URI"))
 	if err != nil {
-		log.Fatal(err)
+		logger.Error("opening database", "error", err)
+		os.Exit(1)
 	}
 	productsRepo := repository.NewRepository(db)
 	productServices := product.NewServices(productsRepo)
@@ -34,9 +39,14 @@ func main() {
 	storeRepo := store_repository.NewRepository(db)
 	storeServices := store.NewServices(storeRepo)
 
-	httpServer := ports.NewHttpServer(customerServices, productServices, storeServices)
+	httpServer, err := ports.NewHttpServer(customerServices, productServices, storeServices, logger)
+	if err != nil {
+		logger.Error("creating http server", "error", err)
+		os.Exit(1)
+	}
 	err = httpServer.Run(context.TODO(), ":8080")
 	if err != nil {
-		log.Fatal(err)
+		logger.Error("running http server", "error", err)
+		os.Exit(1)
 	}
 }
