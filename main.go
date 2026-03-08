@@ -2,13 +2,11 @@ package main
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
 	"log"
 	"os"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
+	"github.com/siderustler/go-ecommerce/adapters"
 	"github.com/siderustler/go-ecommerce/customer"
 	customerRepository "github.com/siderustler/go-ecommerce/customer/repository"
 	"github.com/siderustler/go-ecommerce/ports"
@@ -16,7 +14,6 @@ import (
 	"github.com/siderustler/go-ecommerce/product/repository"
 	"github.com/siderustler/go-ecommerce/store"
 	store_repository "github.com/siderustler/go-ecommerce/store/repository"
-	"github.com/stripe/stripe-go/v84"
 )
 
 func main() {
@@ -24,11 +21,9 @@ func main() {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
-	stripe.Key = os.Getenv("STRIPE_SERVER_KEY")
-
-	db, err := sql.Open("pgx", os.Getenv("DATABASE_URI"))
+	db, err := adapters.OpenDB(os.Getenv("DATABASE_URI"))
 	if err != nil {
-		panic(fmt.Errorf("connecting to db: %w", err))
+		log.Fatal(err)
 	}
 	productsRepo := repository.NewRepository(db)
 	productServices := product.NewServices(productsRepo)

@@ -16,6 +16,7 @@ import (
 	"github.com/siderustler/go-ecommerce/ports/auth"
 	"github.com/siderustler/go-ecommerce/product"
 	store "github.com/siderustler/go-ecommerce/store"
+	"github.com/stripe/stripe-go/v84"
 )
 
 type httpServer struct {
@@ -28,6 +29,8 @@ func NewHttpServer(
 	productServices *product.Services,
 	storeServices *store.Services,
 ) *httpServer {
+	stripe.Key = os.Getenv("STRIPE_SERVER_KEY")
+
 	authenticator, err := auth.New()
 	if err != nil {
 		panic(fmt.Errorf("creating new oauth authenticator: %v", err))
