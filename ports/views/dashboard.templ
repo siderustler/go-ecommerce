@@ -154,14 +154,14 @@ templ promotedProductsSection(dashboardViewModel dashboardViewModel) {
 
 templ promoProduct(product product.Product) {
 	{{ productPath := "/products/details/" + product.ID }}
-	<div class="flex flex-col gap-6 lg:gap-8 p-6 md:p-8 items-center justify-center rounded-xl border-primary-300 border-2 shadow-lg bg-grey-100 max-w-sm relative">
+	<div class="flex flex-col gap-3 lg:gap-4 p-6 md:p-8 justify-center rounded-xl border-primary-300 border-2 shadow-lg bg-grey-100 max-w-sm relative">
 		<img src="/public/icons/product-sale.svg" alt="produkt w promocji ikona" height="48px" width="48px" class="absolute -top-3 -left-2"/>
 		<a
 			href={ productPath }
 			hx-get={ productPath }
 			hx-target="#products"
 			hx-swap="outerHTML"
-			class="flex flex-col gap-4 items-center justify-center"
+			class="flex flex-col gap-4 justify-center"
 			hx-push-url="true"
 		>
 			<img
@@ -169,17 +169,11 @@ templ promoProduct(product product.Product) {
 				src={ product.Image }
 				class="rounded-2xl shadow-xl htmx-swapping:opacity-0 transition-opacity duration-200 htmx-settling:opacity-100 w-full h-full"
 			/>
-			<div class="flex flex-col gap-2">
-				<img
-					alt="product name"
-					src="/public/icons/product-name.svg"
-					width="24px"
-					height="24px"
-				/>
-				<p class="pl-4 pr-2 text-primary-800 text-lg">{ product.Name }</p>
-			</div>
+			@components.Info("Nazwa produktu") {
+				<p class="text-primary-800 text-lg">{ product.Name }</p>
+			}
 		</a>
-			@promotionPrice(product.Price, product.DiscountPrice)
+		@promoPrice(product.Price, product.DiscountPrice)
 		<form action="/basket/add" method="post" hx-post="/basket/add" class="w-full">
 			<input
 				name="count"
@@ -217,14 +211,14 @@ templ promotionPrice(basePrice, discountPrice int) {
 			<p class="text-error-700 text-sm">Cena przed:</p>
 			<p class="flex gap-2 md:gap-3">
 				<img alt="price before promotion" src="/public/icons/promo-price-before.svg" width="24px" height="24px"/>
-					<span class="text-error-800 line-through text-lg">{ basePrice / 100.0 }</span>
+				<span class="text-error-800 line-through text-lg">{ basePrice / 100.0 }</span>
 			</p>
 		</div>
 		<div class="flex gap-2 flex-col">
 			<p class="text-primary-700 text-sm">Aktualna cena:</p>
 			<p class="flex gap-2 md:gap-3">
 				<img alt="price with promotion" src="/public/icons/promo-price-after.svg" width="24px" height="24px"/>
-					<span class="text-primary-800 text-lg">{ discountPrice / 100.0 }</span>
+				<span class="text-primary-800 text-lg">{ discountPrice / 100.0 }</span>
 			</p>
 		</div>
 	</div>

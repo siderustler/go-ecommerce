@@ -154,6 +154,31 @@ templ sortFilter(endpoint, content string) {
 	</a>
 }
 
+templ promoPrice(basePrice, discountPrice int) {
+	{{
+		base := float64(basePrice) / 100.0
+		discount := float64(discountPrice) / 100.0
+		savings := float64(basePrice-discountPrice) / 100.0
+		discountPercentage := 0
+		if basePrice > 0 {
+			discountPercentage = int((float64(basePrice-discountPrice) * 100.0) / float64(basePrice))
+		}
+	}}
+	<div class="flex flex-col gap-3 md:gap-6 lg:gap-8 w-full pb-4">
+		@components.Info("Cena") {
+			<div class="flex items-center gap-3 md:gap-6 lg:gap-8">
+				<span class="rounded-full bg-error-700 px-3 md:px-4 lg:px-6 py-1 md:py-2 lg:py-3 text-xs text-grey-100">-{ strconv.Itoa(discountPercentage) }%</span>
+				<span class="text-xs text-primary-800">Oszczędzasz { fmt.Sprintf("%.2f", savings) } zł</span>
+			</div>
+			<div class="flex items-end gap-3 md:gap-6 lg:gap-8">
+				<span class="text-error-800 line-through text-base">{ fmt.Sprintf("%.2f", base) } zł</span>
+				<span class="text-primary-900 text-2xl font-semibold leading-none">{ fmt.Sprintf("%.2f", discount) } zł</span>
+			</div>
+			<p class="text-xs text-primary-700">Cena promocyjna</p>
+		}
+	</div>
+}
+
 templ productItem(viewModel productViewModel) {
 	<div class="flex flex-col md:flex-row py-8 px-2 md:p-8 gap-3 md:gap-6 lg:gap-8 w-full shadow-sm rounded-2xl bg-grey-100 border border-grey-300">
 		{{ productDetailsHref := fmt.Sprintf("/products/details/%s?back=%s", viewModel.domain.ID, viewModel.currentUrl) }}
@@ -170,27 +195,30 @@ templ productItem(viewModel productViewModel) {
 			<img src={ viewModel.domain.Image } alt={ viewModel.domain.Name + " image" } class="rounded-2xl lg:rounded-3xl shadow-lg max-w-72 max-h-72 mx-auto"/>
 			<button type="submit" class="absolute top-0 left-0 w-full h-full z-10"></button>
 		</form>
-		<div class="flex flex-col gap-2 md:gap-4">
-			<div class="flex flex-col gap-3 md:gap-6">
-				<form
-					method="GET"
-					action={ productDetailsHref }
-					hx-get={ productDetailsHref }
-					hx-target="#products"
-					hx-swap="outerHTML"
-					hx-push-url={ "/products/details/" + viewModel.domain.ID }
-					class="relative"
-				>
-					<input name="back" value={ viewModel.currentUrl } hidden/>
-					@components.Info("Nazwa produktu") {
-						<h1 class="text-xl">{ viewModel.domain.Name }</h1>
-					}
+		<div class="flex flex-col gap-3 md:gap-4">
+			<form
+				method="GET"
+				action={ productDetailsHref }
+				hx-get={ productDetailsHref }
+				hx-target="#products"
+				hx-swap="outerHTML"
+				hx-push-url={ "/products/details/" + viewModel.domain.ID }
+				class="relative"
+			>
+				<input name="back" value={ viewModel.currentUrl } hidden/>
+				@components.Info("Nazwa produktu") {
+					<h1 class="text-xl mb-3 md:mb-4 lg:mb-6">{ viewModel.domain.Name }</h1>
+				}
+				{{ hasDiscount := viewModel.domain.DiscountPrice != 0 }}
+				if hasDiscount {
+					@promoPrice(viewModel.domain.Price, viewModel.domain.DiscountPrice)
+				} else {
 					@components.Info("Cena") {
-						<h2 class="text-primary-700 text-xl">{ fmt.Sprintf("%.2f",float32(viewModel.domain.Price / 100.0)) + " zł" }</h2>
+						<h2 class="text-primary-700 text-2xl">{ fmt.Sprintf("%.2f",float32(viewModel.domain.Price / 100.0)) + " zł" }</h2>
 					}
-					<button type="submit" class="absolute top-0 left-0 w-full h-full z-10"></button>
-				</form>
-			</div>
+				}
+				<button type="submit" class="absolute top-0 left-0 w-full h-full z-10"></button>
+			</form>
 			@components.Info("Dostosuj ilość") {
 				{{ id := ProductBasketAdderFragment(viewModel.domain.ID) }}
 				@templ.Fragment(id) {
