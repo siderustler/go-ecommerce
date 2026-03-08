@@ -580,15 +580,10 @@ func (h handlers) createCheckout(c fiber.Ctx) error {
 	type errStruct struct {
 		Err string `json:"error"`
 	}
-	err := h.storeServices.CreateCheckout(c.RequestCtx(), userID)
+	checkout, err := h.storeServices.CheckoutOrCreate(c.RequestCtx(), userID)
 	if err != nil {
 		fmt.Printf("error is :%+v", err)
 		return c.Status(http.StatusBadRequest).JSON(errStruct{Err: fmt.Sprintf("error creating cehckout: %v", err.Error())})
-	}
-	checkout, err := h.storeServices.CheckoutByUserID(c.RequestCtx(), userID)
-	if err != nil {
-		fmt.Printf("error is CHECKOUTBYSEURID:%+v", err)
-		return c.Status(http.StatusBadRequest).JSON(errStruct{Err: fmt.Sprintf("retrieving checkout: %v", err.Error())})
 	}
 	products, err := h.productServices.ProductsByIDs(c.RequestCtx(), slices.Collect(maps.Keys(checkout.Items)))
 	if err != nil {

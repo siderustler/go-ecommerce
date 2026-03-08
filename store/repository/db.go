@@ -8,27 +8,22 @@ import (
 	"slices"
 	"time"
 
+	"github.com/siderustler/go-ecommerce/adapters"
 	"github.com/siderustler/go-ecommerce/store"
 	store_domain "github.com/siderustler/go-ecommerce/store/domain"
 )
 
 type repository struct {
-	db *sql.DB
-}
-
-type executor interface {
-	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
-	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
-	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+	db *adapters.Database
 }
 
 var _ store.Repository = repository{}
 
-func NewRepository(db *sql.DB) *repository {
+func NewRepository(db *adapters.Database) *repository {
 	return &repository{db: db}
 }
 
-func products(ctx context.Context, exec executor, ids ...string) ([]store_domain.Product, error) {
+func products(ctx context.Context, exec adapters.Executor, ids ...string) ([]store_domain.Product, error) {
 	row, err := exec.QueryContext(ctx, `SELECT id, name, price, price_before FROM products WHERE id = ANY($1)`, ids)
 	if err != nil {
 		return nil, fmt.Errorf("retrieving products: %w", err)
@@ -56,7 +51,7 @@ func (r repository) CreateOrder(
 		products []store_domain.Product,
 	) (store_domain.Order, error),
 ) error {
-	return RunInTx(ctx, r.db, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
+	return r.db.RunInTx(ctx, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
 		checkout, err := checkoutByID(ctx, tx, checkoutID)
 		if err != nil {
 			return fmt.Errorf("retrieving checkout by id: %w", err)
@@ -141,7 +136,7 @@ func (r repository) MergeUserCarts(
 		stock *store_domain.Stock,
 	) error,
 ) error {
-	return RunInTx(ctx, r.db, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
+	return r.db.RunInTx(ctx, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
 		fromCart, err := cart(ctx, tx, fromUserID)
 		if err != nil && err != sql.ErrNoRows {
 			return fmt.Errorf("retrieving from cart: %w", err)
@@ -235,7 +230,7 @@ func (r repository) MergeUserCarts(
 	})
 }
 
-func cart(ctx context.Context, exec executor, userID string) (store_domain.Cart, error) {
+func cart(ctx context.Context, exec adapters.Executor, userID string) (store_domain.Cart, error) {
 	rows, err := exec.QueryContext(
 		ctx,
 		`SELECT b.id, b.customer_id, b.last_modified_at, b.status, bp.product_id, bp.count FROM baskets AS b 
@@ -285,7 +280,7 @@ func (r repository) CartCount(ctx context.Context, userID string) (int, error) {
 	return count, nil
 }
 
-func stockForUpdate(ctx context.Context, exec executor, stockItemIds ...string) (store_domain.Stock, error) {
+func stockForUpdate(ctx context.Context, exec adapters.Executor, stockItemIds ...string) (store_domain.Stock, error) {
 	stock := store_domain.Stock{Items: make(map[string]store_domain.StockItem, len(stockItemIds))}
 	rows, err := exec.QueryContext(
 		ctx,
@@ -315,19 +310,24 @@ func stockForUpdate(ctx context.Context, exec executor, stockItemIds ...string) 
 	return stock, nil
 }
 
-// CreateCheckout implements store.Repository.
-func (r repository) CreateCheckout(
+// CheckoutOrCreate implements store.Repository.
+func (r repository) CheckoutOrCreate(
 	ctx context.Context,
 	userID string,
 	insertFn func(cart *store_domain.Cart, stock *store_domain.Stock) (store_domain.Checkout, error),
-) error {
-	return RunInTx(ctx, r.db, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
-		var exists int
-		row := tx.QueryRowContext(ctx, `SELECT 1 FROM checkouts WHERE status = $1 AND customer_id = $2`, store_domain.CheckoutPending, userID)
-		_ = row.Scan(&exists)
-		if exists == 1 {
+) (store_domain.Checkout, error) {
+	var checkoutResult store_domain.Checkout
+
+	err := r.db.RunInTx(ctx, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
+		existingCheckout, err := checkoutByUserID(ctx, tx, userID)
+		if err != nil {
+			return fmt.Errorf("retrieving existing checkout: %w", err)
+		}
+		if !existingCheckout.IsZero() {
+			checkoutResult = existingCheckout
 			return nil
 		}
+
 		cart, err := cart(ctx, tx, userID)
 		if err != nil {
 			return fmt.Errorf("retrieving cart: %w", err)
@@ -344,6 +344,7 @@ func (r repository) CreateCheckout(
 		if err != nil {
 			return fmt.Errorf("insertfn domain checkout: %w", err)
 		}
+		checkoutResult = checkout
 		_, err = tx.ExecContext(
 			ctx,
 			`INSERT INTO checkouts (id, customer_id, basket_id, created_at, status) VALUES ($1,$2,$3,$4,$5)`,
@@ -386,6 +387,10 @@ func (r repository) CreateCheckout(
 
 		return nil
 	})
+	if err != nil {
+		return store_domain.Checkout{}, err
+	}
+	return checkoutResult, nil
 }
 
 // InsertStockItem implements store.Repository.
@@ -403,7 +408,7 @@ func (r repository) UpdateStockItem(ctx context.Context, stockItem store_domain.
 	panic("unimplemented")
 }
 
-func stockItem(ctx context.Context, exec executor, itemID string) (store_domain.StockItem, error) {
+func stockItem(ctx context.Context, exec adapters.Executor, itemID string) (store_domain.StockItem, error) {
 	var stockItem store_domain.StockItem
 	row := exec.QueryRowContext(
 		ctx,
@@ -418,7 +423,7 @@ func stockItem(ctx context.Context, exec executor, itemID string) (store_domain.
 	return stockItem, nil
 }
 
-func checkoutByID(ctx context.Context, exec executor, id string) (store_domain.Checkout, error) {
+func checkoutByID(ctx context.Context, exec adapters.Executor, id string) (store_domain.Checkout, error) {
 	checkout := store_domain.Checkout{Items: make(map[string]store_domain.CartProduct)}
 	rows, err := exec.QueryContext(
 		ctx,
@@ -456,7 +461,7 @@ func checkoutByID(ctx context.Context, exec executor, id string) (store_domain.C
 	return checkout, nil
 }
 
-func checkoutByBasketID(ctx context.Context, exec executor, basketID string) (store_domain.Checkout, error) {
+func checkoutByBasketID(ctx context.Context, exec adapters.Executor, basketID string) (store_domain.Checkout, error) {
 	checkout := store_domain.Checkout{Items: make(map[string]store_domain.CartProduct)}
 	rows, err := exec.QueryContext(
 		ctx,
@@ -494,7 +499,7 @@ func checkoutByBasketID(ctx context.Context, exec executor, basketID string) (st
 	return checkout, nil
 }
 
-func checkoutByUserID(ctx context.Context, exec executor, userID string) (store_domain.Checkout, error) {
+func checkoutByUserID(ctx context.Context, exec adapters.Executor, userID string) (store_domain.Checkout, error) {
 	checkout := store_domain.Checkout{Items: make(map[string]store_domain.CartProduct)}
 	rows, err := exec.QueryContext(
 		ctx,
@@ -534,7 +539,7 @@ func checkoutByUserID(ctx context.Context, exec executor, userID string) (store_
 
 // UpsertCart implements store.Repository.
 func (r repository) UpsertCart(ctx context.Context, userID string, item store_domain.CartProduct, upsertFn func(cart *store_domain.Cart, checkout *store_domain.Checkout, stock *store_domain.Stock, stockItem store_domain.StockItem) error) error {
-	return RunInTx(ctx, r.db, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
+	return r.db.RunInTx(ctx, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
 		cart, err := cart(ctx, tx, userID)
 		if err != nil && err != sql.ErrNoRows {
 			return fmt.Errorf("retrieving user cart: %w", err)
@@ -604,20 +609,4 @@ func (r repository) UpsertCart(ctx context.Context, userID string, item store_do
 		}
 		return nil
 	})
-}
-
-func RunInTx(ctx context.Context, db *sql.DB, opts *sql.TxOptions, txFunc func(tx *sql.Tx) error) (err error) {
-	tx, err := db.BeginTx(ctx, opts)
-	if err != nil {
-		return fmt.Errorf("starting transaction: %w", err)
-	}
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-		} else {
-			err = tx.Commit()
-		}
-	}()
-
-	return txFunc(tx)
 }

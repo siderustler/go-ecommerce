@@ -47,11 +47,11 @@ type Repository interface {
 		) error,
 	) error
 
-	CreateCheckout(
+	CheckoutOrCreate(
 		ctx context.Context,
 		userID string,
 		insertFn func(cart *store_domain.Cart, stock *store_domain.Stock) (store_domain.Checkout, error),
-	) error
+	) (store_domain.Checkout, error)
 
 	UpdateCheckout(
 		ctx context.Context,

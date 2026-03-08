@@ -7,37 +7,64 @@ import (
 	store_domain "github.com/siderustler/go-ecommerce/store/domain"
 )
 
-func TestCreateCheckout_ErrorsWhenCartIsZero(t *testing.T) {
+func TestCheckoutOrCreate_DoesNothingWhenPendingCheckoutAlreadyExists(t *testing.T) {
+	existingCheckout := store_domain.NewCheckout(
+		"ch-existing",
+		"u-existing",
+		map[string]store_domain.CartProduct{"p1": store_domain.NewCartProduct("p1", 1)},
+		"2026-01-01T00:00:00Z",
+		store_domain.CheckoutPending,
+	)
+	repo := repositoryMock{
+		checkoutOrCreateFn: func(
+			ctx context.Context,
+			incomingUserID string,
+			insertFn func(cart *store_domain.Cart, stock *store_domain.Stock) (store_domain.Checkout, error),
+		) (store_domain.Checkout, error) {
+			return existingCheckout, nil
+		},
+	}
+
+	checkout, err := newServices(repo).CheckoutOrCreate(context.Background(), "u-existing")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if checkout.ID != existingCheckout.ID {
+		t.Fatalf("expected existing checkout %s, got %s", existingCheckout.ID, checkout.ID)
+	}
+}
+
+func TestCheckoutOrCreate_ErrorsWhenCartIsZero(t *testing.T) {
 	cart := store_domain.Cart{Products: map[string]store_domain.CartProduct{}}
 	stock := store_domain.Stock{Items: map[string]store_domain.StockItem{}}
-	_, err := runCreateCheckout("u1", &cart, &stock)
+	_, err := runCheckoutOrCreate("u1", &cart, &stock)
 	if err == nil {
 		t.Fatalf("expected error, got nil")
 	}
 }
 
-func TestCreateCheckout_ErrorsWhenStockItemMissing(t *testing.T) {
+func TestCheckoutOrCreate_ErrorsWhenStockItemMissing(t *testing.T) {
 	cart := store_domain.Cart{ID: "c2", Products: map[string]store_domain.CartProduct{"p2": store_domain.NewCartProduct("p2", 1)}}
 	stock := store_domain.Stock{Items: map[string]store_domain.StockItem{}}
-	_, err := runCreateCheckout("u2", &cart, &stock)
+	_, err := runCheckoutOrCreate("u2", &cart, &stock)
 	if err == nil {
 		t.Fatalf("expected error, got nil")
 	}
 }
 
-func TestCreateCheckout_ErrorsWhenReservationFails(t *testing.T) {
+func TestCheckoutOrCreate_ErrorsWhenReservationFails(t *testing.T) {
 	cart := store_domain.Cart{ID: "c3", Products: map[string]store_domain.CartProduct{"p3": store_domain.NewCartProduct("p3", 2)}}
 	stock := store_domain.Stock{Items: map[string]store_domain.StockItem{"p3": store_domain.NewStockItem("p3", 1, 0)}}
-	_, err := runCreateCheckout("u3", &cart, &stock)
+	_, err := runCheckoutOrCreate("u3", &cart, &stock)
 	if err == nil {
 		t.Fatalf("expected error, got nil")
 	}
 }
 
-func TestCreateCheckout_ReservesItemsAndReturnsPendingCheckout(t *testing.T) {
+func TestCheckoutOrCreate_ReservesItemsAndReturnsPendingCheckout(t *testing.T) {
 	cart := store_domain.Cart{ID: "c4", Products: map[string]store_domain.CartProduct{"p4": store_domain.NewCartProduct("p4", 2)}}
 	stock := store_domain.Stock{Items: map[string]store_domain.StockItem{"p4": store_domain.NewStockItem("p4", 5, 1)}}
-	checkout, err := runCreateCheckout("u4", &cart, &stock)
+	checkout, err := runCheckoutOrCreate("u4", &cart, &stock)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -55,20 +82,23 @@ func TestCreateCheckout_ReservesItemsAndReturnsPendingCheckout(t *testing.T) {
 	}
 }
 
-func runCreateCheckout(userID string, cart *store_domain.Cart, stock *store_domain.Stock) (store_domain.Checkout, error) {
+func runCheckoutOrCreate(userID string, cart *store_domain.Cart, stock *store_domain.Stock) (store_domain.Checkout, error) {
 	capturedCheckout := store_domain.Checkout{}
 	repo := repositoryMock{
-		createCheckoutFn: func(
+		checkoutOrCreateFn: func(
 			ctx context.Context,
 			incomingUserID string,
 			insertFn func(cart *store_domain.Cart, stock *store_domain.Stock) (store_domain.Checkout, error),
-		) error {
+		) (store_domain.Checkout, error) {
 			checkout, err := insertFn(cart, stock)
 			capturedCheckout = checkout
-			return err
+			return checkout, err
 		},
 	}
 
-	err := newServices(repo).CreateCheckout(context.Background(), userID)
+	checkout, err := newServices(repo).CheckoutOrCreate(context.Background(), userID)
+	if !checkout.IsZero() {
+		capturedCheckout = checkout
+	}
 	return capturedCheckout, err
 }

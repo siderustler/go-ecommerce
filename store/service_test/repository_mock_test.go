@@ -31,11 +31,11 @@ type repositoryMock struct {
 			stock *store_domain.Stock,
 		) error,
 	) error
-	createCheckoutFn func(
+	checkoutOrCreateFn func(
 		ctx context.Context,
 		userID string,
 		insertFn func(cart *store_domain.Cart, stock *store_domain.Stock) (store_domain.Checkout, error),
-	) error
+	) (store_domain.Checkout, error)
 	updateCheckoutFn func(
 		ctx context.Context,
 		userID string,
@@ -106,15 +106,15 @@ func (m repositoryMock) MergeUserCarts(
 	return m.mergeUserCartsFn(ctx, fromUserID, toUserID, mergeFn)
 }
 
-func (m repositoryMock) CreateCheckout(
+func (m repositoryMock) CheckoutOrCreate(
 	ctx context.Context,
 	userID string,
 	insertFn func(cart *store_domain.Cart, stock *store_domain.Stock) (store_domain.Checkout, error),
-) error {
-	if m.createCheckoutFn == nil {
-		return errors.New("CreateCheckout not configured")
+) (store_domain.Checkout, error) {
+	if m.checkoutOrCreateFn == nil {
+		return store_domain.Checkout{}, errors.New("CheckoutOrCreate not configured")
 	}
-	return m.createCheckoutFn(ctx, userID, insertFn)
+	return m.checkoutOrCreateFn(ctx, userID, insertFn)
 }
 
 func (m repositoryMock) UpdateCheckout(
