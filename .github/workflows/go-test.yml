@@ -25,4 +25,6 @@ jobs:
           cache: true
 
       - name: Run tests
+        env:
+          GOFLAGS: -mod=mod
         run: go test ./...
