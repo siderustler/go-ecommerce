@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/siderustler/go-ecommerce/store"
 	store_domain "github.com/siderustler/go-ecommerce/store/domain"
 )
 
@@ -100,6 +101,6 @@ func runInvalidateCheckout(
 		},
 	}
 
-	err := newServices(repo).InvalidateCheckout(context.Background(), checkout.ID)
+	err := newServices(repo).Command.InvalidateCheckout.Handle(context.Background(), store.InvalidateCheckoutCmd{CheckoutID: checkout.ID})
 	return capturedCheckout, capturedStock, err
 }

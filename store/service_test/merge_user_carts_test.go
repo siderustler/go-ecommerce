@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/siderustler/go-ecommerce/store"
 	store_domain "github.com/siderustler/go-ecommerce/store/domain"
 )
 
@@ -188,5 +189,8 @@ func runMergeUserCarts(
 		},
 	}
 
-	return newServices(repo).MergeUserCarts(context.Background(), "from", "to")
+	return newServices(repo).Command.MergeUserCarts.Handle(context.Background(), store.MergeUserCartsCmd{
+		FromID: "from",
+		ToID:   "to",
+	})
 }

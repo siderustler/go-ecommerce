@@ -62,11 +62,11 @@ func NewHttpServer(
 	h.srv.Use(requestLoggingMiddleware(logger.With("component", "ports.http")))
 	h.srv.Use("/public", ignoreCacheStaticFilesInDev)
 
-	auth := h.srv.Group("/", sessionStore)
+	auth := h.srv.Group("/", sessionStore, correlationContextMiddleware)
 	auth.Get("/oauth/logout", oauthLogoutHandler)
 	auth.Get("/oauth/login", oauthLoginHandler(authenticator))
 	auth.Get("/oauth/callback", h.handlers.oauthCallbackHandler(authenticator))
-	account := h.srv.Group("/account", sessionStore, isAuthorized)
+	account := h.srv.Group("/account", sessionStore, correlationContextMiddleware, isAuthorized)
 	account.Get("/", h.handlers.accountHandler)
 	account.Get("/customer/billing", h.handlers.getBillingInfo)
 	account.Get("/customer/shipping", h.handlers.getShippingInfo)

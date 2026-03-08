@@ -1,6 +1,7 @@
 package ports
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/session"
 	"github.com/google/uuid"
+	"github.com/siderustler/go-ecommerce/common/service_logger"
 	"github.com/siderustler/go-ecommerce/ports/auth"
 )
 
@@ -65,6 +67,23 @@ func clientIDMiddleware(c fiber.Ctx) error {
 		})
 	}
 	c.Locals(clientIDLocalKey, clientID)
+	return c.Next()
+}
+
+func correlationContextMiddleware(c fiber.Ctx) error {
+	var ctx context.Context = c.RequestCtx()
+
+	if requestID, _ := c.Locals(requestIDLocalKey).(string); requestID != "" {
+		ctx = service_logger.WithRequestID(ctx, requestID)
+	}
+	if clientID, _ := c.Locals(clientIDLocalKey).(string); clientID != "" {
+		ctx = service_logger.WithClientID(ctx, clientID)
+	}
+	if userID := auth.UserIDFromRequest(c); userID != "" {
+		ctx = service_logger.WithUserID(ctx, userID)
+	}
+
+	c.SetContext(ctx)
 	return c.Next()
 }
 

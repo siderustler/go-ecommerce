@@ -3,6 +3,8 @@ package store_service_test
 import (
 	"context"
 	"errors"
+	"io"
+	"log/slog"
 
 	"github.com/siderustler/go-ecommerce/store"
 	store_domain "github.com/siderustler/go-ecommerce/store/domain"
@@ -147,5 +149,6 @@ func (m repositoryMock) CheckoutByUserID(ctx context.Context, userID string) (st
 }
 
 func newServices(r repositoryMock) *store.Services {
-	return store.NewServices(r)
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	return store.NewServices(r, logger)
 }

@@ -2,6 +2,10 @@ package customer
 
 import "context"
 
-func (s Services) CustomerOrCreate(ctx context.Context, userID string) (Customer, error) {
-	return s.repository.CustomerOrCreate(ctx, userID)
+type CustomerOrCreateCmd struct {
+	UserID string
+}
+
+func (s *Services) customerOrCreate(ctx context.Context, cmd CustomerOrCreateCmd) (Customer, error) {
+	return s.repository.CustomerOrCreate(ctx, cmd.UserID)
 }

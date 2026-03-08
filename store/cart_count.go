@@ -2,6 +2,10 @@ package store
 
 import "context"
 
-func (s Services) CartCount(ctx context.Context, userID string) (int, error) {
-	return s.repository.CartCount(ctx, userID)
+type CartCountQuery struct {
+	UserID string
+}
+
+func (s *Services) cartCount(ctx context.Context, query CartCountQuery) (int, error) {
+	return s.repository.CartCount(ctx, query.UserID)
 }

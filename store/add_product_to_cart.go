@@ -9,11 +9,16 @@ import (
 	store_domain "github.com/siderustler/go-ecommerce/store/domain"
 )
 
-func (s Services) AddProductToCart(ctx context.Context, userID string, productToAdd store_domain.CartProduct) error {
+type AddProductToCartCmd struct {
+	UserID       string
+	ProductToAdd store_domain.CartProduct
+}
+
+func (s *Services) addProductToCart(ctx context.Context, cmd AddProductToCartCmd) error {
 	return s.repository.UpsertCart(
 		ctx,
-		userID,
-		productToAdd,
+		cmd.UserID,
+		cmd.ProductToAdd,
 		func(cart *store_domain.Cart, checkout *store_domain.Checkout, checkoutStock *store_domain.Stock, requestedProductStock store_domain.StockItem) error {
 			if !requestedProductStock.IsAvailable() {
 				return errors.New("item is not available in stock")
@@ -21,14 +26,14 @@ func (s Services) AddProductToCart(ctx context.Context, userID string, productTo
 			if cart.IsZero() {
 				newCart := store_domain.NewCart(
 					uuid.NewString(),
-					userID,
+					cmd.UserID,
 					make(map[string]store_domain.CartProduct),
 					"",
 					store_domain.CartActive,
 				)
 				*cart = newCart
 			}
-			err := cart.AddProduct(productToAdd)
+			err := cart.AddProduct(cmd.ProductToAdd)
 			if err != nil {
 				return fmt.Errorf("adding product to cart: %w", err)
 			}

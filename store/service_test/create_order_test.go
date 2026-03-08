@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/siderustler/go-ecommerce/store"
 	store_domain "github.com/siderustler/go-ecommerce/store/domain"
 )
 
@@ -77,6 +78,9 @@ func runCreateOrder(
 		},
 	}
 
-	err := newServices(repo).CreateOrder(context.Background(), checkout.ID, "now")
+	err := newServices(repo).Command.CreateOrder.Handle(context.Background(), store.CreateOrderCmd{
+		CheckoutID: checkout.ID,
+		OrderTime:  "now",
+	})
 	return capturedOrder, *cart, *checkout, err
 }

@@ -2,8 +2,12 @@ package product
 
 import "context"
 
-func (s *Services) GetProductDetails(ctx context.Context, id string) (ProductDetail, error) {
-	return NewProductDetail(id,
+type ProductDetailsQuery struct {
+	ID string
+}
+
+func (s *Services) getProductDetails(ctx context.Context, query ProductDetailsQuery) (ProductDetail, error) {
+	return NewProductDetail(query.ID,
 		"essa",
 		[]string{"/public/products/essa/1.webp", "/public/products/essa/2.webp", "/public/products/essa/3.webp"},
 		[]string{

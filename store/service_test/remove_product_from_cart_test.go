@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/siderustler/go-ecommerce/store"
 	store_domain "github.com/siderustler/go-ecommerce/store/domain"
 )
 
@@ -134,5 +135,8 @@ func runRemoveProductFromCart(
 		},
 	}
 
-	return newServices(repo).RemoveProductFromCart(context.Background(), userID, input)
+	return newServices(repo).Command.RemoveProductFromCart.Handle(context.Background(), store.RemoveProductFromCartCmd{
+		UserID:      userID,
+		CartProduct: input,
+	})
 }

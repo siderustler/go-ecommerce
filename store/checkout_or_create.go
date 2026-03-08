@@ -10,10 +10,14 @@ import (
 	store_domain "github.com/siderustler/go-ecommerce/store/domain"
 )
 
-func (s Services) CheckoutOrCreate(ctx context.Context, userID string) (store_domain.Checkout, error) {
+type CheckoutOrCreateCmd struct {
+	UserID string
+}
+
+func (s *Services) checkoutOrCreate(ctx context.Context, cmd CheckoutOrCreateCmd) (store_domain.Checkout, error) {
 	checkout, err := s.repository.CheckoutOrCreate(
 		ctx,
-		userID,
+		cmd.UserID,
 		func(cart *store_domain.Cart, stock *store_domain.Stock) (store_domain.Checkout, error) {
 			if cart.IsZero() {
 				return store_domain.Checkout{}, errors.New("cart not exists")
@@ -30,7 +34,7 @@ func (s Services) CheckoutOrCreate(ctx context.Context, userID string) (store_do
 			}
 			return store_domain.NewCheckout(
 				uuid.NewString(),
-				userID,
+				cmd.UserID,
 				cart.Products,
 				time.Now().UTC().Format(time.RFC3339),
 				store_domain.CheckoutPending,

@@ -8,7 +8,12 @@ import (
 	store_domain "github.com/siderustler/go-ecommerce/store/domain"
 )
 
-func (s Services) MergeUserCarts(ctx context.Context, fromID string, toID string) error {
+type MergeUserCartsCmd struct {
+	FromID string
+	ToID   string
+}
+
+func (s *Services) mergeUserCarts(ctx context.Context, cmd MergeUserCartsCmd) error {
 	mergeFn := func(
 		fromCart *store_domain.Cart, toCart *store_domain.Cart,
 		fromCheckout *store_domain.Checkout, toCheckout *store_domain.Checkout,
@@ -20,7 +25,7 @@ func (s Services) MergeUserCarts(ctx context.Context, fromID string, toID string
 		if toCart.IsZero() {
 			*toCart = store_domain.NewCart(
 				uuid.NewString(),
-				toID,
+				cmd.ToID,
 				make(map[string]store_domain.CartProduct),
 				"",
 				store_domain.CartActive,
@@ -65,5 +70,5 @@ func (s Services) MergeUserCarts(ctx context.Context, fromID string, toID string
 		}
 		return nil
 	}
-	return s.repository.MergeUserCarts(ctx, fromID, toID, mergeFn)
+	return s.repository.MergeUserCarts(ctx, cmd.FromID, cmd.ToID, mergeFn)
 }

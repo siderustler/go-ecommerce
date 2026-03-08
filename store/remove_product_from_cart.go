@@ -9,21 +9,26 @@ import (
 	store_domain "github.com/siderustler/go-ecommerce/store/domain"
 )
 
-func (s Services) RemoveProductFromCart(ctx context.Context, userID string, cartProduct store_domain.CartProduct) error {
+type RemoveProductFromCartCmd struct {
+	UserID      string
+	CartProduct store_domain.CartProduct
+}
+
+func (s *Services) removeProductFromCart(ctx context.Context, cmd RemoveProductFromCartCmd) error {
 	return s.repository.UpsertCart(
 		ctx,
-		userID,
-		cartProduct,
+		cmd.UserID,
+		cmd.CartProduct,
 		func(cart *store_domain.Cart, checkout *store_domain.Checkout, stock *store_domain.Stock, stockItem store_domain.StockItem) error {
 			if !stockItem.IsAvailable() {
 				return errors.New("item is not available in stock")
 			}
 			if cart.IsZero() {
 				cart.ID = uuid.NewString()
-				cart.CustomerID = userID
+				cart.CustomerID = cmd.UserID
 				cart.Status = store_domain.CartActive
 			}
-			err := cart.RemoveProduct(cartProduct)
+			err := cart.RemoveProduct(cmd.CartProduct)
 			if err != nil {
 				return fmt.Errorf("removing product from cart: %w", err)
 			}

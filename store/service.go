@@ -2,8 +2,11 @@ package store
 
 import (
 	"context"
+	"log/slog"
 
+	"github.com/siderustler/go-ecommerce/common/service_logger"
 	store_domain "github.com/siderustler/go-ecommerce/store/domain"
+	"github.com/stripe/stripe-go/v84"
 )
 
 type Repository interface {
@@ -73,8 +76,46 @@ type Repository interface {
 
 type Services struct {
 	repository Repository
+	Command    Command
+	Query      Query
 }
 
-func NewServices(repository Repository) *Services {
-	return &Services{repository: repository}
+type Command struct {
+	AddProductToCart      service_logger.Command[AddProductToCartCmd]
+	RemoveProductFromCart service_logger.Command[RemoveProductFromCartCmd]
+	CreateOrder           service_logger.Command[CreateOrderCmd]
+	InvalidateCheckout    service_logger.Command[InvalidateCheckoutCmd]
+	MergeUserCarts        service_logger.Command[MergeUserCartsCmd]
+	CreateStripeCheckout  service_logger.CommandResult[CreateStripeCheckoutCmd, *stripe.CheckoutSession]
+	CheckoutOrCreate      service_logger.CommandResult[CheckoutOrCreateCmd, store_domain.Checkout]
+}
+
+type Query struct {
+	Cart             service_logger.Query[CartQuery, store_domain.Cart]
+	CartCount        service_logger.Query[CartCountQuery, int]
+	CheckoutByUserID service_logger.Query[CheckoutByUserIDQuery, store_domain.Checkout]
+}
+
+func NewServices(repository Repository, logger *slog.Logger) *Services {
+	if logger == nil {
+		logger = slog.Default()
+	}
+
+	s := &Services{repository: repository}
+	s.Command = Command{
+		AddProductToCart:      service_logger.NewCommandLoggerDecorator(s.addProductToCart, logger),
+		RemoveProductFromCart: service_logger.NewCommandLoggerDecorator(s.removeProductFromCart, logger),
+		CreateOrder:           service_logger.NewCommandLoggerDecorator(s.createOrder, logger),
+		InvalidateCheckout:    service_logger.NewCommandLoggerDecorator(s.invalidateCheckout, logger),
+		MergeUserCarts:        service_logger.NewCommandLoggerDecorator(s.mergeUserCarts, logger),
+		CheckoutOrCreate:      service_logger.NewCommandResultLoggerDecorator(s.checkoutOrCreate, logger),
+		CreateStripeCheckout:  service_logger.NewCommandResultLoggerDecorator(s.createStripeCheckout, logger),
+	}
+	s.Query = Query{
+		Cart:             service_logger.NewQueryLoggerDecorator(s.cart, logger),
+		CartCount:        service_logger.NewQueryLoggerDecorator(s.cartCount, logger),
+		CheckoutByUserID: service_logger.NewQueryLoggerDecorator(s.checkoutByUserID, logger),
+	}
+
+	return s
 }

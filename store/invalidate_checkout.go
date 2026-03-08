@@ -7,10 +7,14 @@ import (
 	store_domain "github.com/siderustler/go-ecommerce/store/domain"
 )
 
-func (s Services) InvalidateCheckout(ctx context.Context, checkoutID string) error {
+type InvalidateCheckoutCmd struct {
+	CheckoutID string
+}
+
+func (s *Services) invalidateCheckout(ctx context.Context, cmd InvalidateCheckoutCmd) error {
 	return s.repository.UpdateCheckout(
 		ctx,
-		checkoutID,
+		cmd.CheckoutID,
 		func(checkout *store_domain.Checkout, stock *store_domain.Stock) error {
 			err := checkout.Invalidate()
 			if err != nil {

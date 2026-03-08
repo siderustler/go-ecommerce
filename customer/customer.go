@@ -2,6 +2,10 @@ package customer
 
 import "context"
 
-func (s Services) Customer(ctx context.Context, id string) (Customer, error) {
-	return s.repository.CustomerByID(ctx, id)
+type CustomerQuery struct {
+	UserID string
+}
+
+func (s *Services) customer(ctx context.Context, query CustomerQuery) (Customer, error) {
+	return s.repository.CustomerByID(ctx, query.UserID)
 }

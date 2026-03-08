@@ -31,13 +31,13 @@ func main() {
 		os.Exit(1)
 	}
 	productsRepo := repository.NewRepository(db)
-	productServices := product.NewServices(productsRepo)
+	productServices := product.NewServices(productsRepo, logger.With("component", "product.services"))
 
 	customerRepo := customerRepository.NewRepository(db)
-	customerServices := customer.NewServices(customerRepo)
+	customerServices := customer.NewServices(customerRepo, logger.With("component", "customer.services"))
 
 	storeRepo := store_repository.NewRepository(db)
-	storeServices := store.NewServices(storeRepo)
+	storeServices := store.NewServices(storeRepo, logger.With("component", "store.services"))
 
 	httpServer, err := ports.NewHttpServer(customerServices, productServices, storeServices, logger)
 	if err != nil {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/siderustler/go-ecommerce/store"
 	store_domain "github.com/siderustler/go-ecommerce/store/domain"
 )
 
@@ -159,7 +160,10 @@ func TestAddProductToCart_ForwardsInputsToRepository(t *testing.T) {
 		},
 	}
 
-	err := newServices(repo).AddProductToCart(context.Background(), expectedUserID, expectedProduct)
+	err := newServices(repo).Command.AddProductToCart.Handle(context.Background(), store.AddProductToCartCmd{
+		UserID:       expectedUserID,
+		ProductToAdd: expectedProduct,
+	})
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -190,7 +194,10 @@ func runAddProductToCart(
 		},
 	}
 
-	return newServices(repo).AddProductToCart(context.Background(), userID, productToAdd)
+	return newServices(repo).Command.AddProductToCart.Handle(context.Background(), store.AddProductToCartCmd{
+		UserID:       userID,
+		ProductToAdd: productToAdd,
+	})
 }
 
 func activeCart(id string, userID string) store_domain.Cart {

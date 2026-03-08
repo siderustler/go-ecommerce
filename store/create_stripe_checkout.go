@@ -10,19 +10,20 @@ import (
 	"github.com/stripe/stripe-go/v84/checkout/session"
 )
 
-func (s Services) CreateStripeCheckout(
-	ctx context.Context,
-	checkoutID string,
-	cartProducts map[string]store_domain.CartProduct,
-	products map[string]product.Product,
-) (sess *stripe.CheckoutSession, err error) {
+type CreateStripeCheckoutCmd struct {
+	CheckoutID   string
+	CartProducts map[string]store_domain.CartProduct
+	Products     map[string]product.Product
+}
+
+func (s *Services) createStripeCheckout(ctx context.Context, cmd CreateStripeCheckoutCmd) (sess *stripe.CheckoutSession, err error) {
 	expires := int64((time.Hour * 2).Seconds())
 	sessionParams := &stripe.CheckoutSessionParams{
 		Mode:              stripe.String(string(stripe.CheckoutSessionModePayment)),
 		UIMode:            stripe.String("embedded"),
 		ReturnURL:         stripe.String("http://localhost:8080/basket/checkout/finalize?session_id={CHECKOUT_SESSION_ID}"),
-		LineItems:         mapCartProductsToStripeLineItems(cartProducts, products),
-		ClientReferenceID: stripe.String(checkoutID),
+		LineItems:         mapCartProductsToStripeLineItems(cmd.CartProducts, cmd.Products),
+		ClientReferenceID: stripe.String(cmd.CheckoutID),
 		ExpiresAt:         &expires,
 	}
 	sess, err = session.New(sessionParams)

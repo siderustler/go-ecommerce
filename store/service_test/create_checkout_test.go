@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/siderustler/go-ecommerce/store"
 	store_domain "github.com/siderustler/go-ecommerce/store/domain"
 )
 
@@ -25,7 +26,7 @@ func TestCheckoutOrCreate_DoesNothingWhenPendingCheckoutAlreadyExists(t *testing
 		},
 	}
 
-	checkout, err := newServices(repo).CheckoutOrCreate(context.Background(), "u-existing")
+	checkout, err := newServices(repo).Command.CheckoutOrCreate.Handle(context.Background(), store.CheckoutOrCreateCmd{UserID: "u-existing"})
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -96,7 +97,7 @@ func runCheckoutOrCreate(userID string, cart *store_domain.Cart, stock *store_do
 		},
 	}
 
-	checkout, err := newServices(repo).CheckoutOrCreate(context.Background(), userID)
+	checkout, err := newServices(repo).Command.CheckoutOrCreate.Handle(context.Background(), store.CheckoutOrCreateCmd{UserID: userID})
 	if !checkout.IsZero() {
 		capturedCheckout = checkout
 	}

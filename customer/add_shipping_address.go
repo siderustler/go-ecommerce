@@ -2,6 +2,11 @@ package customer
 
 import "context"
 
-func (s Services) AddShippingAddress(ctx context.Context, userID string, shipping ShippingAddress) error {
-	return s.repository.UpdateShippingAddress(ctx, userID, shipping)
+type AddShippingAddressCmd struct {
+	UserID   string
+	Shipping ShippingAddress
+}
+
+func (s *Services) addShippingAddress(ctx context.Context, cmd AddShippingAddressCmd) error {
+	return s.repository.UpdateShippingAddress(ctx, cmd.UserID, cmd.Shipping)
 }
