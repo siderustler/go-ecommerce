@@ -27,16 +27,21 @@ type address struct {
 
 func newAddress(city, addr, postalCode, local string) (address, error) {
 	var err error
-	if strings.Trim(city, " ") == "" {
+	city = strings.Trim(city, " ")
+	addr = strings.Trim(addr, " ")
+	postalCode = strings.Trim(postalCode, " ")
+	local = strings.Trim(local, " ")
+
+	if city == "" {
 		err = errors.Join(err, ErrCityEmpty)
 	}
-	if strings.Trim(addr, " ") == "" {
+	if addr == "" {
 		err = errors.Join(err, ErrAddressEmpty)
 	}
-	if strings.Trim(postalCode, " ") == "" {
+	if postalCode == "" {
 		err = errors.Join(err, ErrPostalCodeEmpty)
 	}
-	if strings.Trim(local, " ") == "" {
+	if local == "" {
 		err = errors.Join(err, ErrLocalNumberEmpty)
 	}
 	return address{
@@ -79,10 +84,12 @@ func NewBilling(id, nipCode, company, city, address, postalCode, local string) (
 	if err != nil {
 		err = fmt.Errorf("validating billing address: %w", err)
 	}
-	if strings.Trim(nipCode, " ") == "" {
+	nipCode = strings.Trim(nipCode, " ")
+	company = strings.Trim(company, " ")
+	if nipCode == "" {
 		err = errors.Join(err, ErrNipCodeEmpty)
 	}
-	if strings.Trim(company, " ") == "" {
+	if company == "" {
 		err = errors.Join(err, ErrCompanyNameEmpty)
 	}
 	return Billing{
