@@ -8,6 +8,12 @@ import (
 	store_domain "github.com/siderustler/go-ecommerce/store/domain"
 )
 
+var fixedCheckoutNow = time.Date(2026, time.April, 25, 10, 15, 0, 0, time.UTC)
+
+func fixedCheckoutTimeNow() time.Time {
+	return fixedCheckoutNow
+}
+
 func TestCheckoutStatusFromRawString(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -16,6 +22,7 @@ func TestCheckoutStatusFromRawString(t *testing.T) {
 	}{
 		{name: "finalized", raw: "FINALIZED", status: store_domain.CheckoutFinalized},
 		{name: "pending", raw: "PENDING", status: store_domain.CheckoutPending},
+		{name: "invalidated", raw: "INVALIDATED", status: store_domain.CheckoutInvalidated},
 		{name: "fallback invalidated", raw: "UNKNOWN", status: store_domain.CheckoutInvalidated},
 	}
 
@@ -34,12 +41,20 @@ func TestCheckoutIsExpired(t *testing.T) {
 		expired   bool
 	}{
 		{name: "invalid timestamp is expired", createdAt: "broken", expired: true},
-		{name: "older than 15 minutes is expired", createdAt: time.Now().UTC().Add(-16 * time.Minute).Format(time.RFC3339), expired: true},
-		{name: "recent checkout is not expired", createdAt: time.Now().UTC().Add(-5 * time.Minute).Format(time.RFC3339), expired: false},
+		{name: "older than 15 minutes is expired", createdAt: fixedCheckoutNow.Add(-16 * time.Minute).Format(time.RFC3339), expired: true},
+		{name: "exactly 15 minutes old is not expired", createdAt: fixedCheckoutNow.Add(-15 * time.Minute).Format(time.RFC3339), expired: false},
+		{name: "recent checkout is not expired", createdAt: fixedCheckoutNow.Add(-5 * time.Minute).Format(time.RFC3339), expired: false},
 	}
 
 	for _, test := range tests {
-		actual := store_domain.NewCheckout("1", "u1", map[string]store_domain.CartProduct{}, test.createdAt, store_domain.CheckoutPending)
+		actual := store_domain.NewCheckout(
+			"1",
+			"u1",
+			map[string]store_domain.CartProduct{},
+			test.createdAt,
+			store_domain.CheckoutPending,
+			fixedCheckoutTimeNow,
+		)
 		isExpired := actual.IsExpired()
 		if isExpired != test.expired {
 			t.Fatalf("test %s failed: expected expired: %t actual expired: %t", test.name, test.expired, isExpired)
@@ -63,6 +78,11 @@ func TestCheckoutInvalidate(t *testing.T) {
 			name:          "invalidating invalidated checkout returns error",
 			entity:        store_domain.NewCheckout("1", "u1", map[string]store_domain.CartProduct{}, time.Now().UTC().Format(time.RFC3339), store_domain.CheckoutInvalidated),
 			expectedError: store_domain.ErrCheckoutInvalidated,
+			expectedState: store_domain.CheckoutInvalidated,
+		},
+		{
+			name:          "invalidating finalized checkout transitions to invalidated",
+			entity:        store_domain.NewCheckout("1", "u1", map[string]store_domain.CartProduct{}, time.Now().UTC().Format(time.RFC3339), store_domain.CheckoutFinalized),
 			expectedState: store_domain.CheckoutInvalidated,
 		},
 	}

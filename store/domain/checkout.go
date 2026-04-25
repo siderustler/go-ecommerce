@@ -5,6 +5,12 @@ import (
 	"time"
 )
 
+type checkoutTimeNowProvider func() time.Time
+
+var checkoutTimeNowProviderDefault checkoutTimeNowProvider = func() time.Time {
+	return time.Now().UTC()
+}
+
 var ErrCheckoutInvalidated = errors.New("checkout already invalidated")
 
 type CheckoutStatus string
@@ -32,15 +38,21 @@ type Checkout struct {
 	Items     map[string]CartProduct
 	CreatedAt string
 	Status    CheckoutStatus
+	timeNow   checkoutTimeNowProvider
 }
 
-func NewCheckout(id, userID string, items map[string]CartProduct, createdAt string, status CheckoutStatus) Checkout {
+func NewCheckout(id, userID string, items map[string]CartProduct, createdAt string, status CheckoutStatus, timers ...checkoutTimeNowProvider) Checkout {
+	t := checkoutTimeNowProviderDefault
+	if len(timers) > 0 {
+		t = timers[0]
+	}
 	return Checkout{
 		ID:        id,
 		UserID:    userID,
 		Items:     items,
 		Status:    status,
 		CreatedAt: createdAt,
+		timeNow:   t,
 	}
 }
 
@@ -51,7 +63,7 @@ func (c Checkout) IsExpired() bool {
 	}
 	expiryTime := 15 * time.Minute
 	expiredTime := parsedTime.Add(expiryTime)
-	return time.Now().UTC().After(expiredTime)
+	return c.timeNow().After(expiredTime)
 }
 
 func (c Checkout) IsZero() bool {
