@@ -246,7 +246,9 @@ func cart(ctx context.Context, exec adapters.Executor, userID string) (store_dom
 		}
 	}()
 	cart := store_domain.Cart{Products: make(map[string]store_domain.CartProduct)}
+	found := false
 	for rows.Next() {
+		found = true
 		var cartProduct store_domain.CartProduct
 		err := rows.Scan(&cart.ID, &cart.CustomerID, &cart.LastModifiedAt, &cart.Status, &cartProduct.ProductID, &cartProduct.Count)
 		if err != nil {
@@ -256,6 +258,9 @@ func cart(ctx context.Context, exec adapters.Executor, userID string) (store_dom
 	}
 	if err = rows.Err(); err != nil {
 		return store_domain.Cart{}, fmt.Errorf("iterating cart rows: %w", err)
+	}
+	if !found {
+		return store_domain.Cart{}, sql.ErrNoRows
 	}
 	return cart, nil
 }
@@ -320,7 +325,7 @@ func (r repository) CheckoutOrCreate(
 
 	err := r.db.RunInTx(ctx, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
 		existingCheckout, err := checkoutByUserID(ctx, tx, userID)
-		if err != nil {
+		if err != nil && err != sql.ErrNoRows {
 			return fmt.Errorf("retrieving existing checkout: %w", err)
 		}
 		if !existingCheckout.IsZero() {
@@ -395,17 +400,114 @@ func (r repository) CheckoutOrCreate(
 
 // InsertStockItem implements store.Repository.
 func (r repository) InsertStockItem(ctx context.Context, stockItem store_domain.StockItem, product store_domain.Product) error {
-	panic("unimplemented")
+	return r.db.RunInTx(ctx, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
+		_, err := tx.ExecContext(
+			ctx,
+			`INSERT INTO products (id, name, main_image, price, category, price_before)
+			 VALUES ($1, $2, $3, $4, $5, $6)
+			 ON CONFLICT (id) DO UPDATE SET
+			   name = EXCLUDED.name,
+			   price = EXCLUDED.price,
+			   price_before = EXCLUDED.price_before`,
+			product.ID,
+			product.Name,
+			"",
+			int(product.ActualPrice),
+			"PARTS",
+			int(product.DiscountPrice),
+		)
+		if err != nil {
+			return fmt.Errorf("upserting product: %w", err)
+		}
+		_, err = tx.ExecContext(
+			ctx,
+			`INSERT INTO stock (product_id, available_amount, reserved_amount)
+			 VALUES ($1, $2, $3)
+			 ON CONFLICT (product_id) DO UPDATE SET
+			   available_amount = EXCLUDED.available_amount,
+			   reserved_amount = EXCLUDED.reserved_amount`,
+			stockItem.ProductID,
+			stockItem.AvailableAmount,
+			stockItem.ReservedAmount,
+		)
+		if err != nil {
+			return fmt.Errorf("upserting stock item: %w", err)
+		}
+		return nil
+	})
 }
 
 // UpdateCheckout implements store.Repository.
 func (r repository) UpdateCheckout(ctx context.Context, checkoutID string, updateFn func(checkout *store_domain.Checkout, stock *store_domain.Stock) error) error {
-	panic("unimplemented")
+	return r.db.RunInTx(ctx, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
+		checkout, err := checkoutByID(ctx, tx, checkoutID)
+		if err != nil {
+			return fmt.Errorf("retrieving checkout by id: %w", err)
+		}
+		stock, err := stockForUpdate(ctx, tx, slices.Collect(maps.Keys(checkout.Items))...)
+		if err != nil {
+			return fmt.Errorf("retrieving stock for update: %w", err)
+		}
+		if err := updateFn(&checkout, &stock); err != nil {
+			return fmt.Errorf("update fn: %w", err)
+		}
+		_, err = tx.ExecContext(ctx, `UPDATE checkouts SET status = $1 WHERE id = $2`, checkout.Status, checkout.ID)
+		if err != nil {
+			return fmt.Errorf("updating checkout: %w", err)
+		}
+		for productID, stockItem := range stock.Items {
+			_, err = tx.ExecContext(
+				ctx,
+				`UPDATE stock SET available_amount = $1, reserved_amount = $2 WHERE product_id = $3`,
+				stockItem.AvailableAmount,
+				stockItem.ReservedAmount,
+				productID,
+			)
+			if err != nil {
+				return fmt.Errorf("updating stock item %s: %w", productID, err)
+			}
+		}
+		return nil
+	})
 }
 
 // UpdateStockItem implements store.Repository.
-func (r repository) UpdateStockItem(ctx context.Context, stockItem store_domain.StockItem, updateFn func(stockItem *store_domain.StockItem) error) {
-	panic("unimplemented")
+func (r repository) UpdateStockItem(ctx context.Context, item store_domain.StockItem, updateFn func(stockItem *store_domain.StockItem) error) {
+	_ = r.db.RunInTx(ctx, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
+		current, err := stockItemForUpdate(ctx, tx, item.ProductID)
+		if err != nil {
+			return fmt.Errorf("retrieving stock item: %w", err)
+		}
+		if err := updateFn(&current); err != nil {
+			return fmt.Errorf("update fn: %w", err)
+		}
+		_, err = tx.ExecContext(
+			ctx,
+			`UPDATE stock SET available_amount = $1, reserved_amount = $2 WHERE product_id = $3`,
+			current.AvailableAmount,
+			current.ReservedAmount,
+			current.ProductID,
+		)
+		if err != nil {
+			return fmt.Errorf("updating stock item: %w", err)
+		}
+		return nil
+	})
+}
+
+func stockItemForUpdate(ctx context.Context, exec adapters.Executor, itemID string) (store_domain.StockItem, error) {
+	var item store_domain.StockItem
+	row := exec.QueryRowContext(
+		ctx,
+		`SELECT product_id, available_amount, reserved_amount
+		 FROM stock WHERE product_id = $1 FOR UPDATE`,
+		itemID,
+	)
+	err := row.Scan(&item.ProductID, &item.AvailableAmount, &item.ReservedAmount)
+	if err != nil {
+		return store_domain.StockItem{}, fmt.Errorf("scanning stock item: %w", err)
+	}
+	return item, nil
 }
 
 func stockItem(ctx context.Context, exec adapters.Executor, itemID string) (store_domain.StockItem, error) {
@@ -440,7 +542,9 @@ func checkoutByID(ctx context.Context, exec adapters.Executor, id string) (store
 			fmt.Printf("closing rows in checkoutByID query: %v\n", closeErr)
 		}
 	}()
+	found := false
 	for rows.Next() {
+		found = true
 		var checkoutProduct store_domain.CartProduct
 		err = rows.Scan(
 			&checkout.ID,
@@ -457,6 +561,9 @@ func checkoutByID(ctx context.Context, exec adapters.Executor, id string) (store
 	}
 	if err = rows.Err(); err != nil {
 		return store_domain.Checkout{}, fmt.Errorf("iterating checkout rows: %w", err)
+	}
+	if !found {
+		return store_domain.Checkout{}, sql.ErrNoRows
 	}
 	return checkout, nil
 }
@@ -478,7 +585,9 @@ func checkoutByBasketID(ctx context.Context, exec adapters.Executor, basketID st
 			fmt.Printf("closing rows in checkoutByBasketID query: %v\n", closeErr)
 		}
 	}()
+	found := false
 	for rows.Next() {
+		found = true
 		var checkoutProduct store_domain.CartProduct
 		err = rows.Scan(
 			&checkout.ID,
@@ -495,6 +604,9 @@ func checkoutByBasketID(ctx context.Context, exec adapters.Executor, basketID st
 	}
 	if err = rows.Err(); err != nil {
 		return store_domain.Checkout{}, fmt.Errorf("iterating checkout rows: %w", err)
+	}
+	if !found {
+		return store_domain.Checkout{}, sql.ErrNoRows
 	}
 	return checkout, nil
 }
@@ -516,7 +628,9 @@ func checkoutByUserID(ctx context.Context, exec adapters.Executor, userID string
 			fmt.Printf("closing rows in checkoutByUserID query: %v\n", closeErr)
 		}
 	}()
+	found := false
 	for rows.Next() {
+		found = true
 		var checkoutProduct store_domain.CartProduct
 		err = rows.Scan(
 			&checkout.ID,
@@ -533,6 +647,9 @@ func checkoutByUserID(ctx context.Context, exec adapters.Executor, userID string
 	}
 	if err = rows.Err(); err != nil {
 		return store_domain.Checkout{}, fmt.Errorf("iterating checkout rows: %w", err)
+	}
+	if !found {
+		return store_domain.Checkout{}, sql.ErrNoRows
 	}
 	return checkout, nil
 }
