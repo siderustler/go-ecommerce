@@ -6,11 +6,24 @@ import (
 	"time"
 )
 
+type timeNowProvider func() string
+
+var timeNowProviderDefault timeNowProvider = func() string {
+	return time.Now().UTC().Format(time.RFC3339)
+}
+
 type CartStatus string
 
 var (
 	CartActive   = CartStatus("ACTIVE")
 	CartInactive = CartStatus("INACTIVE")
+
+	ErrAddProductToInactiveCart      = errors.New("unable to add product to inactive cart")
+	ErrRemoveProductFromInactiveCart = errors.New("unable to remove product from inactive cart")
+	ErrNegativeProductCount          = errors.New("count must be greater than zero")
+	ErrProductNotInCart              = errors.New("product not in Cart")
+	ErrRequestedCountExceedsCart     = errors.New("requested count is greater than count in cart")
+	ErrCartInactive                  = errors.New("status is not active")
 )
 
 type Cart struct {
@@ -19,6 +32,7 @@ type Cart struct {
 	Products       map[string]CartProduct
 	LastModifiedAt string
 	Status         CartStatus
+	timeNow        timeNowProvider
 }
 
 func CartStatusFromRawString(stat string) CartStatus {
@@ -36,12 +50,12 @@ func (b Cart) IsZero() bool {
 
 func (b *Cart) AddProduct(cartProduct CartProduct) error {
 	if b.Status == CartInactive {
-		return errors.New("unable to add product to inactive cart")
+		return ErrAddProductToInactiveCart
 	}
 	if cartProduct.Count <= 0 {
-		return errors.New("count must be greater than zero")
+		return ErrNegativeProductCount
 	}
-	b.LastModifiedAt = time.Now().UTC().Format(time.RFC3339)
+	b.LastModifiedAt = b.timeNow()
 	product, inCart := b.Products[cartProduct.ProductID]
 	if !inCart {
 		b.Products[cartProduct.ProductID] = NewCartProduct(cartProduct.ProductID, cartProduct.Count)
@@ -55,19 +69,19 @@ func (b *Cart) AddProduct(cartProduct CartProduct) error {
 
 func (b *Cart) RemoveProduct(cartProduct CartProduct) error {
 	if b.Status == CartInactive {
-		return errors.New("unable to remove product from inactive cart")
+		return ErrRemoveProductFromInactiveCart
 	}
 	if cartProduct.Count <= 0 {
-		return errors.New("count must be greater than zero")
+		return ErrNegativeProductCount
 	}
 	product, inCart := b.Products[cartProduct.ProductID]
 	if !inCart {
-		return errors.New("product not in Cart")
+		return ErrProductNotInCart
 	}
 	if product.Count < cartProduct.Count {
-		return errors.New("requested count is greater than count in cart")
+		return ErrRequestedCountExceedsCart
 	}
-	b.LastModifiedAt = time.Now().UTC().Format(time.RFC3339)
+	b.LastModifiedAt = b.timeNow()
 	product.Count -= cartProduct.Count
 	if product.Count == 0 {
 		delete(b.Products, cartProduct.ProductID)
@@ -89,18 +103,23 @@ func (b *Cart) MergeCart(cart Cart) error {
 
 func (b *Cart) Inactivate() error {
 	if b.Status != CartActive {
-		return errors.New("status is not active")
+		return ErrCartInactive
 	}
 	b.Status = CartInactive
 	return nil
 }
 
-func NewCart(id, customerID string, products map[string]CartProduct, lastModifiedAt string, cartStatus CartStatus) Cart {
+func NewCart(id, customerID string, products map[string]CartProduct, lastModifiedAt string, cartStatus CartStatus, timers ...timeNowProvider) Cart {
+	var t timeNowProvider = timeNowProviderDefault
+	if len(timers) > 0 {
+		t = timers[0]
+	}
 	return Cart{
 		ID:             id,
 		CustomerID:     customerID,
 		Products:       products,
 		LastModifiedAt: lastModifiedAt,
 		Status:         cartStatus,
+		timeNow:        t,
 	}
 }
