@@ -110,7 +110,7 @@ func (b *Cart) Inactivate() error {
 }
 
 func NewCart(id, customerID string, products map[string]CartProduct, lastModifiedAt string, cartStatus CartStatus, timers ...timeNowProvider) Cart {
-	var t timeNowProvider = timeNowProviderDefault
+	t := timeNowProviderDefault
 	if len(timers) > 0 {
 		t = timers[0]
 	}
