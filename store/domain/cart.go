@@ -49,6 +49,9 @@ func (b Cart) IsZero() bool {
 }
 
 func (b *Cart) AddProduct(cartProduct CartProduct) error {
+	if b.timeNow == nil {
+		b.timeNow = timeNowProviderDefault
+	}
 	if b.Status == CartInactive {
 		return ErrAddProductToInactiveCart
 	}
@@ -68,6 +71,9 @@ func (b *Cart) AddProduct(cartProduct CartProduct) error {
 }
 
 func (b *Cart) RemoveProduct(cartProduct CartProduct) error {
+	if b.timeNow == nil {
+		b.timeNow = timeNowProviderDefault
+	}
 	if b.Status == CartInactive {
 		return ErrRemoveProductFromInactiveCart
 	}
