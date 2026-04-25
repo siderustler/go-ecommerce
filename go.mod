@@ -1,6 +1,6 @@
 module github.com/siderustler/go-ecommerce
 
-go 1.25.4
+go 1.26.2
 
 require (
 	github.com/a-h/templ v0.3.943
@@ -32,7 +32,7 @@ require (
 	github.com/valyala/fasthttp v1.69.0 // indirect
 	golang.org/x/crypto v0.48.0 // indirect
 	golang.org/x/net v0.50.0 // indirect
-	golang.org/x/sync v0.19.0 // indirect
+	golang.org/x/sync v0.19.0 // indirect; indirectq
 	golang.org/x/sys v0.41.0 // indirect
 	golang.org/x/text v0.34.0 // indirect
 )
