@@ -44,6 +44,9 @@ db:
 	-v $(CURDIR)/sql/02_seed.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro \
 	-p 5432:5432 postgres
 
+test/integration/customer:
+	go test -mod=mod -tags=integration ./customer
+
 
 #need to be authorized to stripe (stripe cli = stripe login)
 payment_provider:
