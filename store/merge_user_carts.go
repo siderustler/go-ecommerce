@@ -15,15 +15,15 @@ type MergeUserCartsCmd struct {
 
 func (s *Services) mergeUserCarts(ctx context.Context, cmd MergeUserCartsCmd) error {
 	mergeFn := func(
-		fromCart *store_domain.Cart, toCart *store_domain.Cart,
-		fromCheckout *store_domain.Checkout, toCheckout *store_domain.Checkout,
+		fromActiveCart *store_domain.Cart, toActiveCart *store_domain.Cart,
+		fromPendingCheckout *store_domain.Checkout, toPendingCheckout *store_domain.Checkout,
 		stock *store_domain.Stock,
 	) error {
-		if fromCart.IsZero() {
+		if fromActiveCart.IsZero() {
 			return nil
 		}
-		if toCart.IsZero() {
-			*toCart = store_domain.NewCart(
+		if toActiveCart.IsZero() {
+			*toActiveCart = store_domain.NewCart(
 				uuid.NewString(),
 				cmd.ToID,
 				make(map[string]store_domain.CartProduct),
@@ -31,35 +31,35 @@ func (s *Services) mergeUserCarts(ctx context.Context, cmd MergeUserCartsCmd) er
 				store_domain.CartActive,
 			)
 		}
-		err := toCart.MergeCart(*fromCart)
+		err := toActiveCart.MergeCart(*fromActiveCart)
 		if err != nil {
 			return fmt.Errorf("merging carts: %w", err)
 		}
-		err = fromCart.Inactivate()
+		err = fromActiveCart.Inactivate()
 		if err != nil {
 			return fmt.Errorf("inactivating from cart: %w", err)
 		}
-		if !fromCheckout.IsZero() {
-			err = fromCheckout.Invalidate()
+		if !fromPendingCheckout.IsZero() {
+			err = fromPendingCheckout.Invalidate()
 			if err != nil {
 				return fmt.Errorf("invalidating from checkout: %w", err)
 			}
 		}
-		if !toCheckout.IsZero() {
-			err = toCheckout.Invalidate()
+		if !toPendingCheckout.IsZero() {
+			err = toPendingCheckout.Invalidate()
 			if err != nil {
 				return fmt.Errorf("invalidating to checkout: %w", err)
 			}
 		}
 		for productID, item := range stock.Items {
-			fromCheckoutItem, ok := fromCheckout.Items[productID]
+			fromCheckoutItem, ok := fromPendingCheckout.Items[productID]
 			if ok {
 				err = item.ReleaseItemReservation(fromCheckoutItem.Count)
 				if err != nil {
 					return fmt.Errorf("releasing merging checkout stock item reservation: %w", err)
 				}
 			}
-			toCheckoutItem, ok := toCheckout.Items[productID]
+			toCheckoutItem, ok := toPendingCheckout.Items[productID]
 			if ok {
 				err = item.ReleaseItemReservation(toCheckoutItem.Count)
 				if err != nil {

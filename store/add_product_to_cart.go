@@ -19,7 +19,7 @@ func (s *Services) addProductToCart(ctx context.Context, cmd AddProductToCartCmd
 		ctx,
 		cmd.UserID,
 		cmd.ProductToAdd,
-		func(cart *store_domain.Cart, checkout *store_domain.Checkout, checkoutStock *store_domain.Stock, requestedProductStock store_domain.StockItem) error {
+		func(cart *store_domain.Cart, activeCheckout *store_domain.Checkout, checkoutStock *store_domain.Stock, requestedProductStock store_domain.StockItem) error {
 			if !requestedProductStock.IsAvailable() {
 				return errors.New("item is not available in stock")
 			}
@@ -37,14 +37,14 @@ func (s *Services) addProductToCart(ctx context.Context, cmd AddProductToCartCmd
 			if err != nil {
 				return fmt.Errorf("adding product to cart: %w", err)
 			}
-			if checkout.IsZero() {
+			if activeCheckout.IsZero() {
 				return nil
 			}
-			err = checkout.Invalidate()
+			err = activeCheckout.Invalidate()
 			if err != nil {
 				return fmt.Errorf("invalidating existing checkout: %w", err)
 			}
-			for productID, cartItem := range checkout.Items {
+			for productID, cartItem := range activeCheckout.Items {
 				stockItem, exists := checkoutStock.Items[productID]
 				if !exists {
 					continue
