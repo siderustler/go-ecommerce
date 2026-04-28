@@ -9,9 +9,9 @@ import (
 
 type repository interface {
 	CustomerByID(ctx context.Context, userID string) (Customer, error)
-	CustomerOrCreate(ctx context.Context, userID string) (Customer, error)
+	CreateShallowCustomer(ctx context.Context, userID string) error
+	SaveCustomerProfile(ctx context.Context, customer Customer) error
 	UpdateShippingAddress(ctx context.Context, userID string, shipping ShippingAddress) error
-	CreateCustomer(ctx context.Context, customer Customer) error
 }
 
 type Services struct {
@@ -21,9 +21,9 @@ type Services struct {
 }
 
 type Command struct {
-	CustomerOrCreate   service_logger.CommandResult[CustomerOrCreateCmd, Customer]
-	CreateCustomer     service_logger.Command[CreateCustomerCmd]
-	AddShippingAddress service_logger.Command[AddShippingAddressCmd]
+	CreateShallowCustomer service_logger.Command[CreateShallowCustomerCmd]
+	SaveCustomerProfile   service_logger.Command[SaveCustomerProfileCmd]
+	AddShippingAddress    service_logger.Command[AddShippingAddressCmd]
 }
 
 type Query struct {
@@ -37,9 +37,9 @@ func NewServices(repository repository, logger *slog.Logger) *Services {
 
 	s := &Services{repository: repository}
 	s.Command = Command{
-		CustomerOrCreate:   service_logger.NewCommandResultLoggerDecorator(s.customerOrCreate, logger),
-		CreateCustomer:     service_logger.NewCommandLoggerDecorator(s.createCustomer, logger),
-		AddShippingAddress: service_logger.NewCommandLoggerDecorator(s.addShippingAddress, logger),
+		CreateShallowCustomer: service_logger.NewCommandLoggerDecorator(s.createShallowCustomer, logger),
+		SaveCustomerProfile:   service_logger.NewCommandLoggerDecorator(s.saveCustomerProfile, logger),
+		AddShippingAddress:    service_logger.NewCommandLoggerDecorator(s.addShippingAddress, logger),
 	}
 	s.Query = Query{
 		Customer: service_logger.NewQueryLoggerDecorator(s.customer, logger),

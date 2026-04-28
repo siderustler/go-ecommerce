@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"maps"
@@ -227,12 +228,8 @@ func (h handlers) updateBasket(c fiber.Ctx) error {
 	_ = c.Bind().Body(&basketViewModel)
 	userID := auth.UserIDFromRequest(c)
 	if userID == "" {
-		userID = uuid.NewString()
-		auth.PersistUserID(c, userID)
-	}
-	if _, err := h.customerServices.Command.CustomerOrCreate.Handle(c.Context(), customer.CustomerOrCreateCmd{UserID: userID}); err != nil {
-		requestLogger(c, h.logger).ErrorContext(c.RequestCtx(), "customer.or_create.failed", "error", err)
-		return renderFragmentOrView(c, views.Basket(basketViewModel), views.BasketItemFragment(basketViewModel.ChangeCountID))
+		requestLogger(c, h.logger).ErrorContext(c.RequestCtx(), "updateBasket", "userID", "not in session: invalid state")
+		return renderFragmentOrView(c, views.Basket(basketViewModel))
 	}
 
 	var err error
@@ -282,7 +279,7 @@ func (h handlers) addItemToBasket(c fiber.Ctx) error {
 		userID = uuid.NewString()
 		auth.PersistUserID(c, userID)
 	}
-	if _, err := h.customerServices.Command.CustomerOrCreate.Handle(c.Context(), customer.CustomerOrCreateCmd{UserID: userID}); err != nil {
+	if err := h.customerServices.Command.CreateShallowCustomer.Handle(c.Context(), customer.CreateShallowCustomerCmd{UserID: userID}); err != nil && !errors.Is(err, customer.ErrCustomerAlreadyExists) {
 		requestLogger(c, h.logger).ErrorContext(c.RequestCtx(), "customer.or_create.failed", "error", err)
 		return c.Redirect().To(basketAdd.Redirect)
 	}
@@ -357,7 +354,7 @@ func (h handlers) postBillingInfo(c fiber.Ctx) error {
 		billingInfoViewModel.MapDomainErrorToViewModelError(err)
 		return renderFragmentOrView(c, views.BillingInfo(billingInfoViewModel), views.BillingInfoFragment)
 	}
-	err = h.customerServices.Command.CreateCustomer.Handle(c.Context(), customer.CreateCustomerCmd{Customer: customerData})
+	err = h.customerServices.Command.SaveCustomerProfile.Handle(c.Context(), customer.SaveCustomerProfileCmd{Customer: customerData})
 	if err != nil {
 		//FIXME
 		// DISPLAY TOAST OTN ERROR
@@ -412,7 +409,7 @@ func (h handlers) postBasketBillingInfo(c fiber.Ctx) error {
 		billingInfoViewModel.MapDomainErrorToViewModelError(err)
 		return renderFragmentOrView(c, views.BasketBillingInfo(billingInfoViewModel), views.BillingInfoFragment)
 	}
-	err = h.customerServices.Command.CreateCustomer.Handle(c.Context(), customer.CreateCustomerCmd{Customer: customerData})
+	err = h.customerServices.Command.SaveCustomerProfile.Handle(c.Context(), customer.SaveCustomerProfileCmd{Customer: customerData})
 	if err != nil {
 		//FIXME
 		// DISPLAY TOAST OTN ERROR
@@ -654,7 +651,7 @@ func (h handlers) oauthCallbackHandler(oauth *auth.Authenticator) func(c fiber.C
 		sess.Set("ip", c.IP())
 		auth.PersistUserID(c, idToken.Subject)
 		sess.Set("authorized", true)
-		if _, err = h.customerServices.Command.CustomerOrCreate.Handle(c.Context(), customer.CustomerOrCreateCmd{UserID: idToken.Subject}); err != nil {
+		if err = h.customerServices.Command.CreateShallowCustomer.Handle(c.Context(), customer.CreateShallowCustomerCmd{UserID: idToken.Subject}); err != nil && !errors.Is(err, customer.ErrCustomerAlreadyExists) {
 			return c.SendString("customer-or-create: " + err.Error())
 		}
 		previousUserExisted := previousUser != ""

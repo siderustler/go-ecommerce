@@ -65,30 +65,30 @@ func (r repository) CustomerByID(ctx context.Context, userID string) (customer.C
 	return cust, nil
 }
 
-func (r repository) CustomerOrCreate(ctx context.Context, userID string) (customer.Customer, error) {
-	existingCustomer, err := r.CustomerByID(ctx, userID)
-	if err != nil {
-		return customer.Customer{}, fmt.Errorf("retrieving customer by id: %w", err)
-	}
-	if !existingCustomer.IsZero() {
-		return existingCustomer, nil
-	}
-
-	newCustomer := customer.NewCustomer(
+func (r repository) CreateShallowCustomer(ctx context.Context, userID string) error {
+	result, err := r.db.ExecContext(
+		ctx,
+		`INSERT INTO customers (customer_id, name, email, phone) VALUES ($1, $2, $3, $4)
+		ON CONFLICT (customer_id) DO NOTHING`,
 		userID,
-		customer.Credentials{},
-		customer.Billing{},
-		customer.ShippingAddress{},
+		"",
+		"",
+		"",
 	)
-	err = r.CreateCustomer(ctx, newCustomer)
 	if err != nil {
-		return customer.Customer{}, fmt.Errorf("creating customer: %w", err)
+		return fmt.Errorf("creating shallow customer: %w", err)
 	}
-
-	return newCustomer, nil
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("retrieving created shallow customer rows: %w", err)
+	}
+	if rowsAffected == 0 {
+		return customer.ErrCustomerAlreadyExists
+	}
+	return nil
 }
 
-func (r repository) CreateCustomer(ctx context.Context, customer customer.Customer) error {
+func (r repository) SaveCustomerProfile(ctx context.Context, customer customer.Customer) error {
 	return r.db.RunInTx(ctx, &sql.TxOptions{Isolation: sql.LevelDefault}, func(tx *sql.Tx) error {
 		if !customer.Billing.IsZero() {
 			_, err := tx.ExecContext(
@@ -196,13 +196,20 @@ func (r repository) UpdateShippingAddress(ctx context.Context, userID string, sh
 			return fmt.Errorf("creating credentials: %w", err)
 		}
 
-		_, err = tx.ExecContext(
+		result, err := tx.ExecContext(
 			ctx,
 			`UPDATE customers SET shipping = $1 WHERE customer_id = $2`,
 			shipping.ID, userID,
 		)
 		if err != nil {
 			return fmt.Errorf("creating credentials: %w", err)
+		}
+		rowsAffected, err := result.RowsAffected()
+		if err != nil {
+			return fmt.Errorf("retrieving updated shipping rows: %w", err)
+		}
+		if rowsAffected == 0 {
+			return customer.ErrCustomerNotFound
 		}
 		return nil
 	})

@@ -739,41 +739,51 @@ func TestCustomerIsZero(t *testing.T) {
 			expected: false,
 		},
 		{
-			name: "zero credentials",
+			name: "missing credentials still counts as an existing customer",
 			value: customer.NewCustomer(
 				"customer-1",
 				customer.Credentials{},
 				validBilling,
 				validShipping,
 			),
-			expected: true,
+			expected: false,
 		},
 		{
-			name: "zero billing",
+			name: "missing billing still counts as an existing customer",
 			value: customer.NewCustomer(
 				"customer-1",
 				validCredentials,
 				customer.Billing{},
 				validShipping,
 			),
-			expected: true,
+			expected: false,
 		},
 		{
-			name: "zero shipping",
+			name: "missing shipping still counts as an existing customer",
 			value: customer.NewCustomer(
 				"customer-1",
 				validCredentials,
 				validBilling,
 				customer.ShippingAddress{},
 			),
-			expected: true,
+			expected: false,
 		},
 		{
-			name: "multiple zero nested values",
+			name: "missing nested values with an id still counts as an existing customer",
 			value: customer.NewCustomer(
 				"customer-1",
 				customer.Credentials{},
 				customer.Billing{},
+				validShipping,
+			),
+			expected: false,
+		},
+		{
+			name: "empty id is zero",
+			value: customer.NewCustomer(
+				"",
+				validCredentials,
+				validBilling,
 				validShipping,
 			),
 			expected: true,

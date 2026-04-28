@@ -16,6 +16,9 @@ var (
 	ErrNameEmpty        = errors.New("name is empty")
 	ErrPhoneEmpty       = errors.New("phone is empty")
 	ErrEmailEmpty       = errors.New("email is empty")
+
+	ErrCustomerAlreadyExists = errors.New("customer already exists")
+	ErrCustomerNotFound      = errors.New("customer not found")
 )
 
 type address struct {
@@ -128,7 +131,7 @@ type Customer struct {
 }
 
 func (c Customer) IsZero() bool {
-	return c.Billing.IsZero() || c.Shipping.IsZero() || c.Credentials.IsZero()
+	return c.ID == ""
 }
 
 func (c Credentials) IsZero() bool {
