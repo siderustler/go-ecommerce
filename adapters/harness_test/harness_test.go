@@ -1,15 +1,14 @@
-package harness_test
+package db_harness_test
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"log"
 	"os"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/siderustler/go-ecommerce/adapters"
+	db_harness "github.com/siderustler/go-ecommerce/adapters/harness_test"
 	harness "github.com/siderustler/go-ecommerce/adapters/harness_test"
 	"github.com/testcontainers/testcontainers-go"
 	postgrescontainer "github.com/testcontainers/testcontainers-go/modules/postgres"
@@ -48,17 +47,13 @@ func TestDatabaseConnection(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	if err := integrationDB.PingContext(ctx); err != nil {
-		t.Fatalf("ping database: %v", err)
-	}
-
-	tx, err := integrationDB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelDefault})
+	teardown, tx, err := db_harness.BeginTestTransaction(ctx, integrationDB)
 	if err != nil {
-		t.Fatalf("begin transaction: %v", err)
+		t.Fatalf("setting up integration test: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := tx.Rollback(); err != nil && !errors.Is(err, sql.ErrTxDone) {
-			t.Fatalf("rollback transaction: %v", err)
+		if err := teardown(); err != nil {
+			t.Fatalf("teardown: %v", err)
 		}
 	})
 
@@ -99,15 +94,29 @@ func TestPerTestTransaction(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	tx, err := integrationDB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelDefault})
-	if err != nil {
-		t.Fatalf("begin transaction: %v", err)
-	}
 
-	txDB := integrationDB.WithTransactionExecutor(tx)
+	teardown1, tx1, err1 := db_harness.BeginTestTransaction(ctx, integrationDB)
+	if err1 != nil {
+		t.Fatalf("setting up integration test: %v", err1)
+	}
+	teardown2, tx2, err2 := db_harness.BeginTestTransaction(ctx, integrationDB)
+	if err2 != nil {
+		t.Fatalf("setting up integration test: %v", err2)
+	}
+	t.Cleanup(func() {
+		if err := teardown1(); err != nil {
+			t.Fatalf("teardown1: %v", err)
+		}
+		if err := teardown2(); err != nil {
+			t.Fatalf("teardown2: %v", err)
+		}
+	})
+
+	txDB1 := integrationDB.WithTransactionExecutor(tx1)
+	txDB2 := integrationDB.WithTransactionExecutor(tx2)
 	customerID := "rollback-" + uuid.NewString()
 
-	if _, err := txDB.ExecContext(
+	if _, err := txDB1.ExecContext(
 		ctx,
 		`INSERT INTO customers (customer_id, name, email, phone) VALUES ($1, $2, $3, $4)`,
 		customerID,
@@ -119,7 +128,7 @@ func TestPerTestTransaction(t *testing.T) {
 	}
 
 	var seenInTx string
-	if err := txDB.QueryRowContext(
+	if err := txDB1.QueryRowContext(
 		ctx,
 		`SELECT customer_id FROM customers WHERE customer_id = $1`,
 		customerID,
@@ -130,12 +139,12 @@ func TestPerTestTransaction(t *testing.T) {
 		t.Fatalf("unexpected customer id in transaction: got %q want %q", seenInTx, customerID)
 	}
 
-	if err := tx.Rollback(); err != nil {
-		t.Fatalf("rollback transaction: %v", err)
+	if err := teardown1(); err != nil {
+		t.Fatalf("teardown1: %v", err)
 	}
 
 	var count int
-	if err := integrationDB.QueryRowContext(
+	if err := txDB2.QueryRowContext(
 		ctx,
 		`SELECT COUNT(*) FROM customers WHERE customer_id = $1`,
 		customerID,
@@ -144,5 +153,9 @@ func TestPerTestTransaction(t *testing.T) {
 	}
 	if count != 0 {
 		t.Fatalf("expected rolled back customer to be absent, got count %d", count)
+	}
+
+	if err := teardown2(); err != nil {
+		t.Fatalf("teardown2: %v", err)
 	}
 }
