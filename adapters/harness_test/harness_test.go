@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/siderustler/go-ecommerce/adapters"
 	db_harness "github.com/siderustler/go-ecommerce/adapters/harness_test"
-	harness "github.com/siderustler/go-ecommerce/adapters/harness_test"
 	"github.com/testcontainers/testcontainers-go"
 	postgrescontainer "github.com/testcontainers/testcontainers-go/modules/postgres"
 )
@@ -21,7 +20,7 @@ var (
 
 func TestMain(m *testing.M) {
 	var err error
-	integrationDB, container, err = harness.SetupIntegrationTestDatabase(context.Background())
+	integrationDB, container, err = db_harness.SetupIntegrationTestDatabase(context.Background())
 	if err != nil {
 		log.Printf("setting up harness integration database: %v", err)
 		os.Exit(1)
